@@ -9,7 +9,7 @@
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Centralized configuration server for .NET microservices - hot reload, encryption, versioning, diff, webhook notify</Description>
     <PackageProjectUrl>https://github.com/sarmkadan/dotnet-config-server</PackageProjectUrl>
-    <PackageLicense>MIT</PackageLicense>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/sarmkadan/dotnet-config-server</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
