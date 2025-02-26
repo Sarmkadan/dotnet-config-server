@@ -4,6 +4,7 @@
 // =============================================================================
 
 using System.Text.RegularExpressions;
+using DotnetConfigServer.Exceptions;
 
 namespace DotnetConfigServer.Utilities;
 
@@ -138,7 +139,7 @@ public static class ValidationExtensions
     public static void ThrowIfInvalid(this ValidationResult result)
     {
         if (!result.IsValid)
-            throw new ValidationException(result.ErrorMessage ?? "Validation failed");
+            throw new ValidationException("Validation", result.ErrorMessage ?? "Validation failed");
     }
 
     /// <summary>

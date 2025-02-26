@@ -3,6 +3,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
 
 namespace DotnetConfigServer.BackgroundWorkers;

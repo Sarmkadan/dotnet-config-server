@@ -50,7 +50,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(c => c.ApplicationId);
             entity.HasIndex(c => new { c.ApplicationId, c.Name });
             entity.Property(c => c.Name).IsRequired().HasMaxLength(256);
-            entity.HasMany(c => c.Configurations).WithOne().HasForeignKey(c => c.ApplicationId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(c => c.Name);
         });
 
         // Configure ConfigurationKey

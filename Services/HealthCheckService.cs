@@ -4,6 +4,7 @@
 // =============================================================================
 
 using System.Diagnostics;
+using DotnetConfigServer.Caching;
 
 namespace DotnetConfigServer.Services;
 

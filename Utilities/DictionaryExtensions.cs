@@ -3,6 +3,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Collections;
+
 namespace DotnetConfigServer.Utilities;
 
 /// <summary>
@@ -108,7 +110,7 @@ public static class DictionaryExtensions
         {
             var key = string.IsNullOrEmpty(prefix) ? kvp.Key.ToString() ?? "" : $"{prefix}{separator}{kvp.Key}";
 
-            if (kvp.Value is IDictionary<string, object?> nestedDict)
+            if (kvp.Value is Dictionary<string, object?> nestedDict)
             {
                 var flattened = nestedDict.Flatten(key, separator);
                 foreach (var item in flattened)

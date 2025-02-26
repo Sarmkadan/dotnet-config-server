@@ -9,6 +9,7 @@ using DotnetConfigServer.Common;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
 
+using DotnetConfigServer.Exceptions;
 namespace DotnetConfigServer.Services;
 
 /// <summary>

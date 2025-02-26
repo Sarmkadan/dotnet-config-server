@@ -5,6 +5,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using DotnetConfigServer.Common;
+using Environment = DotnetConfigServer.Common.Environment;
 
 namespace DotnetConfigServer.Models;
 
