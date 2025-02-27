@@ -1,13 +1,14 @@
-# Dotnet Config Server
-
 [![Build](https://github.com/sarmkadan/dotnet-config-server/actions/workflows/build.yml/badge.svg)](https://github.com/sarmkadan/dotnet-config-server/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0-purple.svg)](https://dotnet.microsoft.com/)
+
+# Dotnet Config Server
 
 A production-grade centralized configuration server for .NET microservices with support for hot reload, encryption, versioning, diff tracking, and webhook notifications.
 
 ## Table of Contents
 
+- [Quick Start](#quick-start)
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -21,6 +22,37 @@ A production-grade centralized configuration server for .NET microservices with 
 - [Performance](#performance)
 - [Related Projects](#related-projects)
 - [Contributing](#contributing)
+
+## Quick Start
+
+```bash
+# Clone and run locally (requires .NET 10 SDK and SQL Server LocalDB)
+git clone https://github.com/sarmkadan/dotnet-config-server.git
+cd dotnet-config-server
+dotnet restore
+dotnet ef database update
+dotnet run
+# API: https://localhost:5001  |  Swagger: https://localhost:5001/swagger
+```
+
+Or with Docker Compose (no local SQL Server needed):
+
+```bash
+docker-compose up
+# API: http://localhost:80  |  Swagger: http://localhost:80/swagger
+```
+
+Create your first configuration:
+
+```bash
+curl -s -X POST https://localhost:5001/api/v1/applications \
+  -H "Content-Type: application/json" \
+  -d '{"name":"MyService","description":"My microservice"}' | jq .
+
+curl -s -X POST https://localhost:5001/api/v1/configurations \
+  -H "Content-Type: application/json" \
+  -d '{"applicationId":"<id>","environment":"Development","description":"Dev config"}' | jq .
+```
 
 ## Overview
 
@@ -1140,6 +1172,4 @@ The above copyright notice and this permission notice shall be included in all c
 
 ---
 
-**Built by [Vladyslav Zaiets](https://sarmkadan.com) - CTO & Software Architect**
-
-[Portfolio](https://sarmkadan.com) | [GitHub](https://github.com/Sarmkadan) | [Telegram](https://t.me/sarmkadan)
+Built by [Vladyslav Zaiets](https://sarmkadan.com)
