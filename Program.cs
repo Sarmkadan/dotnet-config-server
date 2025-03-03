@@ -81,6 +81,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");
+app.MapControllers();
 
     Log.Information("Dotnet Config Server started successfully with Phase 2 features");
     await app.RunAsync();
