@@ -5,6 +5,31 @@ All notable changes to Dotnet Config Server will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-18
+
+### Added
+- Multi-stage Docker image with .NET 10 runtime optimization
+- Docker Compose orchestration with SQL Server, health checks, and volume management
+- Production-ready HEALTHCHECK directive in Dockerfile with configurable intervals and timeouts
+- Comprehensive migration guide from v1.x to v2.0 with breaking changes documentation
+- Enhanced deployment documentation covering Docker, Kubernetes, and cloud platforms
+- Layer caching optimization for faster builds in CI/CD pipelines
+
+### Changed
+- Dockerfile refactored for better build performance and layer caching
+- Docker Compose configuration now includes automatic health checks for all services
+- API versioning and response envelope structure updated for consistency
+- Deployment guidelines now emphasize containerization as the primary deployment method
+
+### Fixed
+- Container startup time optimized by reducing SDK layer size
+- Health check endpoint timeout configuration standardized across environments
+
+### Security
+- Docker base images pinned to specific versions for supply chain security
+- SQL Server container password complexity enforced in production profiles
+- Environment variable management documented for secrets handling
+
 ## [1.0.0] - 2025-04-22
 
 ### Added
