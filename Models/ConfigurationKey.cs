@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a single key-value pair within a configuration
 /// </summary>
-public class ConfigurationKey
+sealed public class ConfigurationKey
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -184,7 +185,7 @@ public class ConfigurationKey
 /// <summary>
 /// Summary view of a configuration key
 /// </summary>
-public class ConfigurationKeySummary
+sealed public class ConfigurationKeySummary
 {
     public Guid Id { get; set; }
     public string Key { get; set; } = string.Empty;

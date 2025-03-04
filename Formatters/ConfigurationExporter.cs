@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,7 +15,7 @@ namespace DotnetConfigServer.Formatters;
 /// Exports configurations in multiple formats: JSON, CSV, XML, YAML.
 /// Handles serialization with proper escaping and structure preservation.
 /// </summary>
-public class ConfigurationExporter
+sealed public class ConfigurationExporter
 {
     /// <summary>
     /// Exports configurations to JSON format.

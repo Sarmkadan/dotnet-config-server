@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -35,7 +36,7 @@ public interface IConfigurationImportService
     Task<ImportValidationResult> ValidateAsync(string data, string format);
 }
 
-public class ConfigurationImportService : IConfigurationImportService
+sealed public class ConfigurationImportService : IConfigurationImportService
 {
     private readonly ILogger<ConfigurationImportService> _logger;
 
@@ -200,7 +201,7 @@ public class ConfigurationImportService : IConfigurationImportService
     }
 }
 
-public class ImportValidationResult
+sealed public class ImportValidationResult
 {
     public bool IsValid { get; set; }
     public List<string> Errors { get; set; } = new();

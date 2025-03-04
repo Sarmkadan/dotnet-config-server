@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for generating and managing configuration version diffs
 /// </summary>
-public class DiffService : IDiffService
+sealed public class DiffService : IDiffService
 {
     private readonly IConfigurationDiffRepository _diffRepository;
     private readonly IConfigurationVersionRepository _versionRepository;

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing configuration versions
 /// </summary>
-public class VersioningService : IVersioningService
+sealed public class VersioningService : IVersioningService
 {
     private readonly IConfigurationVersionRepository _versionRepository;
     private readonly IConfigurationRepository _configRepository;

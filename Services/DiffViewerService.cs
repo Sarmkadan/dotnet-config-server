@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Provides rich diff visualization and non-destructive rollback preview for configuration versions.
 /// </summary>
-public class DiffViewerService : IDiffViewerService
+sealed public class DiffViewerService : IDiffViewerService
 {
     private readonly IVersioningService _versioningService;
     private readonly IConfigurationDiffRepository _diffRepository;

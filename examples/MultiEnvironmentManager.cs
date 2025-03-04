@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Manages configurations across multiple environments (Dev, Staging, Production).
     /// Provides utilities for environment-specific operations and promoting configurations.
     /// </summary>
-    public class MultiEnvironmentManager
+    sealed public class MultiEnvironmentManager
     {
         private readonly HttpClient _httpClient;
         private readonly string _applicationId;
@@ -274,7 +275,7 @@ namespace DotnetConfigServer.Examples
             };
     }
 
-    public class ConfigurationDto
+    sealed public class ConfigurationDto
     {
         public string Id { get; set; }
         public string Environment { get; set; }
@@ -283,14 +284,14 @@ namespace DotnetConfigServer.Examples
         public DateTime CreatedAt { get; set; }
     }
 
-    public class ConfigurationDetailsDto
+    sealed public class ConfigurationDetailsDto
     {
         public string Id { get; set; }
         public string Environment { get; set; }
         public List<ConfigurationKeyDto> Keys { get; set; }
     }
 
-    public class ConfigurationKeyDto
+    sealed public class ConfigurationKeyDto
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -298,14 +299,14 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    public class PagedResult<T>
+    sealed public class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    public class Program
+    sealed public class Program
     {
         public static async Task Main(string[] args)
         {

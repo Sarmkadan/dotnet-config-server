@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -34,7 +35,7 @@ public interface IBatchOperationService
     Task CancelAsync(Guid operationId);
 }
 
-public class BatchOperationService : IBatchOperationService
+sealed public class BatchOperationService : IBatchOperationService
 {
     private readonly IConfigurationKeyRepository _keyRepository;
     private readonly ILogger<BatchOperationService> _logger;
@@ -237,13 +238,13 @@ public class BatchOperationService : IBatchOperationService
     }
 }
 
-public class KeyUpdateRequest
+sealed public class KeyUpdateRequest
 {
     public Guid KeyId { get; set; }
     public string NewValue { get; set; } = string.Empty;
 }
 
-public class BatchOperationResult
+sealed public class BatchOperationResult
 {
     public Guid OperationId { get; set; }
     public bool Success { get; set; }
@@ -252,7 +253,7 @@ public class BatchOperationResult
     public List<string> Errors { get; set; } = new();
 }
 
-public class BatchOperationStatus
+sealed public class BatchOperationStatus
 {
     public Guid OperationId { get; set; }
     public string Status { get; set; } = string.Empty;

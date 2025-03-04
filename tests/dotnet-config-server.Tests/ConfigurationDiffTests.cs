@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-public class ConfigurationDiffTests
+sealed public class ConfigurationDiffTests
 {
     private static ConfigurationDiff CreateEmptyDiff() => new()
     {

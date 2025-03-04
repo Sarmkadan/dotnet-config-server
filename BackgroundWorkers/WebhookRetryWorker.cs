@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.BackgroundWorkers;
 /// Background worker that retries failed webhook deliveries.
 /// Uses exponential backoff to avoid overwhelming external endpoints.
 /// </summary>
-public class WebhookRetryWorker : BackgroundService
+sealed public class WebhookRetryWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<WebhookRetryWorker> _logger;

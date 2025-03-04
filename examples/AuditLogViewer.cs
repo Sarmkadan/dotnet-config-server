@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Retrieves and displays audit logs for configurations.
     /// Useful for compliance, debugging, and understanding configuration history.
     /// </summary>
-    public class AuditLogViewer
+    sealed public class AuditLogViewer
     {
         private readonly HttpClient _httpClient;
 
@@ -254,7 +255,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    public class AuditLog
+    sealed public class AuditLog
     {
         public string Id { get; set; }
         public DateTime Timestamp { get; set; }
@@ -265,20 +266,20 @@ namespace DotnetConfigServer.Examples
         public Dictionary<string, AuditChange> Changes { get; set; }
     }
 
-    public class AuditChange
+    sealed public class AuditChange
     {
         public string OldValue { get; set; }
         public string NewValue { get; set; }
     }
 
-    public class PagedResult<T>
+    sealed public class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    public class Program
+    sealed public class Program
     {
         public static async Task Main(string[] args)
         {

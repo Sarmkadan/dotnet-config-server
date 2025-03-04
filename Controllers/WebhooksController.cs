@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,7 +18,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class WebhooksController : ControllerBase
+sealed public class WebhooksController : ControllerBase
 {
     private readonly IWebhookSubscriptionRepository _repository;
     private readonly IWebhookService _webhookService;
@@ -221,7 +222,7 @@ public class WebhooksController : ControllerBase
     }
 }
 
-public class WebhookTestResult
+sealed public class WebhookTestResult
 {
     public bool Success { get; set; }
     public DateTime Timestamp { get; set; }

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for ConfigurationKey entity
 /// </summary>
-public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey>, IConfigurationKeyRepository
+sealed public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey>, IConfigurationKeyRepository
 {
     public ConfigurationKeyRepository(ApplicationDbContext context, ILogger<ConfigurationKeyRepository> logger)
         : base(context, logger) { }
@@ -40,7 +41,7 @@ public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey>, ICon
 /// <summary>
 /// Repository for ConfigurationVersion entity
 /// </summary>
-public class ConfigurationVersionRepository : BaseRepository<ConfigurationVersion>, IConfigurationVersionRepository
+sealed public class ConfigurationVersionRepository : BaseRepository<ConfigurationVersion>, IConfigurationVersionRepository
 {
     public ConfigurationVersionRepository(ApplicationDbContext context, ILogger<ConfigurationVersionRepository> logger)
         : base(context, logger) { }
@@ -67,7 +68,7 @@ public class ConfigurationVersionRepository : BaseRepository<ConfigurationVersio
 /// <summary>
 /// Repository for WebhookSubscription entity
 /// </summary>
-public class WebhookSubscriptionRepository : BaseRepository<WebhookSubscription>, IWebhookSubscriptionRepository
+sealed public class WebhookSubscriptionRepository : BaseRepository<WebhookSubscription>, IWebhookSubscriptionRepository
 {
     public WebhookSubscriptionRepository(ApplicationDbContext context, ILogger<WebhookSubscriptionRepository> logger)
         : base(context, logger) { }
@@ -88,7 +89,7 @@ public class WebhookSubscriptionRepository : BaseRepository<WebhookSubscription>
 /// <summary>
 /// Repository for WebhookDelivery entity
 /// </summary>
-public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>, IWebhookDeliveryRepository
+sealed public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>, IWebhookDeliveryRepository
 {
     public WebhookDeliveryRepository(ApplicationDbContext context, ILogger<WebhookDeliveryRepository> logger)
         : base(context, logger) { }
@@ -115,7 +116,7 @@ public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>, IWebho
 /// <summary>
 /// Repository for ConfigurationDiff entity
 /// </summary>
-public class ConfigurationDiffRepository : BaseRepository<ConfigurationDiff>, IConfigurationDiffRepository
+sealed public class ConfigurationDiffRepository : BaseRepository<ConfigurationDiff>, IConfigurationDiffRepository
 {
     public ConfigurationDiffRepository(ApplicationDbContext context, ILogger<ConfigurationDiffRepository> logger)
         : base(context, logger) { }
@@ -137,7 +138,7 @@ public class ConfigurationDiffRepository : BaseRepository<ConfigurationDiff>, IC
 /// <summary>
 /// Repository for AuditLog entity
 /// </summary>
-public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
+sealed public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
 {
     public AuditLogRepository(ApplicationDbContext context, ILogger<AuditLogRepository> logger)
         : base(context, logger) { }
@@ -164,7 +165,7 @@ public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
 /// <summary>
 /// Repository for EncryptionKey entity
 /// </summary>
-public class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEncryptionKeyRepository
+sealed public class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEncryptionKeyRepository
 {
     public EncryptionKeyRepository(ApplicationDbContext context, ILogger<EncryptionKeyRepository> logger)
         : base(context, logger) { }
@@ -197,7 +198,7 @@ public class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEncryptio
 /// <summary>
 /// Repository for Application entity
 /// </summary>
-public class ApplicationRepository : BaseRepository<Application>, IApplicationRepository
+sealed public class ApplicationRepository : BaseRepository<Application>, IApplicationRepository
 {
     public ApplicationRepository(ApplicationDbContext context, ILogger<ApplicationRepository> logger)
         : base(context, logger) { }

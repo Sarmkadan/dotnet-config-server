@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-public class EncryptionServiceTests
+sealed public class EncryptionServiceTests
 {
     private readonly Mock<IEncryptionKeyRepository> _keyRepositoryMock;
     private readonly Mock<ILogger<EncryptionService>> _loggerMock;
