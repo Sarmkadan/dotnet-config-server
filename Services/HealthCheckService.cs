@@ -60,7 +60,7 @@ sealed public class HealthCheckService : IHealthCheckService
         };
 
         // Cache health
-        if (_cacheService != null)
+        if (_cacheService is not null)
         {
             try
             {

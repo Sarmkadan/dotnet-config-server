@@ -145,7 +145,7 @@ sealed public class ExternalApiClient
     /// </summary>
     private static void AddHeaders(HttpRequestMessage request, Dictionary<string, string>? headers)
     {
-        if (headers == null)
+        if (headers is null)
             return;
 
         foreach (var kvp in headers)
