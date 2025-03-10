@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/configurations/{configurationId}/[controller]")]
 [Produces("application/json")]
-public class VersionsController : ControllerBase
+sealed public class VersionsController : ControllerBase
 {
     private readonly IVersioningService _versioningService;
     private readonly IDiffService _diffService;
@@ -237,7 +238,7 @@ public class VersionsController : ControllerBase
 /// <summary>
 /// Request model for creating a version
 /// </summary>
-public class CreateVersionRequest
+sealed public class CreateVersionRequest
 {
     public string? ReleaseNotes { get; set; }
 }
@@ -245,7 +246,7 @@ public class CreateVersionRequest
 /// <summary>
 /// Response model for cleanup operation
 /// </summary>
-public class CleanupResponse
+sealed public class CleanupResponse
 {
     public int ArchivedCount { get; set; }
 }

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Demonstrates configuration versioning, comparison, and rollback operations.
     /// Versions allow you to track all configuration changes and roll back if needed.
     /// </summary>
-    public class VersioningAndRollback
+    sealed public class VersioningAndRollback
     {
         private readonly HttpClient _httpClient;
 
@@ -280,7 +281,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    public class ConfigurationVersion
+    sealed public class ConfigurationVersion
     {
         public string Id { get; set; }
         public int Version { get; set; }
@@ -291,7 +292,7 @@ namespace DotnetConfigServer.Examples
         public DateTime PublishedAt { get; set; }
     }
 
-    public class ConfigurationDiff
+    sealed public class ConfigurationDiff
     {
         public string Key { get; set; }
         public string ChangeType { get; set; } // Added, Modified, Deleted
@@ -299,14 +300,14 @@ namespace DotnetConfigServer.Examples
         public string NewValue { get; set; }
     }
 
-    public class PagedResult<T>
+    sealed public class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    public class Program
+    sealed public class Program
     {
         public static async Task Main(string[] args)
         {

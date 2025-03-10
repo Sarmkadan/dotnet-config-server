@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -27,7 +28,7 @@ public interface IComparisonService
     SummaryOfChanges GetSummary<T>(T original, T modified) where T : notnull;
 }
 
-public class ComparisonService : IComparisonService
+sealed public class ComparisonService : IComparisonService
 {
     private readonly ILogger<ComparisonService> _logger;
 
@@ -88,13 +89,13 @@ public class ComparisonService : IComparisonService
     }
 }
 
-public class ComparisonResult
+sealed public class ComparisonResult
 {
     public string ItemType { get; set; } = string.Empty;
     public List<PropertyChange> Changes { get; set; } = new();
 }
 
-public class PropertyChange
+sealed public class PropertyChange
 {
     public string PropertyName { get; set; } = string.Empty;
     public string OriginalValue { get; set; } = string.Empty;
@@ -102,7 +103,7 @@ public class PropertyChange
     public string PropertyType { get; set; } = string.Empty;
 }
 
-public class SummaryOfChanges
+sealed public class SummaryOfChanges
 {
     public int TotalChanges { get; set; }
     public List<string> ChangedFields { get; set; } = new();

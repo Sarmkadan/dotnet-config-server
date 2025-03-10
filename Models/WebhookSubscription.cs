@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a webhook subscription for configuration change notifications
 /// </summary>
-public class WebhookSubscription
+sealed public class WebhookSubscription
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -179,7 +180,7 @@ public class WebhookSubscription
 /// <summary>
 /// Summary view of a webhook subscription
 /// </summary>
-public class WebhookSubscriptionSummary
+sealed public class WebhookSubscriptionSummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

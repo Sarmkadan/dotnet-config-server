@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.BackgroundWorkers;
 /// Background worker that periodically syncs configuration state.
 /// Cleans up stale entries, archives old versions, and optimizes cache.
 /// </summary>
-public class ConfigurationSyncWorker : BackgroundService
+sealed public class ConfigurationSyncWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConfigurationSyncWorker> _logger;

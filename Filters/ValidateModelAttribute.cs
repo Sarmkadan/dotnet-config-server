@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Filters;
 /// Action filter that automatically validates model state before action execution.
 /// Returns 400 Bad Request with detailed error messages if validation fails.
 /// </summary>
-public class ValidateModelAttribute : ActionFilterAttribute
+sealed public class ValidateModelAttribute : ActionFilterAttribute
 {
     public override void OnActionExecuting(ActionExecutingContext context)
     {
@@ -22,7 +23,7 @@ public class ValidateModelAttribute : ActionFilterAttribute
                 .Where(x => x.Value?.Errors.Count > 0)
                 .ToDictionary(
                     kvp => kvp.Key,
-                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? Array.Empty<string>()
+                    kvp => kvp.Value?.Errors.Select(e => e.ErrorMessage).ToArray() ?? []
                 );
 
             context.Result = new BadRequestObjectResult(new

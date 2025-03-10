@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class ApplicationsController : ControllerBase
+sealed public class ApplicationsController : ControllerBase
 {
     private readonly IApplicationRepository _repository;
     private readonly IConfigurationRepository _configRepository;
@@ -190,7 +191,7 @@ public class ApplicationsController : ControllerBase
     }
 }
 
-public class PaginatedResult<T>
+sealed public class PaginatedResult<T>
 {
     public List<T> Items { get; set; } = new();
     public int Page { get; set; }

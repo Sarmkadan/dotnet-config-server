@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class ConfigurationsController : ControllerBase
+sealed public class ConfigurationsController : ControllerBase
 {
     private readonly IConfigurationService _configurationService;
     private readonly IVersioningService _versioningService;

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Integration;
 /// HTTP client for calling external APIs.
 /// Handles retries, timeouts, and error handling with proper logging.
 /// </summary>
-public class ExternalApiClient
+sealed public class ExternalApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ExternalApiClient> _logger;
@@ -154,7 +155,7 @@ public class ExternalApiClient
     }
 }
 
-public class ExternalApiClientOptions
+sealed public class ExternalApiClientOptions
 {
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
     public int MaxRetries { get; set; } = 3;

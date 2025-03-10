@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an audit log entry tracking changes and actions
 /// </summary>
-public class AuditLog
+sealed public class AuditLog
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -202,7 +203,7 @@ public class AuditLog
 /// <summary>
 /// Summary view of an audit log entry
 /// </summary>
-public class AuditLogSummary
+sealed public class AuditLogSummary
 {
     public Guid Id { get; set; }
     public AuditActionType ActionType { get; set; }

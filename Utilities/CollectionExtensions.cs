@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -195,7 +196,7 @@ public static class CollectionExtensions
 /// <summary>
 /// Helper class for consecutive grouping.
 /// </summary>
-public class ConsecutiveGroup<TKey, T> : IGrouping<TKey, T>
+sealed public class ConsecutiveGroup<TKey, T> : IGrouping<TKey, T>
 {
     private readonly List<T> _items;
 

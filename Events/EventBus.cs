@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ namespace DotnetConfigServer.Events;
 /// In-memory implementation of the event bus.
 /// Manages subscription and publication of domain events.
 /// </summary>
-public class EventBus : IEventBus
+sealed public class EventBus : IEventBus
 {
     private readonly ConcurrentDictionary<Type, List<Delegate>> _subscribers = new();
     private readonly ILogger<EventBus> _logger;

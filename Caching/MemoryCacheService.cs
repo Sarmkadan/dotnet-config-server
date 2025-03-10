@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ namespace DotnetConfigServer.Caching;
 /// In-memory cache implementation using ConcurrentDictionary.
 /// Suitable for single-instance deployments. For distributed scenarios, use Redis.
 /// </summary>
-public class MemoryCacheService : ICacheService
+sealed public class MemoryCacheService : ICacheService
 {
     private readonly ConcurrentDictionary<string, CacheEntry> _cache;
     private readonly ILogger<MemoryCacheService> _logger;

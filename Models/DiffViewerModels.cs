@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ namespace DotnetConfigServer.Models;
 /// A configuration diff enriched with full version metadata for viewer display.
 /// Uses a cached diff record when one exists; otherwise reflects a live key comparison.
 /// </summary>
-public class EnrichedDiff
+sealed public class EnrichedDiff
 {
     /// <summary>Gets or sets the diff record identifier (may be <see cref="Guid.NewGuid"/> when computed on the fly).</summary>
     public Guid DiffId { get; set; }
@@ -57,7 +58,7 @@ public class EnrichedDiff
 /// Preview of what a rollback operation would change relative to the currently active version,
 /// computed without persisting any state changes.
 /// </summary>
-public class RollbackPreview
+sealed public class RollbackPreview
 {
     /// <summary>Gets or sets the configuration identifier the rollback applies to.</summary>
     public Guid ConfigurationId { get; set; }
@@ -97,7 +98,7 @@ public class RollbackPreview
 /// A single point in a configuration version timeline annotated with change statistics
 /// relative to the immediately preceding version.
 /// </summary>
-public class VersionTimelineEntry
+sealed public class VersionTimelineEntry
 {
     /// <summary>Gets or sets the version summary for this timeline point.</summary>
     public ConfigurationVersionSummary Version { get; set; } = null!;

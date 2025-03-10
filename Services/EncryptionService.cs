@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,7 +16,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for encryption and decryption operations
 /// </summary>
-public class EncryptionService : IEncryptionService
+sealed public class EncryptionService : IEncryptionService
 {
     private readonly IEncryptionKeyRepository _keyRepository;
     private readonly ILogger<EncryptionService> _logger;
