@@ -42,7 +42,7 @@ sealed public class VersioningService : IVersioningService
     public async Task<ConfigurationVersion> CreateVersionAsync(Guid configurationId, string releaseNotes, string userId)
     {
         var config = await _configRepository.GetByIdAsync(configurationId);
-        if (config == null)
+        if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
         var previousVersion = await GetActiveVersionAsync(configurationId);
@@ -65,7 +65,7 @@ sealed public class VersioningService : IVersioningService
         version.Validate();
 
         // Copy keys from previous version
-        if (previousVersion != null)
+        if (previousVersion is not null)
         {
             var previousKeys = await _keyRepository.GetByVersionAsync(previousVersion.Id);
             foreach (var key in previousKeys)
@@ -133,12 +133,12 @@ sealed public class VersioningService : IVersioningService
     public async Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId)
     {
         var version = await _versionRepository.GetByIdAsync(versionId);
-        if (version == null)
+        if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
 
         // Unpublish current active version
         var activeVersion = await GetActiveVersionAsync(version.ConfigurationId);
-        if (activeVersion != null && activeVersion.Id != versionId)
+        if (activeVersion is not null && activeVersion.Id != versionId)
         {
             activeVersion.Deprecate();
             await _versionRepository.UpdateAsync(activeVersion);
@@ -150,7 +150,7 @@ sealed public class VersioningService : IVersioningService
 
         // Update configuration's current version
         var config = await _configRepository.GetByIdAsync(version.ConfigurationId);
-        if (config != null)
+        if (config is not null)
         {
             config.CurrentVersionId = version.Id;
             config.VersionNumber = int.Parse(version.VersionNumber.Split('.')[0]);
@@ -181,7 +181,7 @@ sealed public class VersioningService : IVersioningService
     public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId)
     {
         var version = await _versionRepository.GetByIdAsync(versionId);
-        if (version == null)
+        if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
 
         version.Archive(userId);
@@ -198,7 +198,7 @@ sealed public class VersioningService : IVersioningService
     public async Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId)
     {
         var version = await _versionRepository.GetByIdAsync(versionId);
-        if (version == null)
+        if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
 
         version.Deprecate();
@@ -215,7 +215,7 @@ sealed public class VersioningService : IVersioningService
     public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId)
     {
         var previousVersion = await _versionRepository.GetByIdAsync(previousVersionId);
-        if (previousVersion == null)
+        if (previousVersion is null)
             throw new ConfigurationNotFoundException(previousVersionId.ToString());
 
         // Create new version as rollback

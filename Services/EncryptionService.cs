@@ -114,7 +114,7 @@ sealed public class EncryptionService : IEncryptionService
     public async Task<string> EncryptAsync(string plainText, Guid configurationId)
     {
         var key = await GetPrimaryKeyAsync(configurationId);
-        if (key == null)
+        if (key is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
 
         key.IncrementUsage();
@@ -129,7 +129,7 @@ sealed public class EncryptionService : IEncryptionService
     public async Task<string> DecryptAsync(string cipherText, Guid configurationId)
     {
         var primaryKey = await GetPrimaryKeyAsync(configurationId);
-        if (primaryKey == null)
+        if (primaryKey is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
 
         try
@@ -223,7 +223,7 @@ sealed public class EncryptionService : IEncryptionService
     public async Task RotateKeyAsync(string oldKeyId, string userId)
     {
         var oldKey = await _keyRepository.GetByKeyIdAsync(oldKeyId);
-        if (oldKey == null)
+        if (oldKey is null)
             throw new ConfigurationNotFoundException($"Encryption key {oldKeyId} not found");
 
         oldKey.MarkAsRotated(userId);

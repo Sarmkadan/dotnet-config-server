@@ -94,7 +94,7 @@ sealed public class ConfigurationKey
         if (Value?.Length > AppConstants.Configuration.MaxValueLength)
             errors.AddError("Value", $"Value cannot exceed {AppConstants.Configuration.MaxValueLength} characters");
 
-        if (ValidationRegex != null)
+        if (ValidationRegex is not null)
         {
             try
             {

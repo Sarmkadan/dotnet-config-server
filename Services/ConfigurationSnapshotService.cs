@@ -56,7 +56,7 @@ sealed public class ConfigurationSnapshotService : IConfigurationSnapshotService
     public async Task<ConfigurationSnapshot> CreateSnapshotAsync(Guid configurationId, string userId, string? reason = null)
     {
         var config = await _configRepository.GetByIdAsync(configurationId);
-        if (config == null)
+        if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
         var keys = await _keyRepository.GetByConfigurationAsync(configurationId);

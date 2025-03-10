@@ -62,7 +62,7 @@ sealed public class VersionsController : ControllerBase
         try
         {
             var version = await _versioningService.GetActiveVersionAsync(configurationId);
-            if (version == null)
+            if (version is null)
                 return NotFound(new { error = "No active version found" });
 
             return Ok(version);
@@ -84,7 +84,7 @@ sealed public class VersionsController : ControllerBase
         try
         {
             var version = await _versioningService.GetVersionAsync(versionId);
-            if (version == null || version.ConfigurationId != configurationId)
+            if (version is null || version.ConfigurationId != configurationId)
                 return NotFound(new { error = "Version not found" });
 
             return Ok(version);

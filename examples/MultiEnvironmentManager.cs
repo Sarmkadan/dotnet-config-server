@@ -39,7 +39,7 @@ namespace DotnetConfigServer.Examples
             var configs = await ListEnvironmentConfigurationsAsync();
             var existing = configs.FirstOrDefault(c => c.Environment == environment);
 
-            if (existing != null)
+            if (existing is not null)
                 return existing.Id;
 
             // Create new configuration
@@ -105,7 +105,7 @@ namespace DotnetConfigServer.Examples
 
             // Filter keys if needed
             var keysToPromote = sourceConfig.Keys;
-            if (keyFilter != null && keyFilter.Count > 0)
+            if (keyFilter is not null && keyFilter.Count > 0)
                 keysToPromote = keysToPromote.Where(k => keyFilter.Contains(k.Key)).ToList();
 
             var targetKeys = targetConfig.Keys.ToDictionary(k => k.Key);
