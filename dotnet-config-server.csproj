@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageId>Zaiets.dotnet.config.server</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2.0.2</Version>
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Centralized configuration server for .NET microservices - hot reload, encryption, versioning, diff, webhook notify</Description>
     <PackageTags>dotnet config microservices hot-reload encryption versioning webhooks</PackageTags>
