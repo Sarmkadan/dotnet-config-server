@@ -122,3 +122,14 @@ sealed public class WebhookException : ConfigurationException
     {
     }
 }
+
+/// <summary>
+/// Thrown when a requested configuration snapshot is not found
+/// </summary>
+sealed public class ConfigurationSnapshotNotFoundException : ConfigurationException
+{
+    public ConfigurationSnapshotNotFoundException(string snapshotId)
+        : base($"Configuration snapshot '{snapshotId}' not found", "SNAPSHOT_NOT_FOUND", new { SnapshotId = snapshotId })
+    {
+    }
+}
