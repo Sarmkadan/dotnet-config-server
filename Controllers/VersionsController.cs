@@ -4,7 +4,6 @@
 // CTO & Software Architect
 // =============================================================================
 
-using DotnetConfigServer.Exceptions;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -21,15 +20,18 @@ sealed public class VersionsController : ControllerBase
 {
     private readonly IVersioningService _versioningService;
     private readonly IDiffService _diffService;
+    private readonly IDiffViewerService _diffViewerService; // Add IDiffViewerService
     private readonly ILogger<VersionsController> _logger;
 
     public VersionsController(
         IVersioningService versioningService,
         IDiffService diffService,
+        IDiffViewerService diffViewerService, // Inject IDiffViewerService
         ILogger<VersionsController> logger)
     {
         _versioningService = versioningService;
         _diffService = diffService;
+        _diffViewerService = diffViewerService; // Assign
         _logger = logger;
     }
 
@@ -196,7 +198,7 @@ sealed public class VersionsController : ControllerBase
     /// Gets diff between two versions
     /// </summary>
     [HttpGet("{fromVersionId}/diff/{toVersionId}")]
-    [ProducesResponseType(typeof(ConfigurationDiffSummary), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EnrichedDiff), StatusCodes.Status200OK)] // Change return type
     public async Task<IActionResult> GetDiff(
         [FromRoute] Guid configurationId,
         [FromRoute] Guid fromVersionId,
@@ -204,8 +206,13 @@ sealed public class VersionsController : ControllerBase
     {
         try
         {
-            var diff = await _diffService.ComparVersionsAsync(fromVersionId, toVersionId);
+            // Use _diffViewerService to get the enriched diff
+            var diff = await _diffViewerService.GetEnrichedDiffAsync(fromVersionId, toVersionId);
             return Ok(diff);
+        }
+        catch (ConfigurationNotFoundException)
+        {
+            return NotFound(new { error = "One or both versions not found" });
         }
         catch (Exception ex)
         {

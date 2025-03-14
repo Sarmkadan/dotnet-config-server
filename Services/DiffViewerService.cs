@@ -188,29 +188,29 @@ sealed public class DiffViewerService : IDiffViewerService
         {
             var match = from.FirstOrDefault(k => k.Key == toKey.Key);
             if (match is null)
-                changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value));
+                changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value, toKey.IsEncrypted));
             else if (match.Value != toKey.Value)
-                changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value));
+                changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value, toKey.IsEncrypted));
         }
 
         foreach (var fromKey in from)
         {
             if (!to.Any(k => k.Key == fromKey.Key))
-                changes.Add(MakeEntry(fromKey.Key, ChangeType.Deleted, fromKey.Value, null));
+                changes.Add(MakeEntry(fromKey.Key, ChangeType.Deleted, fromKey.Value, null, fromKey.IsEncrypted));
         }
 
         return changes;
     }
 
-    private static DiffEntry MakeEntry(string key, ChangeType changeType, string? oldValue, string? newValue) =>
+    private static DiffEntry MakeEntry(string key, ChangeType changeType, string? oldValue, string? newValue, bool isEncrypted) =>
         new()
         {
             Id = Guid.NewGuid(),
             DiffId = Guid.Empty,
             Key = key,
             ChangeType = changeType,
-            OldValue = oldValue,
-            NewValue = newValue,
+            OldValue = isEncrypted ? "[ENCRYPTED]" : oldValue,
+            NewValue = isEncrypted ? "[ENCRYPTED]" : newValue,
             CreatedAt = DateTime.UtcNow
         };
 }
