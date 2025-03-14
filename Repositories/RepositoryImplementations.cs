@@ -111,6 +111,12 @@ sealed public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>,
         return await _dbSet.Where(d => d.Status == WebhookDeliveryStatus.Pending)
             .OrderBy(d => d.CreatedAt).ToListAsync();
     }
+
+    public async Task<WebhookDelivery?> GetByEventAndSubscriptionAsync(Guid eventId, Guid subscriptionId)
+    {
+        return await _dbSet.FirstOrDefaultAsync(d =>
+            d.EventId == eventId && d.WebhookSubscriptionId == subscriptionId);
+    }
 }
 
 /// <summary>
