@@ -67,6 +67,11 @@ sealed public class WebhookSubscription
     public Dictionary<string, string> CustomHeaders { get; set; } = new();
 
     /// <summary>
+    /// Event types that trigger this webhook. Empty list means all events trigger it.
+    /// </summary>
+    public List<string> TriggerEvents { get; set; } = new();
+
+    /// <summary>
     /// Validates the webhook subscription
     /// </summary>
     public void Validate()

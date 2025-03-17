@@ -55,22 +55,6 @@ sealed public class EnrichedDiff
 }
 
 /// <summary>
-/// Represents a single change entry in a configuration diff.
-/// </summary>
-sealed public class DiffEntry
-{
-    public Guid Id { get; set; }
-    public Guid DiffId { get; set; }
-    public string Key { get; set; } = string.Empty;
-    public ChangeType ChangeType { get; set; }
-    public string? OldValue { get; set; }
-    public string? NewValue { get; set; }
-    public DateTime CreatedAt { get; set; }
-
-    public DiffEntryOrigin Origin { get; set; } = DiffEntryOrigin.Direct;
-}
-
-/// <summary>
 /// Defines the origin of a configuration diff entry.
 /// </summary>
 public enum DiffEntryOrigin

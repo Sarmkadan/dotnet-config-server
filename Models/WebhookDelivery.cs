@@ -50,6 +50,10 @@ sealed public class WebhookDelivery
     [Required]
     public string Payload { get; set; } = string.Empty;
 
+    public string? EventType { get; set; }
+
+    public string? Url { get; set; }
+
     public DateTime? NextRetryAt { get; set; }
 
     /// <summary>

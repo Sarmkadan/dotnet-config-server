@@ -5,6 +5,7 @@
 // =============================================================================
 
 using DotnetConfigServer.Common;
+using DotnetConfigServer.Events;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
 
@@ -20,6 +21,7 @@ sealed public class ConfigurationService : IConfigurationService
     private readonly IConfigurationKeyRepository _keyRepository;
     private readonly IEncryptionService _encryptionService;
     private readonly IAuditLogRepository _auditLogRepository;
+    private readonly IEventBus _eventBus;
     private readonly ILogger<ConfigurationService> _logger;
 
     public ConfigurationService(
@@ -27,12 +29,14 @@ sealed public class ConfigurationService : IConfigurationService
         IConfigurationKeyRepository keyRepository,
         IEncryptionService encryptionService,
         IAuditLogRepository auditLogRepository,
+        IEventBus eventBus,
         ILogger<ConfigurationService> logger)
     {
         _configRepository = configRepository;
         _keyRepository = keyRepository;
         _encryptionService = encryptionService;
         _auditLogRepository = auditLogRepository;
+        _eventBus = eventBus;
         _logger = logger;
     }
 
@@ -228,6 +232,18 @@ sealed public class ConfigurationService : IConfigurationService
 
         await _keyRepository.UpdateAsync(key);
         await _keyRepository.SaveChangesAsync();
+
+        // Publish event so cache is invalidated and hot-reload subscribers are notified
+        await _eventBus.PublishAsync(new ConfigurationKeyChangedEvent
+        {
+            KeyId = key.Id,
+            ConfigurationId = key.ConfigurationId,
+            Key = key.Key,
+            OldValue = oldValue,
+            NewValue = key.Value,
+            IsEncrypted = key.IsEncrypted,
+            UserId = userId
+        });
 
         _logger.LogInformation("Configuration key {KeyId} updated by {UserId}", keyId, userId);
         return key;

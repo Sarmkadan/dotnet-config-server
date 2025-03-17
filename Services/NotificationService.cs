@@ -5,10 +5,30 @@
 // =============================================================================
 
 using System.Text.Json;
-using DotnetConfigServer.Events;
-using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Services;
+
+/// <summary>
+/// Interface for sending notifications.
+/// </summary>
+public interface INotificationService
+{
+    Task NotifyAsync(Notification notification);
+    Task NotifyAsync(string type, object payload);
+}
+
+/// <summary>
+/// Notification object.
+/// </summary>
+sealed public class Notification
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Type { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string Severity { get; set; } = "info"; // info, warning, error
+    public DateTime CreatedAt { get; set; }
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
 
 /// <summary>
 /// Default implementation of INotificationService for sending notifications.
