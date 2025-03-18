@@ -96,3 +96,26 @@ public enum AuditActionType
     UserLogin = 7,
     PermissionChanged = 8
 }
+
+/// <summary>
+/// Represents the status of a configuration change request in the approval workflow
+/// </summary>
+public enum ChangeRequestStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2,
+    Applied = 3,
+    Cancelled = 4
+}
+
+/// <summary>
+/// Represents the type of operation in a change request
+/// </summary>
+public enum ChangeRequestOperation
+{
+    CreateKey = 0,
+    UpdateKey = 1,
+    DeleteKey = 2,
+    UpdateConfiguration = 3
+}

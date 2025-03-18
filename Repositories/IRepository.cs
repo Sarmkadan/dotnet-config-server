@@ -119,3 +119,12 @@ public interface IConfigurationSnapshotRepository : IRepository<Models.Configura
     Task<List<Models.ConfigurationSnapshot>> GetByConfigurationAsync(Guid configurationId);
     Task<Models.ConfigurationSnapshot?> GetLatestSnapshotAsync(Guid configurationId);
 }
+
+/// <summary>
+/// Change request repository interface
+/// </summary>
+public interface IChangeRequestRepository : IRepository<Models.ChangeRequest>
+{
+    Task<List<Models.ChangeRequest>> GetByConfigurationAsync(Guid configurationId, Common.ChangeRequestStatus? status = null);
+    Task<List<Models.ChangeRequest>> GetPendingAsync();
+}

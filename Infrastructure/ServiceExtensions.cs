@@ -42,6 +42,7 @@ public static class ServiceExtensions
         services.AddScoped<IEncryptionKeyRepository, EncryptionKeyRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IConfigurationSnapshotRepository, ConfigurationSnapshotRepository>();
+        services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
 
         return services;
     }
@@ -56,6 +57,7 @@ public static class ServiceExtensions
         services.AddScoped<IVersioningService, VersioningService>();
         services.AddScoped<IDiffService, DiffService>();
         services.AddScoped<IWebhookService, WebhookService>();
+        services.AddScoped<ChangeRequestService>();
 
         return services;
     }
