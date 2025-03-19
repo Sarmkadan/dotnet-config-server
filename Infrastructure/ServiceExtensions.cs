@@ -56,6 +56,7 @@ public static class ServiceExtensions
         services.AddScoped<IConfigurationService, ConfigurationService>();
         services.AddScoped<IVersioningService, VersioningService>();
         services.AddScoped<IDiffService, DiffService>();
+        services.AddScoped<IDiffViewerService, DiffViewerService>();
         services.AddScoped<IWebhookService, WebhookService>();
         services.AddScoped<ChangeRequestService>();
 
