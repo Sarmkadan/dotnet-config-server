@@ -300,6 +300,11 @@ helm install config-server ./k8s/helm-chart -n config-server
 
 ## Usage Examples
 
+For more practical, standalone examples, see the [examples/](examples/) directory:
+- [BasicUsage.cs](examples/BasicUsage.cs)
+- [AdvancedUsage.cs](examples/AdvancedUsage.cs)
+- [IntegrationExample.cs](examples/IntegrationExample.cs)
+
 ### Example 1: Creating a Configuration
 
 ```csharp
