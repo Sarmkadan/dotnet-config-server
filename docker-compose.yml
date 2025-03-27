@@ -1,0 +1,71 @@
+# =============================================================================
+# Author: Vladyslav Zaiets | https://sarmkadan.com
+# CTO & Software Architect
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # SQL Server database
+  mssql:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: dotnet-config-db
+    environment:
+      SA_PASSWORD: "DotnetConfigServer@2026"
+      ACCEPT_EULA: "Y"
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql/data
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "DotnetConfigServer@2026" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 40s
+    networks:
+      - dotnet-config-network
+
+  # Dotnet Config Server application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dotnet-config-server
+    ports:
+      - "80:8080"
+      - "443:8443"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=mssql;Database=DotnetConfigServerDb;User Id=sa;Password=DotnetConfigServer@2026;TrustServerCertificate=true;"
+      ASPNETCORE_ENVIRONMENT: "Production"
+      Logging__LogLevel__Default: "Information"
+      Logging__LogLevel__Microsoft.AspNetCore: "Warning"
+      ApplicationSettings__EnableSwagger: "true"
+      Encryption__KeySize: "256"
+      Webhook__MaxRetries: "5"
+      Webhook__TimeoutSeconds: "30"
+      RateLimit__RequestsPerMinute: "300"
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      - dotnet-config-network
+    healthcheck:
+      test: curl -f http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  sql_data:
+    driver: local
+
+networks:
+  dotnet-config-network:
+    driver: bridge
