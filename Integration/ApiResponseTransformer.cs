@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -34,7 +35,7 @@ public interface IApiResponseTransformer
     Dictionary<string, object?> Flatten(string json, string separator = ".");
 }
 
-public class ApiResponseTransformer : IApiResponseTransformer
+sealed public class ApiResponseTransformer : IApiResponseTransformer
 {
     private readonly ILogger<ApiResponseTransformer> _logger;
     private readonly JsonSerializerOptions _options;

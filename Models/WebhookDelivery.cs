@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a webhook delivery attempt
 /// </summary>
-public class WebhookDelivery
+sealed public class WebhookDelivery
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -131,7 +132,7 @@ public class WebhookDelivery
 /// <summary>
 /// Summary view of a webhook delivery
 /// </summary>
-public class WebhookDeliverySummary
+sealed public class WebhookDeliverySummary
 {
     public Guid Id { get; set; }
     public WebhookDeliveryStatus Status { get; set; }

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -20,7 +21,7 @@ public abstract class DomainEvent
 /// <summary>
 /// Event raised when a configuration is created.
 /// </summary>
-public class ConfigurationCreatedEvent : DomainEvent
+sealed public class ConfigurationCreatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -31,7 +32,7 @@ public class ConfigurationCreatedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration is updated.
 /// </summary>
-public class ConfigurationUpdatedEvent : DomainEvent
+sealed public class ConfigurationUpdatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -42,7 +43,7 @@ public class ConfigurationUpdatedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration key value is changed.
 /// </summary>
-public class ConfigurationKeyChangedEvent : DomainEvent
+sealed public class ConfigurationKeyChangedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid KeyId { get; set; }
@@ -55,7 +56,7 @@ public class ConfigurationKeyChangedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration is deleted.
 /// </summary>
-public class ConfigurationDeletedEvent : DomainEvent
+sealed public class ConfigurationDeletedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -65,7 +66,7 @@ public class ConfigurationDeletedEvent : DomainEvent
 /// <summary>
 /// Event raised when a new configuration version is created.
 /// </summary>
-public class ConfigurationVersionCreatedEvent : DomainEvent
+sealed public class ConfigurationVersionCreatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid VersionId { get; set; }
@@ -76,7 +77,7 @@ public class ConfigurationVersionCreatedEvent : DomainEvent
 /// <summary>
 /// Event raised when configuration is rolled back to a previous version.
 /// </summary>
-public class ConfigurationRolledBackEvent : DomainEvent
+sealed public class ConfigurationRolledBackEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid FromVersionId { get; set; }
@@ -87,10 +88,10 @@ public class ConfigurationRolledBackEvent : DomainEvent
 /// <summary>
 /// Event raised when a webhook subscription is created or updated.
 /// </summary>
-public class WebhookSubscriptionChangedEvent : DomainEvent
+sealed public class WebhookSubscriptionChangedEvent : DomainEvent
 {
     public Guid SubscriptionId { get; set; }
     public Guid ApplicationId { get; set; }
     public string Url { get; set; } = string.Empty;
-    public string[] Events { get; set; } = Array.Empty<string>();
+    public string[] Events { get; set; } = [];
 }

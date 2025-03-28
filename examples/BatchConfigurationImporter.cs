@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,7 +18,7 @@ namespace DotnetConfigServer.Examples
     /// Batch imports multiple configurations from a JSON file.
     /// Useful for initial setup and migrating configurations from other systems.
     /// </summary>
-    public class BatchConfigurationImporter
+    sealed public class BatchConfigurationImporter
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
@@ -187,13 +188,13 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    public class BatchImportRequest
+    sealed public class BatchImportRequest
     {
         public string ConfigurationId { get; set; }
         public List<ConfigurationKeyImport> Keys { get; set; } = new();
     }
 
-    public class ConfigurationKeyImport
+    sealed public class ConfigurationKeyImport
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -201,7 +202,7 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    public class BatchImportResult
+    sealed public class BatchImportResult
     {
         public int SuccessCount { get; set; }
         public int FailureCount { get; set; }
@@ -211,14 +212,14 @@ namespace DotnetConfigServer.Examples
             $"Success: {SuccessCount}, Failed: {FailureCount}, Errors: {Errors.Count}";
     }
 
-    public class ConfigurationDto
+    sealed public class ConfigurationDto
     {
         public Guid Id { get; set; }
         public string Environment { get; set; }
         public List<ConfigurationKeyDto> Keys { get; set; }
     }
 
-    public class ConfigurationKeyDto
+    sealed public class ConfigurationKeyDto
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -228,7 +229,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // Example usage
-    public class Program
+    sealed public class Program
     {
         public static async Task Main(string[] args)
         {

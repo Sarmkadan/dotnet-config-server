@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -9,7 +10,7 @@ namespace DotnetConfigServer.Utilities;
 /// Parser for command-line arguments.
 /// Provides utilities for parsing and validating CLI arguments.
 /// </summary>
-public class CliArgumentParser
+sealed public class CliArgumentParser
 {
     private readonly Dictionary<string, string> _arguments;
     private readonly ILogger<CliArgumentParser> _logger;
@@ -138,7 +139,7 @@ Examples:
 /// <summary>
 /// Represents parsed CLI arguments configuration.
 /// </summary>
-public class CliConfig
+sealed public class CliConfig
 {
     public int Port { get; set; } = 5000;
     public string Environment { get; set; } = "Development";

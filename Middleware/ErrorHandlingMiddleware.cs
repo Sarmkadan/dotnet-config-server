@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Global exception handling middleware that catches all unhandled exceptions
 /// and returns consistent error responses with proper HTTP status codes.
 /// </summary>
-public class ErrorHandlingMiddleware
+sealed public class ErrorHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
@@ -69,7 +70,7 @@ public class ErrorHandlingMiddleware
     }
 }
 
-public class ErrorResponse
+sealed public class ErrorResponse
 {
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
