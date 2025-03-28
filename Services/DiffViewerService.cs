@@ -47,7 +47,7 @@ sealed public class DiffViewerService : IDiffViewerService
         var fromVersion = await _versioningService.GetVersionAsync(fromVersionId);
         var toVersion = await _versioningService.GetVersionAsync(toVersionId);
 
-        if (fromVersion == null || toVersion == null)
+        if (fromVersion is null || toVersion is null)
             throw new ConfigurationNotFoundException("One or both versions not found");
 
         var cached = await _diffRepository.GetByVersionsAsync(fromVersionId, toVersionId);
@@ -56,7 +56,7 @@ sealed public class DiffViewerService : IDiffViewerService
         DateTime generatedAt;
         Guid diffId;
 
-        if (cached != null)
+        if (cached is not null)
         {
             changes = cached.Changes;
             generatedAt = cached.CreatedAt;
@@ -98,12 +98,12 @@ sealed public class DiffViewerService : IDiffViewerService
         cancellationToken.ThrowIfCancellationRequested();
 
         var targetVersion = await _versioningService.GetVersionAsync(targetVersionId);
-        if (targetVersion == null || targetVersion.ConfigurationId != configurationId)
+        if (targetVersion is null || targetVersion.ConfigurationId != configurationId)
             throw new ConfigurationNotFoundException(targetVersionId.ToString());
 
         var activeVersion = await _versioningService.GetActiveVersionAsync(configurationId);
 
-        if (activeVersion == null)
+        if (activeVersion is null)
         {
             return new RollbackPreview
             {
@@ -187,7 +187,7 @@ sealed public class DiffViewerService : IDiffViewerService
         foreach (var toKey in to)
         {
             var match = from.FirstOrDefault(k => k.Key == toKey.Key);
-            if (match == null)
+            if (match is null)
                 changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value));
             else if (match.Value != toKey.Value)
                 changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value));

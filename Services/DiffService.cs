@@ -41,7 +41,7 @@ sealed public class DiffService : IDiffService
         var fromVersion = await _versionRepository.GetByIdAsync(fromVersionId);
         var toVersion = await _versionRepository.GetByIdAsync(toVersionId);
 
-        if (fromVersion == null || toVersion == null)
+        if (fromVersion is null || toVersion is null)
             throw new ConfigurationNotFoundException("One or both versions not found");
 
         var fromKeys = await _keyRepository.GetByVersionAsync(fromVersionId);
@@ -60,7 +60,7 @@ sealed public class DiffService : IDiffService
         foreach (var toKey in toKeys)
         {
             var fromKey = fromKeys.FirstOrDefault(k => k.Key == toKey.Key);
-            if (fromKey == null)
+            if (fromKey is null)
             {
                 diff.AddChange(toKey.Key, ChangeType.Added, null, toKey.Value);
             }
@@ -132,7 +132,7 @@ sealed public class DiffService : IDiffService
     public async Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id)
     {
         var existingDiff = await _diffRepository.GetByVersionsAsync(version1Id, version2Id);
-        if (existingDiff != null)
+        if (existingDiff is not null)
             return existingDiff.GetSummary();
 
         var keys1 = await _keyRepository.GetByVersionAsync(version1Id);

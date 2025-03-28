@@ -218,7 +218,7 @@ namespace DotnetConfigServer.Examples
             Console.WriteLine($"Created new version: {greenVersion.Version} (Green)");
 
             // 3. Run validation tests if provided
-            if (validateAsync != null)
+            if (validateAsync is not null)
             {
                 var isValid = await validateAsync(greenVersion.Id);
                 if (!isValid)
@@ -260,7 +260,7 @@ namespace DotnetConfigServer.Examples
             {
                 Console.WriteLine($"\nCanary stage: {stage}% traffic");
 
-                if (validateAsync != null)
+                if (validateAsync is not null)
                 {
                     var isValid = await validateAsync(canaryVersion.Id, stage);
                     if (!isValid)

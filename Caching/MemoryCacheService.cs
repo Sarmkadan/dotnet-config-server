@@ -88,7 +88,7 @@ sealed public class MemoryCacheService : ICacheService
     public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null)
     {
         var cached = await GetAsync<T>(key);
-        if (cached != null)
+        if (cached is not null)
             return cached;
 
         var value = await factory();
@@ -190,7 +190,7 @@ sealed public class MemoryCacheService : ICacheService
         {
             get
             {
-                if (_expiration == null)
+                if (_expiration is null)
                     return false;
 
                 return DateTime.UtcNow - _createdAt > _expiration;
