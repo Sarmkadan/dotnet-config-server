@@ -4,18 +4,20 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Text.Json;
 using DotnetConfigServer.Events;
+using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Services;
 
 /// <summary>
-/// In-memory implementation of the INotificationService.
-/// This service logs notifications and stores them in memory.
+/// Default implementation of INotificationService for sending notifications.
+/// This service could integrate with external notification systems (e.g., email, SMS, push notifications).
+/// For now, it logs notifications.
 /// </summary>
 sealed public class NotificationService : INotificationService
 {
     private readonly ILogger<NotificationService> _logger;
-    private readonly List<Notification> _notifications = new();
 
     public NotificationService(ILogger<NotificationService> logger)
     {
@@ -25,29 +27,16 @@ sealed public class NotificationService : INotificationService
     public Task NotifyAsync(Notification notification)
     {
         _logger.LogInformation(
-            "Notification (Type: {Type}, Severity: {Severity}): {Message}",
-            notification.Type, notification.Severity, notification.Message);
-
-        _notifications.Add(notification);
+            "Sending notification (Type: {Type}, Severity: {Severity}, Message: {Message}, Metadata: {Metadata})",
+            notification.Type, notification.Severity, notification.Message,
+            JsonSerializer.Serialize(notification.Metadata));
         return Task.CompletedTask;
     }
 
     public Task NotifyAsync(string type, object payload)
     {
-        _logger.LogInformation("Notification (Type: {Type}): {Payload}", type, System.Text.Json.JsonSerializer.Serialize(payload));
-        // For simplicity, not storing the object payload directly in the list, but it could be serialized.
-        _notifications.Add(new Notification
-        {
-            Type = type,
-            Message = $"Payload: {System.Text.Json.JsonSerializer.Serialize(payload)}",
-            Severity = "info",
-            CreatedAt = DateTime.UtcNow
-        });
+        _logger.LogInformation("Sending notification (Type: {Type}, Payload: {Payload})",
+            type, JsonSerializer.Serialize(payload));
         return Task.CompletedTask;
     }
-
-    /// <summary>
-    /// For testing/debugging: get all notifications received.
-    /// </summary>
-    public IReadOnlyList<Notification> GetNotifications() => _notifications.AsReadOnly();
 }
