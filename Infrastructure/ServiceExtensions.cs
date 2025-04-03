@@ -41,6 +41,7 @@ public static class ServiceExtensions
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IEncryptionKeyRepository, EncryptionKeyRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IConfigurationSnapshotRepository, ConfigurationSnapshotRepository>();
 
         return services;
     }
