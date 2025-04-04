@@ -31,6 +31,7 @@ try
     // Add Phase 2 services
     builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
     builder.Services.AddSingleton<IEventBus, EventBus>();
+    builder.Services.AddSingleton<INotificationService, NotificationService>();
     builder.Services.AddSingleton<PerformanceMetrics>();
 
     builder.Services.AddScoped<IComparisonService, ComparisonService>();
