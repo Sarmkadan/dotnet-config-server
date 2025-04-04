@@ -39,7 +39,7 @@ sealed public class ConfigurationService : IConfigurationService
     /// <summary>
     /// Creates a new configuration
     /// </summary>
-    public async Task<Configuration> CreateAsync(Configuration configuration, string userId) { configuration.Validate(); configuration.CreatedBy = userId; configuration.UpdatedAt = DateTime.UtcNow; await _configRepository.AddAsync(configuration); await _configRepository.SaveChangesAsync(); var auditEntry = AuditLog.CreateEntry(configuration.Id, nameof(Configuration), configuration.Id.ToString(), configuration.Name, userId, null, $"Created configuration '{configuration.Name}' for application {configuration.ApplicationId}"); await _auditLogRepository.AddAsync(auditEntry); await _auditLogRepository.SaveChangesAsync(); _logger.LogInformation("Configuration {ConfigId} created by {UserId}", configuration.Id, userId); return configuration; }
+    public async Task<Configuration> CreateAsync(Configuration configuration, string userId)
     {
         configuration.Validate();
         configuration.CreatedBy = userId;
