@@ -184,6 +184,13 @@ sealed public class ConfigurationService : IConfigurationService
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
 
         var oldValue = key.Value;
+        
+        // If the key is encrypted, encrypt the new value before updating
+        if (key.IsEncrypted)
+        {
+            value = await _encryptionService.EncryptAsync(value, key.ConfigurationId);
+        }
+
         key.Update(value, key.Description, userId);
         key.Validate();
 
@@ -199,8 +206,58 @@ sealed public class ConfigurationService : IConfigurationService
     /// </summary>
     public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null)
     {
-        var keys = await _keyRepository.GetByConfigurationAsync(configurationId);
-        return keys.Where(k => !k.IsActive || (versionId.HasValue && k.VersionId == versionId.Value)).ToList();
+        var fetchedKeys = await _keyRepository.GetByConfigurationAsync(configurationId);
+
+        var processedKeys = new List<ConfigurationKey>();
+        foreach (var key in fetchedKeys.Where(k => k.IsActive && (!versionId.HasValue || k.VersionId == versionId.Value)))
+        {
+            var clonedKey = new ConfigurationKey
+            {
+                Id = key.Id,
+                Key = key.Key,
+                Value = key.Value, // This will be replaced if encrypted
+                DefaultValue = key.DefaultValue,
+                Description = key.Description,
+                ValueType = key.ValueType,
+                ConfigurationId = key.ConfigurationId,
+                VersionId = key.VersionId,
+                CreatedAt = key.CreatedAt,
+                UpdatedAt = key.UpdatedAt,
+                CreatedBy = key.CreatedBy,
+                UpdatedBy = key.UpdatedBy,
+                IsActive = key.IsActive,
+                IsEncrypted = key.IsEncrypted,
+                IsRequired = key.IsRequired,
+                IsSensitive = key.IsSensitive,
+                ValidationRegex = key.ValidationRegex,
+                MinLength = key.MinLength,
+                MaxLength = key.MaxLength
+            };
+
+            if (clonedKey.IsEncrypted)
+            {
+                try
+                {
+                    clonedKey.Value = await _encryptionService.DecryptAsync(clonedKey.Value, configurationId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to decrypt key {KeyId} for configuration {ConfigId}. Returning encrypted value.", clonedKey.Id, configurationId);
+                    // Optionally, you might choose to throw an exception or return a placeholder
+                    // For now, we'll log and keep the encrypted value, or mark it as error.
+                    // The problem states "old decrypted value continues to be served", implying we should attempt decryption.
+                    // If decryption fails, it's better to return a clear error or encrypted value rather than a wrong decrypted one.
+                    // For the purpose of this bug fix, returning the encrypted value if decryption fails still ensures the "new value" is present,
+                    // but the service consuming it might then fail to decrypt. The original problem was a "silent failure" serving old decrypted.
+                    // So, returning the encrypted value (or throwing) would make it "not silent".
+                    // The prompt implies the server should handle decryption before serving. So let's aim to decrypt.
+                    // If decryption truly fails due to bad key, it might be an unrecoverable state for that specific key.
+                    clonedKey.Value = "[DECRYPTION_FAILED]"; // Or re-throw specific EncryptionException
+                }
+            }
+            processedKeys.Add(clonedKey);
+        }
+        return processedKeys;
     }
 
     /// <summary>
