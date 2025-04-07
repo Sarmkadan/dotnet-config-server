@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
 using DotnetConfigServer.Common;
@@ -24,6 +25,10 @@ sealed public class WebhookService : IWebhookService
     private readonly IWebhookDeliveryRepository _deliveryRepository;
     private readonly ILogger<WebhookService> _logger;
     private readonly HttpClient _httpClient;
+
+    // In-flight guard: prevents duplicate deliveries when NotifyAsync is called concurrently
+    // for the same (eventId, subscriptionId) pair before the DB record is persisted.
+    private readonly ConcurrentDictionary<(Guid eventId, Guid subscriptionId), bool> _pendingDeliveries = new();
 
     public WebhookService(
         IWebhookSubscriptionRepository subscriptionRepository,
@@ -168,10 +173,24 @@ sealed public class WebhookService : IWebhookService
 
         foreach (var subscription in subscriptions)
         {
-            if (subscription.TriggerEvents.Contains(eventType))
+            if (subscription.TriggerEvents.Count > 0 && !subscription.TriggerEvents.Contains(eventType))
+                continue;
+
+            var guardKey = (payload.Id, subscription.Id);
+
+            // Fast in-memory check: skip if another concurrent call is already processing
+            // this (eventId, subscriptionId) pair before the DB record is committed.
+            if (!_pendingDeliveries.TryAdd(guardKey, true))
             {
-                // Idempotency check:
-                // Check if a delivery for this event and subscription already exists and is pending or successful.
+                _logger.LogInformation(
+                    "Skipping concurrent duplicate webhook delivery for event {EventId} to subscription {SubscriptionId}.",
+                    payload.Id, subscription.Id);
+                continue;
+            }
+
+            try
+            {
+                // Persistent idempotency check: skip if delivery already recorded in DB.
                 var existingDelivery = await _deliveryRepository.GetByEventAndSubscriptionAsync(payload.Id, subscription.Id);
                 if (existingDelivery is not null &&
                     (existingDelivery.Status == WebhookDeliveryStatus.Pending || existingDelivery.Status == WebhookDeliveryStatus.Success))
@@ -189,20 +208,22 @@ sealed public class WebhookService : IWebhookService
                     EventType = eventType,
                     Url = subscription.Url,
                     NextRetryAt = DateTime.UtcNow,
-                    EventId = payload.Id, // Assign EventId from DomainEvent
-                    // Heuristic for ConfigurationVersionId as DomainEvent does not directly carry it
+                    EventId = payload.Id,
                     ConfigurationVersionId = payload is ConfigurationVersionCreatedEvent versionEvent
                                              ? versionEvent.VersionId
                                              : (payload is ConfigurationUpdatedEvent updatedEvent
-                                                ? updatedEvent.ConfigurationId // This is ConfigurationId, not VersionId, but best available for now.
+                                                ? updatedEvent.ConfigurationId
                                                 : Guid.Empty)
                 };
 
                 await _deliveryRepository.AddAsync(delivery);
-                await _deliveryRepository.SaveChangesAsync(); // Save immediately to track pending delivery
-                
-                // For immediate dispatch, consider adding to a background queue
-                _ = SendWebhookAsync(subscription, delivery); // Using the existing SendWebhookAsync
+                await _deliveryRepository.SaveChangesAsync();
+
+                _ = SendWebhookAsync(subscription, delivery);
+            }
+            finally
+            {
+                _pendingDeliveries.TryRemove(guardKey, out _);
             }
         }
     }
