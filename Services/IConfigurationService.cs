@@ -51,7 +51,7 @@ public interface IConfigurationService
     /// <summary>
     /// Gets all keys for a configuration version
     /// </summary>
-    Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null);
+    Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null, bool resolveInheritance = true);
 
     /// <summary>
     /// Gets a specific configuration key
@@ -67,6 +67,11 @@ public interface IConfigurationService
     /// Searches for configurations
     /// </summary>
     Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null);
+
+    /// <summary>
+    /// Searches for configuration keys by text and/or prefix
+    /// </summary>
+    Task<List<ConfigurationKey>> SearchKeysAsync(string? query, string? prefix, Guid? configurationId);
 
     /// <summary>
     /// Gets configuration count for an application

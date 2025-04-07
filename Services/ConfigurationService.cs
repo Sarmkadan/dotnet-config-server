@@ -392,6 +392,14 @@ sealed public class ConfigurationService : IConfigurationService
     }
 
     /// <summary>
+    /// Searches for configuration keys by text and/or prefix
+    /// </summary>
+    public async Task<List<ConfigurationKey>> SearchKeysAsync(string? query, string? prefix, Guid? configurationId)
+    {
+        return await _keyRepository.SearchAsync(query, prefix, configurationId);
+    }
+
+    /// <summary>
     /// Gets configuration count for an application
     /// </summary>
     public async Task<int> GetConfigurationCountAsync(Guid applicationId)

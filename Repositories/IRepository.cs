@@ -38,6 +38,7 @@ public interface IConfigurationKeyRepository : IRepository<Models.ConfigurationK
     Task<List<Models.ConfigurationKey>> GetByConfigurationAsync(Guid configurationId);
     Task<List<Models.ConfigurationKey>> GetByVersionAsync(Guid versionId);
     Task<Models.ConfigurationKey?> GetByKeyNameAsync(Guid configurationId, string keyName);
+    Task<List<Models.ConfigurationKey>> SearchAsync(string? query, string? prefix, Guid? configurationId);
 }
 
 /// <summary>
