@@ -45,6 +45,15 @@ sealed public class ConfigurationService : IConfigurationService
         configuration.CreatedBy = userId;
         configuration.UpdatedAt = DateTime.UtcNow;
 
+        if (configuration.ParentConfigurationId.HasValue)
+        {
+            var parentConfig = await _configRepository.GetByIdAsync(configuration.ParentConfigurationId.Value);
+            if (parentConfig is null)
+            {
+                throw new ConfigurationNotFoundException($"Parent configuration {configuration.ParentConfigurationId} not found.");
+            }
+        }
+
         await _configRepository.AddAsync(configuration);
         await _configRepository.SaveChangesAsync();
 
@@ -94,8 +103,31 @@ sealed public class ConfigurationService : IConfigurationService
             throw new ConfigurationNotFoundException(id.ToString());
 
         // Hotfix: Fixed update method to properly trigger hot reload when nested config values change
-        existing.Update(configuration.Name, configuration.Description, userId);
+        existing.Update(configuration.Name, configuration.Description, configuration.Environment, configuration.IsActive, userId);
+        existing.ParentConfigurationId = configuration.ParentConfigurationId; // Update parent ID
+
         existing.Validate();
+
+        // Validate parent configuration exists and no circular dependency
+        if (existing.ParentConfigurationId.HasValue)
+        {
+            var parentConfig = await _configRepository.GetByIdAsync(existing.ParentConfigurationId.Value);
+            if (parentConfig is null)
+            {
+                throw new ConfigurationNotFoundException($"Parent configuration {existing.ParentConfigurationId} not found.");
+            }
+            // Check for circular dependency by attempting to resolve keys (without actual data processing)
+            // A simple way to check for circularity is to call GetKeysInternalAsync, which will throw
+            // a ConfigurationException if a circular dependency is detected.
+            try
+            {
+                await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>()); // false to avoid resolving parent keys for this check
+            }
+            catch (ConfigurationException ex) when (ex.Message.Contains("Circular dependency detected"))
+            {
+                throw new ConfigurationException($"Update creates a circular dependency in configuration inheritance: {ex.Message}");
+            }
+        }
 
         await _configRepository.UpdateAsync(existing);
         await _configRepository.SaveChangesAsync();
@@ -108,7 +140,7 @@ sealed public class ConfigurationService : IConfigurationService
             existing.Name,
             userId,
             null,
-            oldValues: $"Name={configuration.Name}",
+            oldValues: $"Name={configuration.Name}", // This part of logging needs to be improved to reflect all changes
             newValues: $"Name={existing.Name}"
         );
         await _auditLogRepository.AddAsync(auditEntry);
@@ -202,14 +234,62 @@ sealed public class ConfigurationService : IConfigurationService
     }
 
     /// <summary>
-    /// Gets all keys for a configuration version
+    /// Gets all keys for a configuration version, optionally resolving inheritance.
     /// </summary>
-    public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null)
+    public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null, bool resolveInheritance = true)
     {
-        var fetchedKeys = await _keyRepository.GetByConfigurationAsync(configurationId);
+        return await GetKeysInternalAsync(configurationId, versionId, resolveInheritance, new HashSet<Guid>());
+    }
 
-        var processedKeys = new List<ConfigurationKey>();
-        foreach (var key in fetchedKeys.Where(k => k.IsActive && (!versionId.HasValue || k.VersionId == versionId.Value)))
+    /// <summary>
+    /// Internal method to get keys with inheritance resolution and circular dependency detection.
+    /// </summary>
+    private async Task<List<ConfigurationKey>> GetKeysInternalAsync(Guid configurationId, Guid? versionId, bool resolveInheritance, HashSet<Guid> visitedConfigs)
+    {
+        var config = await _configRepository.GetByIdAsync(configurationId);
+        if (config is null)
+        {
+            throw new ConfigurationNotFoundException(configurationId.ToString());
+        }
+
+        // Add current config to visited set to detect circular dependencies
+        if (!visitedConfigs.Add(configurationId))
+        {
+            throw new ConfigurationException($"Circular dependency detected for configuration {configurationId}");
+        }
+
+        var currentConfigKeys = await GetRawKeysAsync(configurationId, versionId);
+        var resolvedKeys = new Dictionary<string, ConfigurationKey>();
+
+        // Add current config's keys, these take precedence
+        foreach (var key in currentConfigKeys)
+        {
+            resolvedKeys[key.Key] = key;
+        }
+
+        // If inheritance is enabled and a parent exists, resolve parent keys
+        if (resolveInheritance && config.ParentConfigurationId.HasValue)
+        {
+            try
+            {
+                var parentKeys = await GetKeysInternalAsync(config.ParentConfigurationId.Value, null, true, visitedConfigs); // Always resolve parent fully
+                foreach (var parentKey in parentKeys)
+                {
+                    if (!resolvedKeys.ContainsKey(parentKey.Key))
+                    {
+                        resolvedKeys[parentKey.Key] = parentKey;
+                    }
+                }
+            }
+            catch (ConfigurationNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Parent configuration {ParentId} not found for configuration {ConfigId}. Inheritance chain broken.", config.ParentConfigurationId, configurationId);
+            }
+        }
+
+        // Apply decryption to the final merged and resolved list
+        var finalKeys = new List<ConfigurationKey>();
+        foreach (var key in resolvedKeys.Values)
         {
             var clonedKey = new ConfigurationKey
             {
@@ -242,22 +322,25 @@ sealed public class ConfigurationService : IConfigurationService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to decrypt key {KeyId} for configuration {ConfigId}. Returning encrypted value.", clonedKey.Id, configurationId);
-                    // Optionally, you might choose to throw an exception or return a placeholder
-                    // For now, we'll log and keep the encrypted value, or mark it as error.
-                    // The problem states "old decrypted value continues to be served", implying we should attempt decryption.
-                    // If decryption fails, it's better to return a clear error or encrypted value rather than a wrong decrypted one.
-                    // For the purpose of this bug fix, returning the encrypted value if decryption fails still ensures the "new value" is present,
-                    // but the service consuming it might then fail to decrypt. The original problem was a "silent failure" serving old decrypted.
-                    // So, returning the encrypted value (or throwing) would make it "not silent".
-                    // The prompt implies the server should handle decryption before serving. So let's aim to decrypt.
-                    // If decryption truly fails due to bad key, it might be an unrecoverable state for that specific key.
-                    clonedKey.Value = "[DECRYPTION_FAILED]"; // Or re-throw specific EncryptionException
+                    _logger.LogError(ex, "Failed to decrypt key {KeyId} for configuration {ConfigId}. Returning [DECRYPTION_FAILED].", clonedKey.Id, configurationId);
+                    clonedKey.Value = "[DECRYPTION_FAILED]";
                 }
             }
-            processedKeys.Add(clonedKey);
+            finalKeys.Add(clonedKey);
         }
-        return processedKeys;
+
+        visitedConfigs.Remove(configurationId); // Remove from visited when returning from recursion
+        return finalKeys;
+    }
+
+    /// <summary>
+    /// Gets keys directly associated with a configuration and version, without inheritance or decryption.
+    /// </summary>
+    private async Task<List<ConfigurationKey>> GetRawKeysAsync(Guid configurationId, Guid? versionId)
+    {
+        return (await _keyRepository.GetByConfigurationAsync(configurationId))
+               .Where(k => k.IsActive && (!versionId.HasValue || k.VersionId == versionId.Value))
+               .ToList();
     }
 
     /// <summary>

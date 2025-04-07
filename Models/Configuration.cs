@@ -62,6 +62,9 @@ sealed public class Configuration
 
     public Guid? CurrentVersionId { get; set; }
 
+    public Guid? ParentConfigurationId { get; set; } // Added for hierarchical inheritance
+
+
     /// <summary>
     /// Validates the configuration data
     /// </summary>
