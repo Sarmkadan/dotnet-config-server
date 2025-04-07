@@ -62,4 +62,9 @@ public interface IWebhookService
     /// Deactivates a webhook subscription
     /// </summary>
     Task<WebhookSubscription> DeactivateAsync(Guid subscriptionId, string userId);
+
+    /// <summary>
+    /// Notifies relevant webhook subscriptions about a domain event.
+    /// </summary>
+    Task NotifyAsync(string eventType, DomainEvent payload);
 }
