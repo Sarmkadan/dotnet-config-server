@@ -202,7 +202,7 @@ sealed public class WebhookService : IWebhookService
                 await _deliveryRepository.SaveChangesAsync(); // Save immediately to track pending delivery
                 
                 // For immediate dispatch, consider adding to a background queue
-                _ = SendWebhookAsync(delivery, subscription); // Using the existing SendWebhookAsync
+                _ = SendWebhookAsync(subscription, delivery); // Using the existing SendWebhookAsync
             }
         }
     }

@@ -132,6 +132,19 @@ sealed public class Configuration
     }
 
     /// <summary>
+    /// Updates the configuration metadata including environment and active status
+    /// </summary>
+    public void Update(string name, string? description, Environment environment, bool isActive, string updatedBy)
+    {
+        Name = name;
+        Description = description;
+        Environment = environment;
+        IsActive = isActive;
+        UpdatedBy = updatedBy;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// Sets encryption settings for this configuration
     /// </summary>
     public void SetEncryption(EncryptionAlgorithm algorithm, string? keyId)

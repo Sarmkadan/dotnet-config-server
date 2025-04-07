@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Events;
 using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Services;

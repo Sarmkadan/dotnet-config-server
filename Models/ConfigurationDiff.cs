@@ -144,6 +144,8 @@ sealed public class DiffEntry
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public DiffEntryOrigin Origin { get; set; } = DiffEntryOrigin.Direct;
+
     /// <summary>
     /// Validates the diff entry
     /// </summary>

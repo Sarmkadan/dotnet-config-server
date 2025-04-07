@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Exceptions;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Services;
 using Microsoft.AspNetCore.Mvc;
