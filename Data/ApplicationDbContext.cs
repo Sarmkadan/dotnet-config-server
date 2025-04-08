@@ -28,6 +28,7 @@ sealed public class ApplicationDbContext : DbContext
     public DbSet<DiffEntry> DiffEntries { get; set; } = null!;
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<EncryptionKey> EncryptionKeys { get; set; } = null!;
+    public DbSet<ChangeRequest> ChangeRequests { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -133,6 +134,17 @@ sealed public class ApplicationDbContext : DbContext
             entity.Property(k => k.KeyId).IsRequired().HasMaxLength(256);
             entity.Property(k => k.EncryptedKey).IsRequired();
             entity.Property(k => k.Salt).IsRequired();
+        });
+
+        // Configure ChangeRequest
+        modelBuilder.Entity<ChangeRequest>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.HasIndex(r => r.ConfigurationId);
+            entity.HasIndex(r => r.Status);
+            entity.HasIndex(r => new { r.ConfigurationId, r.Status });
+            entity.Property(r => r.RequestedBy).IsRequired().HasMaxLength(256);
+            entity.Property(r => r.Payload).IsRequired();
         });
     }
 }
