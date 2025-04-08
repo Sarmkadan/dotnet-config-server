@@ -327,7 +327,12 @@ sealed public class ConfigurationService : IConfigurationService
                 IsSensitive = key.IsSensitive,
                 ValidationRegex = key.ValidationRegex,
                 MinLength = key.MinLength,
-                MaxLength = key.MaxLength
+                MaxLength = key.MaxLength,
+                AllowedValues = key.AllowedValues,
+                MinValue = key.MinValue,
+                MaxValue = key.MaxValue,
+                ValidateAsUrl = key.ValidateAsUrl,
+                ValidateAsJson = key.ValidateAsJson
             };
 
             if (clonedKey.IsEncrypted)
