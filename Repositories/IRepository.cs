@@ -128,3 +128,13 @@ public interface IChangeRequestRepository : IRepository<Models.ChangeRequest>
     Task<List<Models.ChangeRequest>> GetByConfigurationAsync(Guid configurationId, Common.ChangeRequestStatus? status = null);
     Task<List<Models.ChangeRequest>> GetPendingAsync();
 }
+
+/// <summary>
+/// Validation rule repository interface
+/// </summary>
+public interface IValidationRuleRepository : IRepository<Models.ValidationRule>
+{
+    Task<List<Models.ValidationRule>> GetByConfigurationAsync(Guid configurationId);
+    Task<List<Models.ValidationRule>> GetGlobalRulesAsync();
+    Task<List<Models.ValidationRule>> GetApplicableRulesAsync(Guid configurationId);
+}

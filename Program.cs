@@ -41,6 +41,7 @@ try
     builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
     builder.Services.AddScoped<IDiffViewerService, DiffViewerService>();
     builder.Services.AddScoped<IRollbackService, RollbackService>();
+    builder.Services.AddScoped<IValidationRuleService, ValidationRuleService>();
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
     builder.Services.AddScoped<ExternalApiClient>();
     // Add HTTP clients
