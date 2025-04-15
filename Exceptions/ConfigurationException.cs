@@ -9,25 +9,19 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Represents errors that occur during configuration operations
 /// </summary>
-public class ConfigurationException : Exception
+sealed public class ConfigurationException : DotnetConfigServerException
 {
-    public string? ErrorCode { get; set; }
-    public object? Details { get; set; }
-
-    public ConfigurationException(string message) : base(message)
+    public ConfigurationException(string message) : base(message, "CONFIGURATION_ERROR")
     {
     }
 
-    public ConfigurationException(string message, Exception innerException)
-        : base(message, innerException)
+    public ConfigurationException(string message, Exception innerException) : base(message, innerException)
     {
+        ErrorCode = "CONFIGURATION_ERROR";
     }
 
-    public ConfigurationException(string message, string errorCode, object? details = null)
-        : base(message)
+    public ConfigurationException(string message, string errorCode, object? details = null) : base(message, errorCode, details)
     {
-        ErrorCode = errorCode;
-        Details = details;
     }
 }
 
@@ -36,8 +30,11 @@ public class ConfigurationException : Exception
 /// </summary>
 sealed public class ConfigurationNotFoundException : ConfigurationException
 {
-    public ConfigurationNotFoundException(string configId)
-        : base($"Configuration '{configId}' not found", "CONFIG_NOT_FOUND", new { ConfigurationId = configId })
+    public ConfigurationNotFoundException(string configId) : base($"Configuration '{configId}' not found", "CONFIG_NOT_FOUND", new { ConfigurationId = configId })
+    {
+    }
+
+    public ConfigurationNotFoundException(Guid configId) : base($"Configuration '{configId}' not found", "CONFIG_NOT_FOUND", new { ConfigurationId = configId })
     {
     }
 }
@@ -47,8 +44,11 @@ sealed public class ConfigurationNotFoundException : ConfigurationException
 /// </summary>
 sealed public class ConfigurationKeyNotFoundException : ConfigurationException
 {
-    public ConfigurationKeyNotFoundException(string key)
-        : base($"Configuration key '{key}' not found", "KEY_NOT_FOUND", new { Key = key })
+    public ConfigurationKeyNotFoundException(string key) : base($"Configuration key '{key}' not found", "KEY_NOT_FOUND", new { Key = key })
+    {
+    }
+
+    public ConfigurationKeyNotFoundException(Guid keyId) : base($"Configuration key '{keyId}' not found", "KEY_NOT_FOUND", new { KeyId = keyId })
     {
     }
 }
@@ -58,68 +58,13 @@ sealed public class ConfigurationKeyNotFoundException : ConfigurationException
 /// </summary>
 sealed public class EncryptionException : ConfigurationException
 {
-    public EncryptionException(string message)
-        : base(message, "ENCRYPTION_FAILED")
+    public EncryptionException(string message) : base(message, "ENCRYPTION_FAILED")
     {
     }
 
-    public EncryptionException(string message, Exception innerException)
-        : base(message, innerException)
+    public EncryptionException(string message, Exception innerException) : base(message, innerException)
     {
         ErrorCode = "ENCRYPTION_FAILED";
-    }
-}
-
-/// <summary>
-/// Thrown when validation fails
-/// </summary>
-sealed public class ValidationException : ConfigurationException
-{
-    public Dictionary<string, List<string>> Errors { get; set; }
-
-    public ValidationException(string message, Dictionary<string, List<string>> errors)
-        : base(message, "VALIDATION_FAILED", errors)
-    {
-        Errors = errors;
-    }
-
-    public ValidationException(string fieldName, string message)
-        : base($"Validation failed: {fieldName} - {message}", "VALIDATION_FAILED")
-    {
-        Errors = new() { { fieldName, new() { message } } };
-    }
-}
-
-/// <summary>
-/// Thrown when database operation fails
-/// </summary>
-sealed public class DatabaseException : ConfigurationException
-{
-    public DatabaseException(string message)
-        : base(message, "DATABASE_ERROR")
-    {
-    }
-
-    public DatabaseException(string message, Exception innerException)
-        : base(message, innerException)
-    {
-        ErrorCode = "DATABASE_ERROR";
-    }
-}
-
-/// <summary>
-/// Thrown when webhook operation fails
-/// </summary>
-sealed public class WebhookException : ConfigurationException
-{
-    public WebhookException(string message)
-        : base(message, "WEBHOOK_ERROR")
-    {
-    }
-
-    public WebhookException(string webhookId, string message)
-        : base(message, "WEBHOOK_ERROR", new { WebhookId = webhookId })
-    {
     }
 }
 
@@ -128,8 +73,39 @@ sealed public class WebhookException : ConfigurationException
 /// </summary>
 sealed public class ConfigurationSnapshotNotFoundException : ConfigurationException
 {
-    public ConfigurationSnapshotNotFoundException(string snapshotId)
-        : base($"Configuration snapshot '{snapshotId}' not found", "SNAPSHOT_NOT_FOUND", new { SnapshotId = snapshotId })
+    public ConfigurationSnapshotNotFoundException(string snapshotId) : base($"Configuration snapshot '{snapshotId}' not found", "SNAPSHOT_NOT_FOUND", new { SnapshotId = snapshotId })
+    {
+    }
+
+    public ConfigurationSnapshotNotFoundException(Guid snapshotId) : base($"Configuration snapshot '{snapshotId}' not found", "SNAPSHOT_NOT_FOUND", new { SnapshotId = snapshotId })
+    {
+    }
+}
+
+/// <summary>
+/// Thrown when a requested configuration version is not found
+/// </summary>
+sealed public class ConfigurationVersionNotFoundException : ConfigurationException
+{
+    public ConfigurationVersionNotFoundException(string versionId) : base($"Configuration version '{versionId}' not found", "VERSION_NOT_FOUND", new { VersionId = versionId })
+    {
+    }
+
+    public ConfigurationVersionNotFoundException(Guid versionId) : base($"Configuration version '{versionId}' not found", "VERSION_NOT_FOUND", new { VersionId = versionId })
+    {
+    }
+}
+
+/// <summary>
+/// Thrown when a webhook operation fails
+/// </summary>
+sealed public class WebhookException : ConfigurationException
+{
+    public WebhookException(string message) : base(message, "WEBHOOK_ERROR")
+    {
+    }
+
+    public WebhookException(string webhookId, string message) : base(message, "WEBHOOK_ERROR", new { WebhookId = webhookId })
     {
     }
 }

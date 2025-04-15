@@ -45,6 +45,9 @@ sealed public class ConfigurationService : IConfigurationService
     /// </summary>
     public async Task<Configuration> CreateAsync(Configuration configuration, string userId)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+    {
         configuration.Validate();
         configuration.CreatedBy = userId;
         configuration.UpdatedAt = DateTime.UtcNow;
@@ -101,6 +104,10 @@ sealed public class ConfigurationService : IConfigurationService
     /// Updates a configuration
     /// </summary>
     public async Task<Configuration> UpdateAsync(Guid id, Configuration configuration, string userId)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
     {
         var existing = await _configRepository.GetByIdAsync(id);
         if (existing is null)
@@ -159,6 +166,9 @@ sealed public class ConfigurationService : IConfigurationService
     /// </summary>
     public async Task DeleteAsync(Guid id, string userId)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+    {
         var config = await _configRepository.GetByIdAsync(id);
         if (config is null)
             throw new ConfigurationNotFoundException(id.ToString());
@@ -188,6 +198,10 @@ sealed public class ConfigurationService : IConfigurationService
     /// </summary>
     public async Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKey key, string userId)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+    {
         var config = await _configRepository.GetByIdAsync(configurationId);
         if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
@@ -214,6 +228,10 @@ sealed public class ConfigurationService : IConfigurationService
     /// Updates a configuration key value
     /// </summary>
     public async Task<ConfigurationKey> UpdateKeyAsync(Guid keyId, string value, string userId)
+    {
+        ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
     {
         var key = await _keyRepository.GetByIdAsync(keyId);
         if (key is null)
@@ -377,6 +395,9 @@ sealed public class ConfigurationService : IConfigurationService
     /// </summary>
     public async Task DeleteKeyAsync(Guid keyId, string userId)
     {
+        ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+    {
         var key = await _keyRepository.GetByIdAsync(keyId);
         if (key is null)
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
@@ -392,6 +413,8 @@ sealed public class ConfigurationService : IConfigurationService
     /// Searches for configurations
     /// </summary>
     public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(query);
     {
         return await _configRepository.SearchAsync(query, applicationId);
     }
