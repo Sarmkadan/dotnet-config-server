@@ -893,9 +893,11 @@ Response: 200 OK
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
+      "Microsoft.AspNetCore": "Warning",
+      "DotnetConfigServer": "Information"
     }
   },
+  "AllowedHosts": "*",
   "ConnectionStrings": {
     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=DotnetConfigServerDb;Trusted_Connection=true;"
   },
@@ -917,7 +919,8 @@ Response: 200 OK
     "BatchSize": 100
   },
   "RateLimit": {
-    "RequestsPerMinute": 100
+    "RequestsPerMinute": 100,
+    "RetryAfterSeconds": 60
   },
   "Cache": {
     "DefaultDurationSeconds": 300
@@ -936,6 +939,8 @@ ConnectionStrings__DefaultConnection=Server=prod-db;Database=ConfigServer;...
 # Encryption
 Encryption__Algorithm=AES256
 Encryption__KeySize=256
+Encryption__SaltSize=16
+Encryption__Iterations=10000
 
 # Logging
 Logging__LogLevel__Default=Warning
@@ -943,9 +948,14 @@ Logging__LogLevel__Default=Warning
 # Webhook
 Webhook__MaxRetries=10
 Webhook__TimeoutSeconds=60
+Webhook__BatchSize=200
 
 # Rate Limiting
 RateLimit__RequestsPerMinute=200
+RateLimit__RetryAfterSeconds=30
+
+# Cache
+Cache__DefaultDurationSeconds=600
 ```
 
 ### appsettings.Development.json

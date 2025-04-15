@@ -52,6 +52,7 @@ try
         });
 
     builder.Services.AddControllers();
+    builder.Services.Configure<DotnetConfigServerOptions>(builder.Configuration);
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -70,7 +71,7 @@ try
     app.UseMiddleware<ErrorHandlingMiddleware>();
     app.UseMiddleware<RequestLoggingMiddleware>();
     app.UseMiddleware<PerformanceMonitoringMiddleware>();
-    app.UseMiddleware<RateLimitingMiddleware>(new RateLimitOptions { RequestsPerMinute = 100 });
+    app.UseMiddleware<RateLimitingMiddleware>();
 
     if (app.Environment.IsDevelopment())
     {

@@ -6,6 +6,7 @@
 
 using System.Collections.Concurrent;
 using System.Net;
+using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Middleware;
 
@@ -20,10 +21,10 @@ sealed public class RateLimitingMiddleware
     private readonly ILogger<RateLimitingMiddleware> _logger;
     private readonly ConcurrentDictionary<string, RateLimitBucket> _buckets;
 
-    public RateLimitingMiddleware(RequestDelegate next, RateLimitOptions options, ILogger<RateLimitingMiddleware> logger)
+    public RateLimitingMiddleware(RequestDelegate next, Microsoft.Extensions.Options.IOptions<DotnetConfigServerOptions> options, ILogger<RateLimitingMiddleware> logger)
     {
         _next = next;
-        _options = options;
+        _options = options.Value.RateLimit;
         _logger = logger;
         _buckets = new ConcurrentDictionary<string, RateLimitBucket>();
     }
@@ -46,12 +47,6 @@ sealed public class RateLimitingMiddleware
 
         await _next(context);
     }
-}
-
-sealed public class RateLimitOptions
-{
-    public int RequestsPerMinute { get; set; } = 100;
-    public int RetryAfterSeconds { get; set; } = 60;
 }
 
 sealed public class RateLimitBucket
