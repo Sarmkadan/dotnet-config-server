@@ -47,7 +47,7 @@ sealed public class ConfigurationService : IConfigurationService
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         configuration.Validate();
         configuration.CreatedBy = userId;
         configuration.UpdatedAt = DateTime.UtcNow;
@@ -108,7 +108,7 @@ sealed public class ConfigurationService : IConfigurationService
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
-    {
+    
         var existing = await _configRepository.GetByIdAsync(id);
         if (existing is null)
             throw new ConfigurationNotFoundException(id.ToString());
@@ -168,7 +168,7 @@ sealed public class ConfigurationService : IConfigurationService
     {
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+    
         var config = await _configRepository.GetByIdAsync(id);
         if (config is null)
             throw new ConfigurationNotFoundException(id.ToString());
@@ -201,7 +201,7 @@ sealed public class ConfigurationService : IConfigurationService
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(key);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+    
         var config = await _configRepository.GetByIdAsync(configurationId);
         if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
@@ -232,7 +232,7 @@ sealed public class ConfigurationService : IConfigurationService
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+    
         var key = await _keyRepository.GetByIdAsync(keyId);
         if (key is null)
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
@@ -397,7 +397,7 @@ sealed public class ConfigurationService : IConfigurationService
     {
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+    
         var key = await _keyRepository.GetByIdAsync(keyId);
         if (key is null)
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
@@ -415,7 +415,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
-    {
+    
         return await _configRepository.SearchAsync(query, applicationId);
     }
 

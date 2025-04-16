@@ -886,6 +886,8 @@ Response: 200 OK
 
 ## Configuration Reference
 
+The application uses the `IOptions<DotnetConfigServerOptions>` pattern for type-safe, validated configuration. Settings must be nested under the `DotnetConfigServer` section in `appsettings.json`.
+
 ### appsettings.json
 
 ```json
@@ -901,61 +903,43 @@ Response: 200 OK
   "ConnectionStrings": {
     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=DotnetConfigServerDb;Trusted_Connection=true;"
   },
-  "ApplicationSettings": {
-    "ApiVersion": "v1",
-    "MaxVersionHistory": 100,
-    "EnableCors": true,
-    "EnableSwagger": true
-  },
-  "Encryption": {
-    "KeySize": 256,
-    "SaltSize": 16,
-    "Iterations": 10000,
-    "Algorithm": "AES256"
-  },
-  "Webhook": {
-    "MaxRetries": 5,
-    "TimeoutSeconds": 30,
-    "BatchSize": 100
-  },
-  "RateLimit": {
-    "RequestsPerMinute": 100,
-    "RetryAfterSeconds": 60
-  },
-  "Cache": {
-    "DefaultDurationSeconds": 300
+  "DotnetConfigServer": {
+    "ApplicationSettings": {
+      "ApiVersion": "v1",
+      "MaxVersionHistory": 100,
+      "EnableCors": true,
+      "EnableSwagger": true
+    },
+    "Encryption": {
+      "KeySize": 256,
+      "SaltSize": 16,
+      "Iterations": 10000,
+      "Algorithm": "AES256"
+    },
+    "Webhook": {
+      "MaxRetries": 5,
+      "TimeoutSeconds": 30,
+      "BatchSize": 100
+    },
+    "RateLimit": {
+      "RequestsPerMinute": 100,
+      "RetryAfterSeconds": 60
+    },
+    "Cache": {
+      "DefaultDurationSeconds": 300
+    }
   }
 }
 ```
 
 ### Environment Variables
 
-Override any setting with environment variables:
+Override any setting with environment variables using double underscores as separators:
 
 ```bash
-# Database
-ConnectionStrings__DefaultConnection=Server=prod-db;Database=ConfigServer;...
-
-# Encryption
-Encryption__Algorithm=AES256
-Encryption__KeySize=256
-Encryption__SaltSize=16
-Encryption__Iterations=10000
-
-# Logging
-Logging__LogLevel__Default=Warning
-
-# Webhook
-Webhook__MaxRetries=10
-Webhook__TimeoutSeconds=60
-Webhook__BatchSize=200
-
-# Rate Limiting
-RateLimit__RequestsPerMinute=200
-RateLimit__RetryAfterSeconds=30
-
-# Cache
-Cache__DefaultDurationSeconds=600
+# Example overrides
+DotnetConfigServer__Encryption__Algorithm=AES256
+DotnetConfigServer__Webhook__MaxRetries=10
 ```
 
 ### appsettings.Development.json

@@ -34,7 +34,7 @@ sealed public class EncryptionService : IEncryptionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(plainText);
         ArgumentNullException.ThrowIfNull(key);
-    {
+        
         ValidateKey(key);
 
         using (var aes = Aes.Create())
@@ -77,7 +77,7 @@ sealed public class EncryptionService : IEncryptionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
         ArgumentNullException.ThrowIfNull(key);
-    {
+        
         ValidateKey(key);
 
         try
@@ -121,7 +121,7 @@ sealed public class EncryptionService : IEncryptionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(plainText);
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
-    {
+        
         var key = await GetPrimaryKeyAsync(configurationId);
         if (key is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
@@ -139,7 +139,7 @@ sealed public class EncryptionService : IEncryptionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
-    {
+        
         var primaryKey = await GetPrimaryKeyAsync(configurationId);
         if (primaryKey is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
@@ -174,7 +174,7 @@ sealed public class EncryptionService : IEncryptionService
     public bool ValidateKey(EncryptionKey key)
     {
         ArgumentNullException.ThrowIfNull(key);
-    {
+        
         if (!key.IsValid())
             throw new EncryptionException($"Encryption key {key.KeyId} is not valid or has expired");
 
@@ -190,7 +190,7 @@ sealed public class EncryptionService : IEncryptionService
     public async Task<EncryptionKey?> GetPrimaryKeyAsync(Guid configurationId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
-    {
+        
         return await _keyRepository.GetPrimaryKeyByConfigurationAsync(configurationId);
     }
 
@@ -200,7 +200,7 @@ sealed public class EncryptionService : IEncryptionService
     public async Task<EncryptionKey?> GetKeyAsync(string keyId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(keyId);
-    {
+        
         return await _keyRepository.GetByKeyIdAsync(keyId);
     }
 
@@ -255,7 +255,7 @@ sealed public class EncryptionService : IEncryptionService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(oldKeyId);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         var oldKey = await _keyRepository.GetByKeyIdAsync(oldKeyId);
         if (oldKey is null)
             throw new ConfigurationNotFoundException($"Encryption key {oldKeyId} not found");

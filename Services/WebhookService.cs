@@ -50,7 +50,7 @@ sealed public class WebhookService : IWebhookService
     {
         ArgumentNullException.ThrowIfNull(subscription);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         subscription.Validate();
         subscription.CreatedBy = userId;
 
@@ -93,7 +93,7 @@ sealed public class WebhookService : IWebhookService
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(subscription);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         var existing = await _subscriptionRepository.GetByIdAsync(subscriptionId);
         if (existing is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
@@ -122,7 +122,7 @@ sealed public class WebhookService : IWebhookService
     {
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
         if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
@@ -143,7 +143,7 @@ sealed public class WebhookService : IWebhookService
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(payload);
         ArgumentOutOfRangeException.ThrowIfEqual(versionId, Guid.Empty);
-    {
+        
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
         if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
@@ -184,7 +184,7 @@ sealed public class WebhookService : IWebhookService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(eventType);
         ArgumentNullException.ThrowIfNull(payload);
-    {
+        
         var subscriptions = await _subscriptionRepository.GetActiveWebhooksAsync();
         var serializedPayload = JsonSerializer.Serialize(payload);
 
@@ -252,7 +252,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<List<WebhookDelivery>> GetDeliveriesAsync(Guid subscriptionId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
-    {
+        
         return await _deliveryRepository.GetBySubscriptionAsync(subscriptionId);
     }
 
@@ -262,7 +262,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<int> RetryFailedDeliveriesAsync(int maxRetries = 5)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxRetries, 1);
-    {
+        
         var failedDeliveries = await _deliveryRepository.GetFailedDeliveriesAsync();
         int retryCount = 0;
 
@@ -299,7 +299,7 @@ sealed public class WebhookService : IWebhookService
     {
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
         if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
@@ -318,7 +318,7 @@ sealed public class WebhookService : IWebhookService
     {
         ArgumentOutOfRangeException.ThrowIfEqual(subscriptionId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-    {
+        
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
         if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());

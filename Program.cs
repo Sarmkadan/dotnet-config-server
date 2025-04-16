@@ -52,7 +52,10 @@ try
         });
 
     builder.Services.AddControllers();
-    builder.Services.Configure<DotnetConfigServerOptions>(builder.Configuration);
+    builder.Services.AddOptions<DotnetConfigServerOptions>()
+        .Bind(builder.Configuration.GetSection("DotnetConfigServer"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -87,7 +90,6 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");
-app.MapControllers();
 
     Log.Information("Dotnet Config Server started successfully with Phase 2 features");
     await app.RunAsync();
