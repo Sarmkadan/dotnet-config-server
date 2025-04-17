@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Order;
+using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,12 +31,12 @@ public class DiffBenchmarks
         var services = new ServiceCollection();
 
         services.AddLogging(configure => configure.AddConsole());
-        services.AddDbContext<ConfigDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IDiffService, DiffService>();
         services.AddScoped<IDiffViewerService, DiffViewerService>();
-        services.AddScoped<IVersionRepository, VersionRepository>();
+        services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IConfigurationKeyRepository, ConfigurationKeyRepository>();
         services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
@@ -44,7 +46,7 @@ public class DiffBenchmarks
 
         // Create test data
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
@@ -53,7 +55,7 @@ public class DiffBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Test configuration for diff benchmarks",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -89,7 +91,7 @@ public class DiffBenchmarks
             ConfigurationId = _testConfigurationId,
             VersionNumber = "1.0.0",
             ReleaseNotes = "Initial version",
-            Status = VersionStatus.Published,
+            Status = DotnetConfigServer.Common.ConfigurationVersionStatus.Active,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "benchmark-user"
         };
@@ -139,7 +141,7 @@ public class DiffBenchmarks
             ConfigurationId = _testConfigurationId,
             VersionNumber = "2.0.0",
             ReleaseNotes = "Updated version with new keys",
-            Status = VersionStatus.Published,
+            Status = DotnetConfigServer.Common.ConfigurationVersionStatus.Active,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "benchmark-user"
         };
@@ -194,7 +196,7 @@ public class DiffBenchmarks
             ConfigurationId = _testConfigurationId,
             VersionNumber = "3.0.0",
             ReleaseNotes = "Final version with significant changes",
-            Status = VersionStatus.Published,
+            Status = DotnetConfigServer.Common.ConfigurationVersionStatus.Active,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "benchmark-user"
         };
@@ -210,7 +212,7 @@ public class DiffBenchmarks
     public async Task GlobalCleanup()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         _serviceProvider.Dispose();
     }
@@ -218,19 +220,19 @@ public class DiffBenchmarks
     [Benchmark]
     public async Task CompareConfigurations()
     {
-        await _diffService.CompareConfigurationsAsync(_version1.Id, _version2.Id);
+        await _diffService.ComparVersionsAsync(_version1.Id, _version2.Id);
     }
 
     [Benchmark]
     public async Task GetDiff()
     {
-        await _diffViewerService.GetDiffAsync(_version1.Id, _version2.Id);
+        await _diffViewerService.GetEnrichedDiffAsync(_version1.Id, _version2.Id);
     }
 
     [Benchmark]
     public async Task GetDiffWithDetails()
     {
-        await _diffViewerService.GetDiffAsync(_version1.Id, _version2.Id, true);
+        await _diffViewerService.GetEnrichedDiffAsync(_version1.Id, _version2.Id);
     }
 
     [Benchmark]
@@ -242,7 +244,7 @@ public class DiffBenchmarks
     [Benchmark]
     public async Task CompareLargeConfigurations()
     {
-        await _diffService.CompareConfigurationsAsync(_version1.Id, _version3.Id);
+        await _diffService.ComparVersionsAsync(_version1.Id, _version3.Id);
     }
 
     [Benchmark]
@@ -254,6 +256,6 @@ public class DiffBenchmarks
     [Benchmark]
     public async Task GetEnrichedDiff()
     {
-        await _diffViewerService.GetDiffAsync(_version2.Id, _version3.Id, true);
+        await _diffViewerService.GetEnrichedDiffAsync(_version2.Id, _version3.Id);
     }
 }

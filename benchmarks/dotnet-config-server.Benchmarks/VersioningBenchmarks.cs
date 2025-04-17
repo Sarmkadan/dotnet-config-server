@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Order;
+using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,12 +29,12 @@ public class VersioningBenchmarks
         var services = new ServiceCollection();
 
         services.AddLogging(configure => configure.AddConsole());
-        services.AddDbContext<ConfigDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IVersioningService, VersioningService>();
         services.AddScoped<IConfigurationService, ConfigurationService>();
-        services.AddScoped<IVersionRepository, VersionRepository>();
+        services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IConfigurationKeyRepository, ConfigurationKeyRepository>();
         services.AddScoped<IEncryptionKeyRepository, EncryptionKeyRepository>();
@@ -42,7 +44,7 @@ public class VersioningBenchmarks
 
         // Create test data
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
@@ -51,7 +53,7 @@ public class VersioningBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Test configuration for versioning benchmarks",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -97,7 +99,7 @@ public class VersioningBenchmarks
     public async Task GlobalCleanup()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         _serviceProvider.Dispose();
     }
@@ -171,7 +173,7 @@ public class VersioningBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Configuration with many keys for versioning test",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -179,7 +181,7 @@ public class VersioningBenchmarks
         };
 
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Configurations.Add(config);
 
         // Add 200 keys

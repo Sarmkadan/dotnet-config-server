@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Order;
+using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,7 +30,7 @@ public class EncryptionBenchmarks
         var services = new ServiceCollection();
 
         services.AddLogging(configure => configure.AddConsole());
-        services.AddDbContext<ConfigDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IEncryptionService, EncryptionService>();
@@ -38,7 +40,7 @@ public class EncryptionBenchmarks
 
         // Create test data
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
@@ -47,7 +49,7 @@ public class EncryptionBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Test configuration for encryption benchmarks",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -60,13 +62,15 @@ public class EncryptionBenchmarks
         // Create test encryption key
         _testKey = new EncryptionKey
         {
-            Id = Guid.NewGuid().ToString(),
-            ConfigurationId = _testConfigurationId,
+            Id = Guid.NewGuid(),
+            KeyId = Guid.NewGuid().ToString(),
             Name = "BenchmarkKey",
-            Algorithm = "AES256",
-            KeyMaterial = "ThisIsATestKey12345678901234567890123", // 32 bytes for AES256
+            Algorithm = DotnetConfigServer.Common.EncryptionAlgorithm.AES256,
+            EncryptedKey = System.Text.Encoding.UTF8.GetBytes("ThisIsATestKey12345678901234567890123"), // 32 bytes for AES256
+            Salt = System.Text.Encoding.UTF8.GetBytes("BenchmarkSaltValue"),
             IsPrimary = true,
             IsActive = true,
+            CreatedBy = "benchmark-user",
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddYears(1)
         };
@@ -87,7 +91,7 @@ public class EncryptionBenchmarks
     public async Task GlobalCleanup()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         _serviceProvider.Dispose();
     }
@@ -133,7 +137,7 @@ public class EncryptionBenchmarks
     [Benchmark]
     public async Task RotateKey()
     {
-        await _encryptionService.RotateKeyAsync(_testKey.Id, "benchmark-user");
+        await _encryptionService.RotateKeyAsync(_testKey.KeyId, "benchmark-user");
     }
 
     [Benchmark]

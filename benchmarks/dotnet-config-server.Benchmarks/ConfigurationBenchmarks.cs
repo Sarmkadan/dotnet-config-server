@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Order;
+using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -32,7 +34,7 @@ private IMemoryCache _memoryCache;
         var services = new ServiceCollection();
 
         services.AddLogging(configure => configure.AddConsole());
-        services.AddDbContext<ConfigDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IConfigurationService, ConfigurationService>();
@@ -41,14 +43,14 @@ private IMemoryCache _memoryCache;
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IConfigurationKeyRepository, ConfigurationKeyRepository>();
         services.AddScoped<IEncryptionKeyRepository, EncryptionKeyRepository>();
-        services.AddScoped<IVersionRepository, VersionRepository>();
+        services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
         _serviceProvider = services.BuildServiceProvider();
 
         // Create test data
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
@@ -68,7 +70,7 @@ private IMemoryCache _memoryCache;
         {
             Id = Guid.NewGuid(),
             ApplicationId = _testApplicationId,
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Benchmark configuration",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -108,7 +110,7 @@ private IMemoryCache _memoryCache;
     public async Task GlobalCleanup()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         _serviceProvider.Dispose();
     }
@@ -120,7 +122,7 @@ private IMemoryCache _memoryCache;
         {
             Id = Guid.NewGuid(),
             ApplicationId = _testApplicationId,
-            Environment = "BenchmarkTest",
+            Environment = DotnetConfigServer.Common.Environment.Staging,
             Description = "Benchmark test configuration",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -148,7 +150,7 @@ private IMemoryCache _memoryCache;
         {
             Id = _testConfigurationId,
             ApplicationId = _testApplicationId,
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Updated benchmark configuration",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -219,7 +221,7 @@ private IMemoryCache _memoryCache;
         {
             Id = Guid.NewGuid(),
             ApplicationId = _testApplicationId,
-            Environment = "BenchmarkEncrypted",
+            Environment = DotnetConfigServer.Common.Environment.Production,
             Description = "Benchmark encrypted configuration",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,

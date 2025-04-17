@@ -1,7 +1,9 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Order;
+using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -30,7 +32,7 @@ public class CachingBenchmarks
         var services = new ServiceCollection();
 
         services.AddLogging(configure => configure.AddConsole());
-        services.AddDbContext<ConfigDbContext>(options =>
+        services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IConfigurationService, ConfigurationService>();
@@ -39,7 +41,7 @@ public class CachingBenchmarks
         services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
         services.AddScoped<IConfigurationKeyRepository, ConfigurationKeyRepository>();
         services.AddScoped<IEncryptionKeyRepository, EncryptionKeyRepository>();
-        services.AddScoped<IVersionRepository, VersionRepository>();
+        services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
 
         // Add memory cache
@@ -53,7 +55,7 @@ public class CachingBenchmarks
 
         // Create test data
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         await dbContext.Database.EnsureCreatedAsync();
 
@@ -73,7 +75,7 @@ public class CachingBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = _testApplicationId,
-            Environment = "Development",
+            Environment = DotnetConfigServer.Common.Environment.Development,
             Description = "Benchmark configuration for caching",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -112,7 +114,7 @@ public class CachingBenchmarks
     public async Task GlobalCleanup()
     {
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await dbContext.Database.EnsureDeletedAsync();
         _serviceProvider.Dispose();
     }
@@ -256,7 +258,7 @@ public class CachingBenchmarks
             {
                 Id = Guid.NewGuid(),
                 ApplicationId = _testApplicationId,
-                Environment = $"CacheTest{i}",
+                Environment = DotnetConfigServer.Common.Environment.Staging,
                 Description = $"Test config {i}",
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
@@ -264,7 +266,7 @@ public class CachingBenchmarks
             };
 
             using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             dbContext.Configurations.Add(config);
             await dbContext.SaveChangesAsync();
 
@@ -281,7 +283,7 @@ public class CachingBenchmarks
         {
             Id = Guid.NewGuid(),
             ApplicationId = _testApplicationId,
-            Environment = "EncryptedCacheTest",
+            Environment = DotnetConfigServer.Common.Environment.Production,
             Description = "Encrypted test configuration",
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -289,7 +291,7 @@ public class CachingBenchmarks
         };
 
         using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ConfigDbContext>();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         dbContext.Configurations.Add(encryptedConfig);
         await dbContext.SaveChangesAsync();
 
