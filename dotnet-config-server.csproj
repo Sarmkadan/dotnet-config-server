@@ -25,6 +25,7 @@
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="examples/**/*.cs" />
+    <Compile Remove="benchmarks/**/*.cs" />
     <Compile Remove="Events/EventHandlers.cs" />
     <Compile Remove="BackgroundWorkers/ConfigurationSyncWorker.cs" />
     <Compile Remove="BackgroundWorkers/WebhookRetryWorker.cs" />

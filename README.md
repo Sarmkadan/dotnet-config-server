@@ -1160,6 +1160,8 @@ Individual test project path: `tests/dotnet-config-server.Tests/`
 
 ## Performance
 
+See [Performance Benchmarks](./benchmarks/dotnet-config-server.Benchmarks/README.md) for detailed information on running benchmarks and interpreting results.
+
 Benchmarks measured on a single instance (4 vCPUs, 8 GB RAM, SQL Server on the same host):
 
 | Operation | p50 | p99 |
