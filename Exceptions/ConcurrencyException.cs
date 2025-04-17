@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Thrown when concurrency conflicts occur (optimistic concurrency, race conditions)
 /// </summary>
-sealed public class ConcurrencyException : DotnetConfigServerException
+public class ConcurrencyException : DotnetConfigServerException
 {
     public ConcurrencyException(string message) : base(message, "CONCURRENCY_ERROR")
     {

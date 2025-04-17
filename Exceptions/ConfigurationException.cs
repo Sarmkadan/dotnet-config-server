@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Represents errors that occur during configuration operations
 /// </summary>
-sealed public class ConfigurationException : DotnetConfigServerException
+public class ConfigurationException : DotnetConfigServerException
 {
     public ConfigurationException(string message) : base(message, "CONFIGURATION_ERROR")
     {

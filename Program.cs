@@ -5,6 +5,7 @@
 // =============================================================================
 
 using Serilog;
+using DotnetConfigServer.Models;
 using DotnetConfigServer.Middleware;
 using DotnetConfigServer.Caching;
 using DotnetConfigServer.Events;

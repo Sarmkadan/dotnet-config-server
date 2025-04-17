@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Base exception for not found scenarios
 /// </summary>
-sealed public class NotFoundException : DotnetConfigServerException
+public class NotFoundException : DotnetConfigServerException
 {
     public NotFoundException(string message, string errorCode, object? details = null) : base(message, errorCode, details)
     {
