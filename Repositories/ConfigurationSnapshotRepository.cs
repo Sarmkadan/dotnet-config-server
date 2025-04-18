@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for ConfigurationSnapshot entity
 /// </summary>
-sealed public class ConfigurationSnapshotRepository : BaseRepository<ConfigurationSnapshot>, IConfigurationSnapshotRepository
+public sealed class ConfigurationSnapshotRepository : BaseRepository<ConfigurationSnapshot>, IConfigurationSnapshotRepository
 {
     public ConfigurationSnapshotRepository(ApplicationDbContext context, ILogger<ConfigurationSnapshotRepository> logger)
         : base(context, logger) { }

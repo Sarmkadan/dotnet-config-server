@@ -31,7 +31,7 @@ public interface IHealthCheckService
     Task<bool> IsAliveAsync();
 }
 
-sealed public class HealthCheckService : IHealthCheckService
+public sealed class HealthCheckService : IHealthCheckService
 {
     private readonly ILogger<HealthCheckService> _logger;
     private readonly ICacheService? _cacheService;
@@ -134,7 +134,7 @@ sealed public class HealthCheckService : IHealthCheckService
     }
 }
 
-sealed public class HealthReport
+public sealed class HealthReport
 {
     public string Status { get; set; } = "healthy"; // healthy, degraded, unhealthy
     public DateTime Timestamp { get; set; }
@@ -145,7 +145,7 @@ sealed public class HealthReport
     public Dictionary<string, HealthCheck> Checks { get; set; } = new();
 }
 
-sealed public class HealthCheck
+public sealed class HealthCheck
 {
     public string Status { get; set; } = string.Empty; // healthy, warning, unhealthy
     public string Message { get; set; } = string.Empty;

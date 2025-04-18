@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-sealed public class ConfigurationsController : ControllerBase
+public sealed class ConfigurationsController : ControllerBase
 {
     private readonly IConfigurationService _configurationService;
     private readonly IVersioningService _versioningService;

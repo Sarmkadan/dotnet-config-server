@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a webhook delivery attempt
 /// </summary>
-sealed public class WebhookDelivery
+public sealed class WebhookDelivery
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -139,7 +139,7 @@ sealed public class WebhookDelivery
 /// <summary>
 /// Summary view of a webhook delivery
 /// </summary>
-sealed public class WebhookDeliverySummary
+public sealed class WebhookDeliverySummary
 {
     public Guid Id { get; set; }
     public WebhookDeliveryStatus Status { get; set; }

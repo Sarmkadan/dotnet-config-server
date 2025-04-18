@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a configuration profile that can contain multiple key-value pairs
 /// </summary>
-sealed public class Configuration
+public sealed class Configuration
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -176,7 +176,7 @@ sealed public class Configuration
 /// <summary>
 /// Summary view of a configuration
 /// </summary>
-sealed public class ConfigurationSummary
+public sealed class ConfigurationSummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

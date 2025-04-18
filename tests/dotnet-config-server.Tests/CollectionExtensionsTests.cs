@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class CollectionExtensionsTests
+public sealed class CollectionExtensionsTests
 {
     [Fact]
     public void Batch_CollectionDivisibleByBatchSize_ProducesFullBatches()

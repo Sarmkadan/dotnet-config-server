@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents the outcome of an executed rollback.
 /// </summary>
-sealed public class RollbackResult
+public sealed class RollbackResult
 {
     /// <summary>Gets or sets the configuration identifier.</summary>
     public Guid ConfigurationId { get; set; }
@@ -36,7 +36,7 @@ sealed public class RollbackResult
 /// <summary>
 /// Represents a persisted rollback history entry.
 /// </summary>
-sealed public class RollbackRecord
+public sealed class RollbackRecord
 {
     /// <summary>Gets or sets the rollback record identifier.</summary>
     public Guid Id { get; set; }

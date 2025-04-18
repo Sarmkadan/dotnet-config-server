@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Retrieves and displays audit logs for configurations.
     /// Useful for compliance, debugging, and understanding configuration history.
     /// </summary>
-    sealed public class AuditLogViewer
+    public sealed class AuditLogViewer
     {
         private readonly HttpClient _httpClient;
 
@@ -255,7 +255,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class AuditLog
+    public sealed class AuditLog
     {
         public string Id { get; set; }
         public DateTime Timestamp { get; set; }
@@ -266,20 +266,20 @@ namespace DotnetConfigServer.Examples
         public Dictionary<string, AuditChange> Changes { get; set; }
     }
 
-    sealed public class AuditChange
+    public sealed class AuditChange
     {
         public string OldValue { get; set; }
         public string NewValue { get; set; }
     }
 
-    sealed public class PagedResult<T>
+    public sealed class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {

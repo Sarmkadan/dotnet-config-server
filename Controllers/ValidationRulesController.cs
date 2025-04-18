@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/configurations/{configurationId}/validation-rules")]
 [Produces("application/json")]
-sealed public class ValidationRulesController : ControllerBase
+public sealed class ValidationRulesController : ControllerBase
 {
     private readonly IValidationRuleService _validationRuleService;
     private readonly ILogger<ValidationRulesController> _logger;
@@ -193,7 +193,7 @@ sealed public class ValidationRulesController : ControllerBase
 /// <summary>
 /// Request body for validation execution.
 /// </summary>
-sealed public class ValidationRequest
+public sealed class ValidationRequest
 {
     /// <summary>
     /// Gets or sets the optional version identifier.

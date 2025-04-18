@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class CacheKeyGeneratorTests
+public sealed class CacheKeyGeneratorTests
 {
     [Fact]
     public void GetConfigurationKey_ReturnsKeyWithConfigurationId()

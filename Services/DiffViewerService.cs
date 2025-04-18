@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Provides rich diff visualization and non-destructive rollback preview for configuration versions.
 /// </summary>
-sealed public class DiffViewerService : IDiffViewerService
+public sealed class DiffViewerService : IDiffViewerService
 {
     private readonly IVersioningService _versioningService;
     private readonly IConfigurationDiffRepository _diffRepository;

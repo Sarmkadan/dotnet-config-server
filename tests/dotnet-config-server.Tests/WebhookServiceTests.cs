@@ -18,7 +18,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class WebhookServiceTests
+public sealed class WebhookServiceTests
 {
     private readonly Mock<IWebhookSubscriptionRepository> _subscriptionRepositoryMock;
     private readonly Mock<IWebhookDeliveryRepository> _deliveryRepositoryMock;

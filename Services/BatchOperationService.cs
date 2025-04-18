@@ -36,7 +36,7 @@ public interface IBatchOperationService
     Task CancelAsync(Guid operationId);
 }
 
-sealed public class BatchOperationService : IBatchOperationService
+public sealed class BatchOperationService : IBatchOperationService
 {
     private readonly IConfigurationKeyRepository _keyRepository;
     private readonly ILogger<BatchOperationService> _logger;
@@ -256,13 +256,13 @@ sealed public class BatchOperationService : IBatchOperationService
     }
 }
 
-sealed public class KeyUpdateRequest
+public sealed class KeyUpdateRequest
 {
     public Guid KeyId { get; set; }
     public string NewValue { get; set; } = string.Empty;
 }
 
-sealed public class BatchOperationResult
+public sealed class BatchOperationResult
 {
     public Guid OperationId { get; set; }
     public bool Success { get; set; }
@@ -271,7 +271,7 @@ sealed public class BatchOperationResult
     public List<string> Errors { get; set; } = new();
 }
 
-sealed public class BatchOperationStatus
+public sealed class BatchOperationStatus
 {
     public Guid OperationId { get; set; }
     public string Status { get; set; } = string.Empty;

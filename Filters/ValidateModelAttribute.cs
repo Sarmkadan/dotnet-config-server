@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Filters;
 /// Action filter that automatically validates model state before action execution.
 /// Returns 400 Bad Request with detailed error messages if validation fails.
 /// </summary>
-sealed public class ValidateModelAttribute : ActionFilterAttribute
+public sealed class ValidateModelAttribute : ActionFilterAttribute
 {
     public override void OnActionExecuting(ActionExecutingContext context)
     {

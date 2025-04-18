@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing configurations
 /// </summary>
-sealed public class ConfigurationService : IConfigurationService
+public sealed class ConfigurationService : IConfigurationService
 {
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;

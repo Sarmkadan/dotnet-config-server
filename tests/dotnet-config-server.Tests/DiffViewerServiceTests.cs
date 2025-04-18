@@ -15,7 +15,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class DiffViewerServiceTests
+public sealed class DiffViewerServiceTests
 {
     private readonly Mock<IVersioningService> _versioningServiceMock;
     private readonly Mock<IConfigurationDiffRepository> _diffRepositoryMock;

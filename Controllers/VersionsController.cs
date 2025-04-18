@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/configurations/{configurationId}/[controller]")]
 [Produces("application/json")]
-sealed public class VersionsController : ControllerBase
+public sealed class VersionsController : ControllerBase
 {
     private readonly IVersioningService _versioningService;
     private readonly IDiffService _diffService;
@@ -246,7 +246,7 @@ sealed public class VersionsController : ControllerBase
 /// <summary>
 /// Request model for creating a version
 /// </summary>
-sealed public class CreateVersionRequest
+public sealed class CreateVersionRequest
 {
     public string? ReleaseNotes { get; set; }
 }
@@ -254,7 +254,7 @@ sealed public class CreateVersionRequest
 /// <summary>
 /// Response model for cleanup operation
 /// </summary>
-sealed public class CleanupResponse
+public sealed class CleanupResponse
 {
     public int ArchivedCount { get; set; }
 }

@@ -61,7 +61,7 @@ public interface ICacheService
 /// <summary>
 /// Cache statistics for monitoring and debugging.
 /// </summary>
-sealed public class CacheStats
+public sealed class CacheStats
 {
     public long Hits { get; set; }
     public long Misses { get; set; }

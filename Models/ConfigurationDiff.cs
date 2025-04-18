@@ -12,7 +12,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents the difference between two configuration versions
 /// </summary>
-sealed public class ConfigurationDiff
+public sealed class ConfigurationDiff
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -122,7 +122,7 @@ sealed public class ConfigurationDiff
 /// <summary>
 /// Represents a single change in a diff
 /// </summary>
-sealed public class DiffEntry
+public sealed class DiffEntry
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -187,7 +187,7 @@ sealed public class DiffEntry
 /// <summary>
 /// Summary view of a configuration diff
 /// </summary>
-sealed public class ConfigurationDiffSummary
+public sealed class ConfigurationDiffSummary
 {
     public Guid Id { get; set; }
     public int TotalChanges { get; set; }

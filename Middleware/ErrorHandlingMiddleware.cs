@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Global exception handling middleware that catches all unhandled exceptions
 /// and returns consistent error responses with proper HTTP status codes.
 /// </summary>
-sealed public class ErrorHandlingMiddleware
+public sealed class ErrorHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
@@ -70,7 +70,7 @@ sealed public class ErrorHandlingMiddleware
     }
 }
 
-sealed public class ErrorResponse
+public sealed class ErrorResponse
 {
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }

@@ -16,7 +16,7 @@ namespace DotnetConfigServer.Examples
     /// Basic client for retrieving configurations from Dotnet Config Server.
     /// Demonstrates simple HTTP-based configuration retrieval.
     /// </summary>
-    sealed public class BasicConfigurationClient
+    public sealed class BasicConfigurationClient
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
@@ -80,7 +80,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class Configuration
+    public sealed class Configuration
     {
         public Guid Id { get; set; }
         public Guid ApplicationId { get; set; }
@@ -94,7 +94,7 @@ namespace DotnetConfigServer.Examples
             Keys.Find(k => k.Key == keyName)?.Value ?? throw new KeyNotFoundException($"Key '{keyName}' not found");
     }
 
-    sealed public class ConfigurationKey
+    public sealed class ConfigurationKey
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -103,7 +103,7 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    sealed public class PagedResult<T>
+    public sealed class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
@@ -112,7 +112,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // Example usage
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {

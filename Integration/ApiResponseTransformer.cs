@@ -35,7 +35,7 @@ public interface IApiResponseTransformer
     Dictionary<string, object?> Flatten(string json, string separator = ".");
 }
 
-sealed public class ApiResponseTransformer : IApiResponseTransformer
+public sealed class ApiResponseTransformer : IApiResponseTransformer
 {
     private readonly ILogger<ApiResponseTransformer> _logger;
     private readonly JsonSerializerOptions _options;

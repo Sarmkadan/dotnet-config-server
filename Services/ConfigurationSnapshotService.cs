@@ -37,7 +37,7 @@ public interface IConfigurationSnapshotService
     Task RestoreFromSnapshotAsync(Guid snapshotId, string userId, string reason);
 }
 
-sealed public class ConfigurationSnapshotService : IConfigurationSnapshotService
+public sealed class ConfigurationSnapshotService : IConfigurationSnapshotService
 {
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;

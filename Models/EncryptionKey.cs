@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an encryption key used for configuration encryption
 /// </summary>
-sealed public class EncryptionKey
+public sealed class EncryptionKey
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -169,7 +169,7 @@ sealed public class EncryptionKey
 /// <summary>
 /// Summary view of an encryption key (safe for sharing)
 /// </summary>
-sealed public class EncryptionKeySummary
+public sealed class EncryptionKeySummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

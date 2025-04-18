@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Formatters;
 /// Exports configurations in multiple formats: JSON, CSV, XML, YAML.
 /// Handles serialization with proper escaping and structure preservation.
 /// </summary>
-sealed public class ConfigurationExporter
+public sealed class ConfigurationExporter
 {
     /// <summary>
     /// Exports configurations to JSON format.

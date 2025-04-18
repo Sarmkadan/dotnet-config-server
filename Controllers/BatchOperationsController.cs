@@ -16,7 +16,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/batch")]
 [Produces("application/json")]
-sealed public class BatchOperationsController : ControllerBase
+public sealed class BatchOperationsController : ControllerBase
 {
     private readonly IBatchOperationService _batchService;
     private readonly ILogger<BatchOperationsController> _logger;

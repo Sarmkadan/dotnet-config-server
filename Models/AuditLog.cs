@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an audit log entry tracking changes and actions
 /// </summary>
-sealed public class AuditLog
+public sealed class AuditLog
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -203,7 +203,7 @@ sealed public class AuditLog
 /// <summary>
 /// Summary view of an audit log entry
 /// </summary>
-sealed public class AuditLogSummary
+public sealed class AuditLogSummary
 {
     public Guid Id { get; set; }
     public AuditActionType ActionType { get; set; }

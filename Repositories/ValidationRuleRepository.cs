@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for <see cref="ValidationRule"/> entities.
 /// </summary>
-sealed public class ValidationRuleRepository : BaseRepository<ValidationRule>, IValidationRuleRepository
+public sealed class ValidationRuleRepository : BaseRepository<ValidationRule>, IValidationRuleRepository
 {
     /// <summary>
     /// Initializes a new instance of <see cref="ValidationRuleRepository"/>.

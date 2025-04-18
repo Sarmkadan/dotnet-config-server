@@ -26,7 +26,7 @@ namespace DotnetConfigServer.Examples
         event EventHandler<ConfigurationChangedEventArgs> ConfigurationChanged;
     }
 
-    sealed public class ConfigurationChangedEventArgs : EventArgs
+    public sealed class ConfigurationChangedEventArgs : EventArgs
     {
         public string Key { get; set; }
         public string OldValue { get; set; }
@@ -37,7 +37,7 @@ namespace DotnetConfigServer.Examples
     /// <summary>
     /// Manages local configuration with periodic synchronization from Config Server.
     /// </summary>
-    sealed public class CachedConfigurationManager : IConfigurationManager
+    public sealed class CachedConfigurationManager : IConfigurationManager
     {
         private readonly HttpClient _httpClient;
         private readonly string _configurationId;
@@ -158,13 +158,13 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class ConfigurationDto
+    public sealed class ConfigurationDto
     {
         public Guid Id { get; set; }
         public List<ConfigurationKeyDto> Keys { get; set; } = new();
     }
 
-    sealed public class ConfigurationKeyDto
+    public sealed class ConfigurationKeyDto
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -173,7 +173,7 @@ namespace DotnetConfigServer.Examples
     /// <summary>
     /// Example service that uses the configuration manager.
     /// </summary>
-    sealed public class OrderService
+    public sealed class OrderService
     {
         private readonly IConfigurationManager _configManager;
         private readonly ILogger<OrderService> _logger;
@@ -217,7 +217,7 @@ namespace DotnetConfigServer.Examples
     /// <summary>
     /// Background task that listens for configuration changes.
     /// </summary>
-    sealed public class ConfigurationSyncBackgroundService : BackgroundService
+    public sealed class ConfigurationSyncBackgroundService : BackgroundService
     {
         private readonly IConfigurationManager _configManager;
         private readonly ILogger<ConfigurationSyncBackgroundService> _logger;
@@ -284,7 +284,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // Example usage in Program.cs
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {
@@ -324,7 +324,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class Order
+    public sealed class Order
     {
         public Guid Id { get; set; }
         public decimal Total { get; set; }

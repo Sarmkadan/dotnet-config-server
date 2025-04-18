@@ -14,7 +14,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class BatchOperationServiceTests
+public sealed class BatchOperationServiceTests
 {
     private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
     private readonly Mock<ILogger<BatchOperationService>> _loggerMock;

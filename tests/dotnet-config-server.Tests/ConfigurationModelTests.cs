@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class ConfigurationModelTests
+public sealed class ConfigurationModelTests
 {
     private static Configuration CreateValidConfiguration() => new()
     {

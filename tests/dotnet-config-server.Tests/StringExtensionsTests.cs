@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class StringExtensionsTests
+public sealed class StringExtensionsTests
 {
     [Fact]
     public void IsNullOrWhiteSpace_NullValue_ReturnsTrue()

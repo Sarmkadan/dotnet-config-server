@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class MemoryCacheServiceTests : IDisposable
+public sealed class MemoryCacheServiceTests : IDisposable
 {
     private readonly Mock<ILogger<MemoryCacheService>> _loggerMock;
     private readonly MemoryCacheService _sut;

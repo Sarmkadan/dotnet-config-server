@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Thrown when validation fails
 /// </summary>
-sealed public class ValidationException : DotnetConfigServerException
+public sealed class ValidationException : DotnetConfigServerException
 {
     public Dictionary<string, List<string>> Errors { get; set; }
 

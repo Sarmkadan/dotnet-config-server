@@ -18,7 +18,7 @@ namespace DotnetConfigServer.Examples
     /// Batch imports multiple configurations from a JSON file.
     /// Useful for initial setup and migrating configurations from other systems.
     /// </summary>
-    sealed public class BatchConfigurationImporter
+    public sealed class BatchConfigurationImporter
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
@@ -188,13 +188,13 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class BatchImportRequest
+    public sealed class BatchImportRequest
     {
         public string ConfigurationId { get; set; }
         public List<ConfigurationKeyImport> Keys { get; set; } = new();
     }
 
-    sealed public class ConfigurationKeyImport
+    public sealed class ConfigurationKeyImport
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -202,7 +202,7 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    sealed public class BatchImportResult
+    public sealed class BatchImportResult
     {
         public int SuccessCount { get; set; }
         public int FailureCount { get; set; }
@@ -212,14 +212,14 @@ namespace DotnetConfigServer.Examples
             $"Success: {SuccessCount}, Failed: {FailureCount}, Errors: {Errors.Count}";
     }
 
-    sealed public class ConfigurationDto
+    public sealed class ConfigurationDto
     {
         public Guid Id { get; set; }
         public string Environment { get; set; }
         public List<ConfigurationKeyDto> Keys { get; set; }
     }
 
-    sealed public class ConfigurationKeyDto
+    public sealed class ConfigurationKeyDto
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -229,7 +229,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // Example usage
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {

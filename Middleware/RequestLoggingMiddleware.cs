@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Middleware for comprehensive request/response logging with timing information.
 /// Captures request headers, body, response status, and execution time for observability.
 /// </summary>
-sealed public class RequestLoggingMiddleware
+public sealed class RequestLoggingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;

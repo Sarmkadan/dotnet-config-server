@@ -28,7 +28,7 @@ public class ConcurrencyException : DotnetConfigServerException
 /// <summary>
 /// Thrown when optimistic concurrency check fails
 /// </summary>
-sealed public class OptimisticConcurrencyException : ConcurrencyException
+public sealed class OptimisticConcurrencyException : ConcurrencyException
 {
     public OptimisticConcurrencyException(string entityType, Guid entityId, string expectedVersion, string actualVersion)
         : base($"Optimistic concurrency conflict for {entityType} {entityId}. Expected version: {expectedVersion}, Actual version: {actualVersion}",
@@ -41,7 +41,7 @@ sealed public class OptimisticConcurrencyException : ConcurrencyException
 /// <summary>
 /// Thrown when a circular dependency is detected
 /// </summary>
-sealed public class CircularDependencyException : ConcurrencyException
+public sealed class CircularDependencyException : ConcurrencyException
 {
     public CircularDependencyException(string message) : base(message, "CIRCULAR_DEPENDENCY")
     {

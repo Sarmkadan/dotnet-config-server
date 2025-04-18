@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/configurations/{configurationId}/rollback")]
 [Produces("application/json")]
-sealed public class RollbackController : ControllerBase
+public sealed class RollbackController : ControllerBase
 {
     private readonly IRollbackService _rollbackService;
     private readonly IDiffViewerService _diffViewerService;
@@ -116,7 +116,7 @@ sealed public class RollbackController : ControllerBase
 /// <summary>
 /// Request body for executing a rollback.
 /// </summary>
-sealed public class RollbackRequest
+public sealed class RollbackRequest
 {
     /// <summary>
     /// Gets or sets the reason for the rollback.

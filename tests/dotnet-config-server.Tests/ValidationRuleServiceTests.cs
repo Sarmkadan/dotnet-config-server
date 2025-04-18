@@ -15,7 +15,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class ValidationRuleServiceTests
+public sealed class ValidationRuleServiceTests
 {
     private readonly Mock<IValidationRuleRepository> _validationRuleRepositoryMock;
     private readonly Mock<IConfigurationService> _configurationServiceMock;

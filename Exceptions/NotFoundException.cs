@@ -19,7 +19,7 @@ public class NotFoundException : DotnetConfigServerException
 /// <summary>
 /// Thrown when a requested application is not found
 /// </summary>
-sealed public class ApplicationNotFoundException : NotFoundException
+public sealed class ApplicationNotFoundException : NotFoundException
 {
     public ApplicationNotFoundException(string applicationId) : base($"Application '{applicationId}' not found", "APP_NOT_FOUND", new { ApplicationId = applicationId })
     {
@@ -33,7 +33,7 @@ sealed public class ApplicationNotFoundException : NotFoundException
 /// <summary>
 /// Thrown when a requested user is not found
 /// </summary>
-sealed public class UserNotFoundException : NotFoundException
+public sealed class UserNotFoundException : NotFoundException
 {
     public UserNotFoundException(string userId) : base($"User '{userId}' not found", "USER_NOT_FOUND", new { UserId = userId })
     {
@@ -47,7 +47,7 @@ sealed public class UserNotFoundException : NotFoundException
 /// <summary>
 /// Thrown when a requested webhook delivery is not found
 /// </summary>
-sealed public class WebhookDeliveryNotFoundException : NotFoundException
+public sealed class WebhookDeliveryNotFoundException : NotFoundException
 {
     public WebhookDeliveryNotFoundException(string deliveryId) : base($"Webhook delivery '{deliveryId}' not found", "DELIVERY_NOT_FOUND", new { DeliveryId = deliveryId })
     {
@@ -61,7 +61,7 @@ sealed public class WebhookDeliveryNotFoundException : NotFoundException
 /// <summary>
 /// Thrown when a requested change request is not found
 /// </summary>
-sealed public class ChangeRequestNotFoundException : NotFoundException
+public sealed class ChangeRequestNotFoundException : NotFoundException
 {
     public ChangeRequestNotFoundException(string changeRequestId) : base($"Change request '{changeRequestId}' not found", "CHANGE_REQUEST_NOT_FOUND", new { ChangeRequestId = changeRequestId })
     {

@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// Represents a snapshot of a configuration's state at a specific point in time.
 /// Includes serialized configuration data and associated keys.
 /// </summary>
-sealed public class ConfigurationSnapshot
+public sealed class ConfigurationSnapshot
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();

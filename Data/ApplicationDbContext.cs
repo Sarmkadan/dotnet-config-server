@@ -12,7 +12,7 @@ namespace DotnetConfigServer.Data;
 /// <summary>
 /// Entity Framework DbContext for the configuration server
 /// </summary>
-sealed public class ApplicationDbContext : DbContext
+public sealed class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {

@@ -21,7 +21,7 @@ namespace DotnetConfigServer.Examples
     /// When configuration changes in the server, clients receive immediate notifications
     /// and can update their in-memory configuration without restarting.
     /// </summary>
-    sealed public class WebhookConfigurationReloader
+    public sealed class WebhookConfigurationReloader
     {
         private readonly ILogger<WebhookConfigurationReloader> _logger;
         private readonly string _webhookSecret;
@@ -152,7 +152,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class WebhookPayload
+    public sealed class WebhookPayload
     {
         public string EventId { get; set; }
         public string EventType { get; set; }
@@ -162,7 +162,7 @@ namespace DotnetConfigServer.Examples
         public List<ConfigurationChange> Changes { get; set; }
     }
 
-    sealed public class ConfigurationChange
+    public sealed class ConfigurationChange
     {
         public string Key { get; set; }
         public string OldValue { get; set; }
@@ -170,7 +170,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // ASP.NET Core startup example
-    sealed public class WebhookStartup
+    public sealed class WebhookStartup
     {
         public void ConfigureServices(IServiceCollection services)
         {

@@ -16,7 +16,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class RollbackServiceTests
+public sealed class RollbackServiceTests
 {
     private readonly Mock<IVersioningService> _versioningServiceMock;
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;

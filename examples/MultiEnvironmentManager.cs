@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Manages configurations across multiple environments (Dev, Staging, Production).
     /// Provides utilities for environment-specific operations and promoting configurations.
     /// </summary>
-    sealed public class MultiEnvironmentManager
+    public sealed class MultiEnvironmentManager
     {
         private readonly HttpClient _httpClient;
         private readonly string _applicationId;
@@ -275,7 +275,7 @@ namespace DotnetConfigServer.Examples
             };
     }
 
-    sealed public class ConfigurationDto
+    public sealed class ConfigurationDto
     {
         public string Id { get; set; }
         public string Environment { get; set; }
@@ -284,14 +284,14 @@ namespace DotnetConfigServer.Examples
         public DateTime CreatedAt { get; set; }
     }
 
-    sealed public class ConfigurationDetailsDto
+    public sealed class ConfigurationDetailsDto
     {
         public string Id { get; set; }
         public string Environment { get; set; }
         public List<ConfigurationKeyDto> Keys { get; set; }
     }
 
-    sealed public class ConfigurationKeyDto
+    public sealed class ConfigurationKeyDto
     {
         public string Key { get; set; }
         public string Value { get; set; }
@@ -299,14 +299,14 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    sealed public class PagedResult<T>
+    public sealed class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {

@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a version of a configuration with associated keys
 /// </summary>
-sealed public class ConfigurationVersion
+public sealed class ConfigurationVersion
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -166,7 +166,7 @@ sealed public class ConfigurationVersion
 /// <summary>
 /// Summary view of a configuration version
 /// </summary>
-sealed public class ConfigurationVersionSummary
+public sealed class ConfigurationVersionSummary
 {
     public Guid Id { get; set; }
     public string VersionNumber { get; set; } = string.Empty;

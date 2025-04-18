@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a webhook subscription for configuration change notifications
 /// </summary>
-sealed public class WebhookSubscription
+public sealed class WebhookSubscription
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -185,7 +185,7 @@ sealed public class WebhookSubscription
 /// <summary>
 /// Summary view of a webhook subscription
 /// </summary>
-sealed public class WebhookSubscriptionSummary
+public sealed class WebhookSubscriptionSummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

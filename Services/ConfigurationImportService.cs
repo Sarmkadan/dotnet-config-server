@@ -36,7 +36,7 @@ public interface IConfigurationImportService
     Task<ImportValidationResult> ValidateAsync(string data, string format);
 }
 
-sealed public class ConfigurationImportService : IConfigurationImportService
+public sealed class ConfigurationImportService : IConfigurationImportService
 {
     private readonly ILogger<ConfigurationImportService> _logger;
 
@@ -201,7 +201,7 @@ sealed public class ConfigurationImportService : IConfigurationImportService
     }
 }
 
-sealed public class ImportValidationResult
+public sealed class ImportValidationResult
 {
     public bool IsValid { get; set; }
     public List<string> Errors { get; set; } = new();

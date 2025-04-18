@@ -158,7 +158,7 @@ public static class ValidationExtensions
 /// <summary>
 /// Result of a validation operation.
 /// </summary>
-sealed public class ValidationResult
+public sealed class ValidationResult
 {
     public bool IsValid { get; set; }
     public string? ErrorMessage { get; set; }

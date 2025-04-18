@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Middleware;
 /// Rate limiting middleware using token bucket algorithm per IP address.
 /// Prevents abuse by limiting requests per client within a time window.
 /// </summary>
-sealed public class RateLimitingMiddleware
+public sealed class RateLimitingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RateLimitOptions _options;
@@ -49,7 +49,7 @@ sealed public class RateLimitingMiddleware
     }
 }
 
-sealed public class RateLimitBucket
+public sealed class RateLimitBucket
 {
     private readonly int _capacity;
     private double _tokens;

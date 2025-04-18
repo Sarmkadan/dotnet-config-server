@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class ConfigurationDiffTests
+public sealed class ConfigurationDiffTests
 {
     private static ConfigurationDiff CreateEmptyDiff() => new()
     {

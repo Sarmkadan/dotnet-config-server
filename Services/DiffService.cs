@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for generating and managing configuration version diffs
 /// </summary>
-sealed public class DiffService : IDiffService
+public sealed class DiffService : IDiffService
 {
     private readonly IConfigurationDiffRepository _diffRepository;
     private readonly IConfigurationVersionRepository _versionRepository;

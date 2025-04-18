@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-sealed public class ApplicationsController : ControllerBase
+public sealed class ApplicationsController : ControllerBase
 {
     private readonly IApplicationRepository _repository;
     private readonly IConfigurationRepository _configRepository;
@@ -191,7 +191,7 @@ sealed public class ApplicationsController : ControllerBase
     }
 }
 
-sealed public class PaginatedResult<T>
+public sealed class PaginatedResult<T>
 {
     public List<T> Items { get; set; } = new();
     public int Page { get; set; }

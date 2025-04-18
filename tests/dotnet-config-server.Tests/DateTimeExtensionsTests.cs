@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class DateTimeExtensionsTests
+public sealed class DateTimeExtensionsTests
 {
     // ── ToRelativeTime ───────────────────────────────────────────────────────
 

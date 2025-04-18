@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Examples
     /// Demonstrates configuration versioning, comparison, and rollback operations.
     /// Versions allow you to track all configuration changes and roll back if needed.
     /// </summary>
-    sealed public class VersioningAndRollback
+    public sealed class VersioningAndRollback
     {
         private readonly HttpClient _httpClient;
 
@@ -281,7 +281,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    sealed public class ConfigurationVersion
+    public sealed class ConfigurationVersion
     {
         public string Id { get; set; }
         public int Version { get; set; }
@@ -292,7 +292,7 @@ namespace DotnetConfigServer.Examples
         public DateTime PublishedAt { get; set; }
     }
 
-    sealed public class ConfigurationDiff
+    public sealed class ConfigurationDiff
     {
         public string Key { get; set; }
         public string ChangeType { get; set; } // Added, Modified, Deleted
@@ -300,14 +300,14 @@ namespace DotnetConfigServer.Examples
         public string NewValue { get; set; }
     }
 
-    sealed public class PagedResult<T>
+    public sealed class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
     }
 
     // Example usage
-    sealed public class Program
+    public sealed class Program
     {
         public static async Task Main(string[] args)
         {

@@ -16,7 +16,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class ChangeRequestServiceTests
+public sealed class ChangeRequestServiceTests
 {
     private readonly Mock<IChangeRequestRepository> _repositoryMock;
     private readonly Mock<IConfigurationService> _configServiceMock;

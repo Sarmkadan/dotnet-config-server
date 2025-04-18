@@ -21,7 +21,7 @@ namespace DotnetConfigServer.Tests;
 /// Integration tests covering configuration inheritance: child configs that override
 /// parent keys, and detection of circular dependency chains.
 /// </summary>
-sealed public class ConfigurationInheritanceIntegrationTests
+public sealed class ConfigurationInheritanceIntegrationTests
 {
     private readonly Mock<IConfigurationRepository> _configRepoMock;
     private readonly Mock<IConfigurationKeyRepository> _keyRepoMock;

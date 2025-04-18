@@ -22,7 +22,7 @@ namespace DotnetConfigServer.Tests;
 /// Integration tests covering the encryption lifecycle: key generation, encrypt/decrypt,
 /// key rotation, and re-encryption of stored values.
 /// </summary>
-sealed public class EncryptionWorkflowIntegrationTests
+public sealed class EncryptionWorkflowIntegrationTests
 {
     private readonly Mock<IEncryptionKeyRepository> _keyRepositoryMock;
     private readonly Mock<IConfigurationRepository> _configRepoMock;

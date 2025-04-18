@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Executes rollbacks and stores rollback metadata in the audit log.
 /// </summary>
-sealed public class RollbackService : IRollbackService
+public sealed class RollbackService : IRollbackService
 {
     private readonly IVersioningService _versioningService;
     private readonly IAuditLogRepository _auditLogRepository;

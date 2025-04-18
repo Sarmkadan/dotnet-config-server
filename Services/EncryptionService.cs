@@ -16,7 +16,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for encryption and decryption operations
 /// </summary>
-sealed public class EncryptionService : IEncryptionService
+public sealed class EncryptionService : IEncryptionService
 {
     private readonly IEncryptionKeyRepository _keyRepository;
     private readonly ILogger<EncryptionService> _logger;

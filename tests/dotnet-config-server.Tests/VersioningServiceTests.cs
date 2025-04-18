@@ -16,7 +16,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class VersioningServiceTests
+public sealed class VersioningServiceTests
 {
     private readonly Mock<IConfigurationVersionRepository> _versionRepositoryMock;
     private readonly Mock<IConfigurationRepository> _configRepositoryMock;

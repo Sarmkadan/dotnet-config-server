@@ -27,7 +27,7 @@ public enum ValidationRuleType
 /// <summary>
 /// Represents a reusable configuration validation rule.
 /// </summary>
-sealed public class ValidationRule
+public sealed class ValidationRule
 {
     /// <summary>Gets or sets the rule identifier.</summary>
     [Key]
@@ -74,7 +74,7 @@ sealed public class ValidationRule
 /// <summary>
 /// Represents the result of validating a configuration against active rules.
 /// </summary>
-sealed public class ValidationRuleResult
+public sealed class ValidationRuleResult
 {
     /// <summary>Gets or sets whether the configuration is valid.</summary>
     public bool IsValid { get; set; }
@@ -86,7 +86,7 @@ sealed public class ValidationRuleResult
 /// <summary>
 /// Represents a single validation rule violation.
 /// </summary>
-sealed public class ValidationViolation
+public sealed class ValidationViolation
 {
     /// <summary>Gets or sets the key name that violated the rule.</summary>
     public string KeyName { get; set; } = string.Empty;

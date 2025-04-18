@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an application that can have configurations
 /// </summary>
-sealed public class Application
+public sealed class Application
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -163,7 +163,7 @@ sealed public class Application
 /// <summary>
 /// Summary view of an application
 /// </summary>
-sealed public class ApplicationSummary
+public sealed class ApplicationSummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

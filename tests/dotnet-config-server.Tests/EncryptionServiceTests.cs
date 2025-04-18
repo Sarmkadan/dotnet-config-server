@@ -17,7 +17,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class EncryptionServiceTests
+public sealed class EncryptionServiceTests
 {
     private readonly Mock<IEncryptionKeyRepository> _keyRepositoryMock;
     private readonly Mock<ILogger<EncryptionService>> _loggerMock;

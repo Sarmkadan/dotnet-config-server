@@ -28,7 +28,7 @@ public class ConfigurationException : DotnetConfigServerException
 /// <summary>
 /// Thrown when a requested configuration is not found
 /// </summary>
-sealed public class ConfigurationNotFoundException : ConfigurationException
+public sealed class ConfigurationNotFoundException : ConfigurationException
 {
     public ConfigurationNotFoundException(string configId) : base($"Configuration '{configId}' not found", "CONFIG_NOT_FOUND", new { ConfigurationId = configId })
     {
@@ -42,7 +42,7 @@ sealed public class ConfigurationNotFoundException : ConfigurationException
 /// <summary>
 /// Thrown when a configuration key is not found
 /// </summary>
-sealed public class ConfigurationKeyNotFoundException : ConfigurationException
+public sealed class ConfigurationKeyNotFoundException : ConfigurationException
 {
     public ConfigurationKeyNotFoundException(string key) : base($"Configuration key '{key}' not found", "KEY_NOT_FOUND", new { Key = key })
     {
@@ -56,7 +56,7 @@ sealed public class ConfigurationKeyNotFoundException : ConfigurationException
 /// <summary>
 /// Thrown when encryption or decryption fails
 /// </summary>
-sealed public class EncryptionException : ConfigurationException
+public sealed class EncryptionException : ConfigurationException
 {
     public EncryptionException(string message) : base(message, "ENCRYPTION_FAILED")
     {
@@ -71,7 +71,7 @@ sealed public class EncryptionException : ConfigurationException
 /// <summary>
 /// Thrown when a requested configuration snapshot is not found
 /// </summary>
-sealed public class ConfigurationSnapshotNotFoundException : ConfigurationException
+public sealed class ConfigurationSnapshotNotFoundException : ConfigurationException
 {
     public ConfigurationSnapshotNotFoundException(string snapshotId) : base($"Configuration snapshot '{snapshotId}' not found", "SNAPSHOT_NOT_FOUND", new { SnapshotId = snapshotId })
     {
@@ -85,7 +85,7 @@ sealed public class ConfigurationSnapshotNotFoundException : ConfigurationExcept
 /// <summary>
 /// Thrown when a requested configuration version is not found
 /// </summary>
-sealed public class ConfigurationVersionNotFoundException : ConfigurationException
+public sealed class ConfigurationVersionNotFoundException : ConfigurationException
 {
     public ConfigurationVersionNotFoundException(string versionId) : base($"Configuration version '{versionId}' not found", "VERSION_NOT_FOUND", new { VersionId = versionId })
     {
@@ -99,7 +99,7 @@ sealed public class ConfigurationVersionNotFoundException : ConfigurationExcepti
 /// <summary>
 /// Thrown when a webhook operation fails
 /// </summary>
-sealed public class WebhookException : ConfigurationException
+public sealed class WebhookException : ConfigurationException
 {
     public WebhookException(string message) : base(message, "WEBHOOK_ERROR")
     {

@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class DictionaryExtensionsTests
+public sealed class DictionaryExtensionsTests
 {
     // ── GetValueOrDefault ────────────────────────────────────────────────────
 

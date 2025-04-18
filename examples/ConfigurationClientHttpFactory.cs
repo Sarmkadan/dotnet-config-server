@@ -16,7 +16,7 @@ namespace DotnetConfigServer.Examples
     /// Factory for creating and managing HTTP clients for Config Server API.
     /// Handles authentication, retry logic, and error handling.
     /// </summary>
-    sealed public class ConfigurationClientFactory
+    public sealed class ConfigurationClientFactory
     {
         private readonly string _baseUrl;
         private readonly string _apiKey;
@@ -150,7 +150,7 @@ namespace DotnetConfigServer.Examples
     /// <summary>
     /// Implementation of strongly-typed client.
     /// </summary>
-    sealed public class ConfigurationServerClient : IConfigurationServerClient
+    public sealed class ConfigurationServerClient : IConfigurationServerClient
     {
         private readonly HttpClient _httpClient;
 
@@ -206,7 +206,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // DTOs
-    sealed public class Configuration
+    public sealed class Configuration
     {
         public Guid Id { get; set; }
         public Guid ApplicationId { get; set; }
@@ -215,7 +215,7 @@ namespace DotnetConfigServer.Examples
         public System.Collections.Generic.List<ConfigurationKey> Keys { get; set; } = new();
     }
 
-    sealed public class ConfigurationKey
+    public sealed class ConfigurationKey
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -224,14 +224,14 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    sealed public class CreateConfigurationRequest
+    public sealed class CreateConfigurationRequest
     {
         public Guid ApplicationId { get; set; }
         public string Environment { get; set; }
         public string Description { get; set; }
     }
 
-    sealed public class ConfigurationKeyRequest
+    public sealed class ConfigurationKeyRequest
     {
         public string Key { get; set; }
         public string Value { get; set; }

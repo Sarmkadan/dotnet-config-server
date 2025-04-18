@@ -19,7 +19,7 @@ namespace DotnetConfigServer.Tests;
 /// <summary>
 /// Integration tests demonstrating end-to-end configuration workflows
 /// </summary>
-sealed public class ConfigurationWorkflowIntegrationTests
+public sealed class ConfigurationWorkflowIntegrationTests
 {
     private readonly Mock<IConfigurationRepository> _configRepositoryMock;
     private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;

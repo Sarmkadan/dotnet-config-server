@@ -9,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Thrown when database operation fails
 /// </summary>
-sealed public class DatabaseException : DotnetConfigServerException
+public sealed class DatabaseException : DotnetConfigServerException
 {
     public DatabaseException(string message) : base(message, "DATABASE_ERROR")
     {

@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-sealed public class ComparisonServiceTests
+public sealed class ComparisonServiceTests
 {
     private readonly ComparisonService _sut;
 

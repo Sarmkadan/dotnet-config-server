@@ -21,7 +21,7 @@ public abstract class DomainEvent
 /// <summary>
 /// Event raised when a configuration is created.
 /// </summary>
-sealed public class ConfigurationCreatedEvent : DomainEvent
+public sealed class ConfigurationCreatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -32,7 +32,7 @@ sealed public class ConfigurationCreatedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration is updated.
 /// </summary>
-sealed public class ConfigurationUpdatedEvent : DomainEvent
+public sealed class ConfigurationUpdatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -43,7 +43,7 @@ sealed public class ConfigurationUpdatedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration key value is changed.
 /// </summary>
-sealed public class ConfigurationKeyChangedEvent : DomainEvent
+public sealed class ConfigurationKeyChangedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid KeyId { get; set; }
@@ -56,7 +56,7 @@ sealed public class ConfigurationKeyChangedEvent : DomainEvent
 /// <summary>
 /// Event raised when a configuration is deleted.
 /// </summary>
-sealed public class ConfigurationDeletedEvent : DomainEvent
+public sealed class ConfigurationDeletedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid ApplicationId { get; set; }
@@ -66,7 +66,7 @@ sealed public class ConfigurationDeletedEvent : DomainEvent
 /// <summary>
 /// Event raised when a new configuration version is created.
 /// </summary>
-sealed public class ConfigurationVersionCreatedEvent : DomainEvent
+public sealed class ConfigurationVersionCreatedEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid VersionId { get; set; }
@@ -77,7 +77,7 @@ sealed public class ConfigurationVersionCreatedEvent : DomainEvent
 /// <summary>
 /// Event raised when configuration is rolled back to a previous version.
 /// </summary>
-sealed public class ConfigurationRolledBackEvent : DomainEvent
+public sealed class ConfigurationRolledBackEvent : DomainEvent
 {
     public Guid ConfigurationId { get; set; }
     public Guid FromVersionId { get; set; }
@@ -88,7 +88,7 @@ sealed public class ConfigurationRolledBackEvent : DomainEvent
 /// <summary>
 /// Event raised when a webhook subscription is created or updated.
 /// </summary>
-sealed public class WebhookSubscriptionChangedEvent : DomainEvent
+public sealed class WebhookSubscriptionChangedEvent : DomainEvent
 {
     public Guid SubscriptionId { get; set; }
     public Guid ApplicationId { get; set; }

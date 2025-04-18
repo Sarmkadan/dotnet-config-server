@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/configurations/{configurationId}/diff-viewer")]
 [Produces("application/json")]
-sealed public class DiffViewerController : ControllerBase
+public sealed class DiffViewerController : ControllerBase
 {
     private readonly IDiffViewerService _diffViewerService;
     private readonly ILogger<DiffViewerController> _logger;

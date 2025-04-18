@@ -28,7 +28,7 @@ public interface IComparisonService
     SummaryOfChanges GetSummary<T>(T original, T modified) where T : notnull;
 }
 
-sealed public class ComparisonService : IComparisonService
+public sealed class ComparisonService : IComparisonService
 {
     private readonly ILogger<ComparisonService> _logger;
 
@@ -89,13 +89,13 @@ sealed public class ComparisonService : IComparisonService
     }
 }
 
-sealed public class ComparisonResult
+public sealed class ComparisonResult
 {
     public string ItemType { get; set; } = string.Empty;
     public List<PropertyChange> Changes { get; set; } = new();
 }
 
-sealed public class PropertyChange
+public sealed class PropertyChange
 {
     public string PropertyName { get; set; } = string.Empty;
     public string OriginalValue { get; set; } = string.Empty;
@@ -103,7 +103,7 @@ sealed public class PropertyChange
     public string PropertyType { get; set; } = string.Empty;
 }
 
-sealed public class SummaryOfChanges
+public sealed class SummaryOfChanges
 {
     public int TotalChanges { get; set; }
     public List<string> ChangedFields { get; set; } = new();
