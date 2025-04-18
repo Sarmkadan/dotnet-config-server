@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Manages validation rules and validates configuration values against them.
 /// </summary>
-sealed public class ValidationRuleService : IValidationRuleService
+public sealed class ValidationRuleService : IValidationRuleService
 {
     private readonly IValidationRuleRepository _validationRuleRepository;
     private readonly IConfigurationService _configurationService;
@@ -153,10 +153,10 @@ sealed public class ValidationRuleService : IValidationRuleService
             ValidationRuleType.Regex => EvaluateValueRule(rule, matchingKeys, value => Regex.IsMatch(value, rule.Parameters ?? string.Empty),
                 $"Value must match regex pattern '{rule.Parameters}'."),
             ValidationRuleType.MinLength => EvaluateValueRule(rule, matchingKeys,
-                value => value.Length >= int.Parse(rule.Parameters ?? "0"),
+                value => value.Length >= int.Parse(rule.Parameters ?? "0", System.Globalization.CultureInfo.InvariantCulture),
                 $"Value must be at least {rule.Parameters} characters long."),
             ValidationRuleType.MaxLength => EvaluateValueRule(rule, matchingKeys,
-                value => value.Length <= int.Parse(rule.Parameters ?? "0"),
+                value => value.Length <= int.Parse(rule.Parameters ?? "0", System.Globalization.CultureInfo.InvariantCulture),
                 $"Value must be at most {rule.Parameters} characters long."),
             ValidationRuleType.AllowedValues => EvaluateAllowedValuesRule(rule, matchingKeys),
             ValidationRuleType.NumericRange => EvaluateNumericRangeRule(rule, matchingKeys),
@@ -353,7 +353,7 @@ sealed public class ValidationRuleService : IValidationRuleService
 
     private static void ValidateIntegerParameters(ValidationRule rule, Dictionary<string, List<string>> errors)
     {
-        if (!int.TryParse(rule.Parameters, out _))
+        if (!int.TryParse(rule.Parameters, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out _))
             errors["Parameters"] = new List<string> { "Length rule requires an integer parameter." };
     }
 

@@ -51,7 +51,7 @@ public static class DictionaryExtensions
     public static int RemoveWhere<TKey, TValue>(this Dictionary<TKey, TValue> source, Func<KeyValuePair<TKey, TValue>, bool> predicate)
         where TKey : notnull
     {
-        var keysToRemove = source.Where(predicate).Select(kvp => kvp.Key).ToList();
+        var keysToRemove = Enumerable.Where(source, predicate).Select(kvp => kvp.Key).ToList();
         return keysToRemove.Count(key => source.Remove(key));
     }
 
@@ -84,7 +84,7 @@ public static class DictionaryExtensions
     public static Dictionary<TKey, TValue> Where<TKey, TValue>(this Dictionary<TKey, TValue> source, Func<KeyValuePair<TKey, TValue>, bool> predicate)
         where TKey : notnull
     {
-        return source.Where(predicate).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        return Enumerable.Where(source, predicate).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
     }
 
     /// <summary>

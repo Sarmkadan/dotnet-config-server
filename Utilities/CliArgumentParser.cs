@@ -10,7 +10,7 @@ namespace DotnetConfigServer.Utilities;
 /// Parser for command-line arguments.
 /// Provides utilities for parsing and validating CLI arguments.
 /// </summary>
-sealed public class CliArgumentParser
+public sealed class CliArgumentParser
 {
     private readonly Dictionary<string, string> _arguments;
     private readonly ILogger<CliArgumentParser> _logger;
@@ -51,7 +51,7 @@ sealed public class CliArgumentParser
     public int? GetIntValue(string key)
     {
         var value = GetValue(key);
-        return int.TryParse(value, out var result) ? result : null;
+        return int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : null;
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ Examples:
 /// <summary>
 /// Represents parsed CLI arguments configuration.
 /// </summary>
-sealed public class CliConfig
+public sealed class CliConfig
 {
     public int Port { get; set; } = 5000;
     public string Environment { get; set; } = "Development";

@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Integration;
 /// HTTP client for calling external APIs.
 /// Handles retries, timeouts, and error handling with proper logging.
 /// </summary>
-sealed public class ExternalApiClient
+public sealed class ExternalApiClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<ExternalApiClient> _logger;
@@ -34,10 +34,12 @@ sealed public class ExternalApiClient
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, url);
-            AddHeaders(request, headers);
-
-            var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
+            using var response = await ExecuteWithRetryAsync(async () =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                AddHeaders(request, headers);
+                return await _httpClient.SendAsync(request);
+            });
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<T>();
@@ -56,11 +58,15 @@ sealed public class ExternalApiClient
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, url);
-            request.Content = JsonContent.Create(data);
-            AddHeaders(request, headers);
-
-            var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
+            using var response = await ExecuteWithRetryAsync(async () =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = JsonContent.Create(data)
+                };
+                AddHeaders(request, headers);
+                return await _httpClient.SendAsync(request);
+            });
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
@@ -79,11 +85,15 @@ sealed public class ExternalApiClient
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Put, url);
-            request.Content = JsonContent.Create(data);
-            AddHeaders(request, headers);
-
-            var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
+            using var response = await ExecuteWithRetryAsync(async () =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Put, url)
+                {
+                    Content = JsonContent.Create(data)
+                };
+                AddHeaders(request, headers);
+                return await _httpClient.SendAsync(request);
+            });
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
@@ -102,10 +112,12 @@ sealed public class ExternalApiClient
     {
         try
         {
-            var request = new HttpRequestMessage(HttpMethod.Delete, url);
-            AddHeaders(request, headers);
-
-            var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
+            using var response = await ExecuteWithRetryAsync(async () =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+                AddHeaders(request, headers);
+                return await _httpClient.SendAsync(request);
+            });
             response.EnsureSuccessStatusCode();
         }
         catch (Exception ex)
@@ -117,6 +129,7 @@ sealed public class ExternalApiClient
 
     /// <summary>
     /// Makes a request with automatic retry logic.
+    /// The operation must create a fresh request per attempt because a request message cannot be resent.
     /// </summary>
     private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<Task<HttpResponseMessage>> operation)
     {
@@ -155,7 +168,7 @@ sealed public class ExternalApiClient
     }
 }
 
-sealed public class ExternalApiClientOptions
+public sealed class ExternalApiClientOptions
 {
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
     public int MaxRetries { get; set; } = 3;

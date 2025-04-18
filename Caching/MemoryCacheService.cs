@@ -12,7 +12,7 @@ namespace DotnetConfigServer.Caching;
 /// In-memory cache implementation using ConcurrentDictionary.
 /// Suitable for single-instance deployments. For distributed scenarios, use Redis.
 /// </summary>
-sealed public class MemoryCacheService : ICacheService
+public sealed class MemoryCacheService : ICacheService
 {
     private readonly ConcurrentDictionary<string, CacheEntry> _cache;
     private readonly ILogger<MemoryCacheService> _logger;
@@ -113,8 +113,14 @@ sealed public class MemoryCacheService : ICacheService
     {
         lock (_statsLock)
         {
-            _stats.Size = _cache.Count;
-            return Task.FromResult(_stats);
+            return Task.FromResult(new CacheStats
+            {
+                Hits = _stats.Hits,
+                Misses = _stats.Misses,
+                Sets = _stats.Sets,
+                Deletes = _stats.Deletes,
+                Size = _cache.Count
+            });
         }
     }
 

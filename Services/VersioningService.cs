@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing configuration versions
 /// </summary>
-sealed public class VersioningService : IVersioningService
+public sealed class VersioningService : IVersioningService
 {
     private readonly IConfigurationVersionRepository _versionRepository;
     private readonly IConfigurationRepository _configRepository;
@@ -153,7 +153,7 @@ sealed public class VersioningService : IVersioningService
         if (config is not null)
         {
             config.CurrentVersionId = version.Id;
-            config.VersionNumber = int.Parse(version.VersionNumber.Split('.')[0]);
+            config.VersionNumber = int.Parse(version.VersionNumber.Split('.')[0], System.Globalization.CultureInfo.InvariantCulture);
             await _configRepository.UpdateAsync(config);
             await _configRepository.SaveChangesAsync();
         }

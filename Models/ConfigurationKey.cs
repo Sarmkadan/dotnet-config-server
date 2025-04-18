@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a single key-value pair within a configuration
 /// </summary>
-sealed public class ConfigurationKey
+public sealed class ConfigurationKey
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -107,14 +107,13 @@ sealed public class ConfigurationKey
 
         if (string.IsNullOrWhiteSpace(Key))
             errors.AddError("Key", "Key is required");
-
-        if (!System.Text.RegularExpressions.Regex.IsMatch(Key, AppConstants.Validation.KeyPattern))
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(Key, AppConstants.Validation.KeyPattern))
             errors.AddError("Key", "Key can only contain alphanumeric characters, underscores, hyphens, and dots");
 
         if (Key?.Length > AppConstants.Configuration.MaxKeyLength)
             errors.AddError("Key", $"Key cannot exceed {AppConstants.Configuration.MaxKeyLength} characters");
 
-        if (string.IsNullOrEmpty(Value) && !IsRequired)
+        if (IsRequired && string.IsNullOrEmpty(Value))
             errors.AddError("Value", "Value is required");
 
         if (Value?.Length > AppConstants.Configuration.MaxValueLength)
@@ -200,11 +199,11 @@ sealed public class ConfigurationKey
             return ValueType switch
             {
                 ConfigurationValueType.String => Value,
-                ConfigurationValueType.Integer => int.Parse(Value),
+                ConfigurationValueType.Integer => int.Parse(Value, System.Globalization.CultureInfo.InvariantCulture),
                 ConfigurationValueType.Boolean => bool.Parse(Value),
                 ConfigurationValueType.Json => System.Text.Json.JsonSerializer.Deserialize<object>(Value),
-                ConfigurationValueType.Decimal => decimal.Parse(Value),
-                ConfigurationValueType.DateTime => DateTime.Parse(Value),
+                ConfigurationValueType.Decimal => decimal.Parse(Value, System.Globalization.CultureInfo.InvariantCulture),
+                ConfigurationValueType.DateTime => DateTime.Parse(Value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind),
                 _ => Value
             };
         }
@@ -257,7 +256,7 @@ sealed public class ConfigurationKey
 /// <summary>
 /// Summary view of a configuration key
 /// </summary>
-sealed public class ConfigurationKeySummary
+public sealed class ConfigurationKeySummary
 {
     public Guid Id { get; set; }
     public string Key { get; set; } = string.Empty;

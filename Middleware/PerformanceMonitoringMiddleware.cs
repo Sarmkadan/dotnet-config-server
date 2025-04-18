@@ -13,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Middleware that monitors performance metrics like request duration,
 /// memory usage, and CPU time. Useful for identifying bottlenecks in the application.
 /// </summary>
-sealed public class PerformanceMonitoringMiddleware
+public sealed class PerformanceMonitoringMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<PerformanceMonitoringMiddleware> _logger;
@@ -67,7 +67,7 @@ sealed public class PerformanceMonitoringMiddleware
     }
 }
 
-sealed public class PerformanceMetrics
+public sealed class PerformanceMetrics
 {
     private readonly ConcurrentQueue<RequestMetric> _metrics = new();
     private readonly int _maxMetrics = 1000;
@@ -100,7 +100,8 @@ sealed public class PerformanceMetrics
         if (path is not null)
             query = query.Where(m => m.Path == path);
 
-        return query.Any() ? query.Average(m => m.DurationMs) : 0;
+        var snapshot = query.ToList();
+        return snapshot.Count > 0 ? snapshot.Average(m => m.DurationMs) : 0;
     }
 
     public void LogSummary()
@@ -122,7 +123,7 @@ sealed public class PerformanceMetrics
     }
 }
 
-sealed public class RequestMetric
+public sealed class RequestMetric
 {
     public string Path { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;

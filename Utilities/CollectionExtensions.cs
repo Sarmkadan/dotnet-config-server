@@ -89,7 +89,7 @@ public static class CollectionExtensions
     /// </summary>
     public static IEnumerable<T> SkipLast<T>(this IEnumerable<T> source)
     {
-        var enumerator = source.GetEnumerator();
+        using var enumerator = source.GetEnumerator();
         if (!enumerator.MoveNext())
             yield break;
 
@@ -122,7 +122,7 @@ public static class CollectionExtensions
     /// </summary>
     public static IEnumerable<IGrouping<TKey, T>> GroupConsecutive<T, TKey>(this IEnumerable<T> source, Func<T, TKey> keySelector)
     {
-        var enumerator = source.GetEnumerator();
+        using var enumerator = source.GetEnumerator();
         if (!enumerator.MoveNext())
             yield break;
 
@@ -196,7 +196,7 @@ public static class CollectionExtensions
 /// <summary>
 /// Helper class for consecutive grouping.
 /// </summary>
-sealed public class ConsecutiveGroup<TKey, T> : IGrouping<TKey, T>
+public sealed class ConsecutiveGroup<TKey, T> : IGrouping<TKey, T>
 {
     private readonly List<T> _items;
 

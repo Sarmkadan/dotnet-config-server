@@ -12,7 +12,7 @@ namespace DotnetConfigServer.Events;
 /// In-memory implementation of the event bus.
 /// Manages subscription and publication of domain events.
 /// </summary>
-sealed public class EventBus : IEventBus
+public sealed class EventBus : IEventBus
 {
     private readonly ConcurrentDictionary<Type, List<Delegate>> _subscribers = new();
     private readonly ILogger<EventBus> _logger;
@@ -27,17 +27,23 @@ sealed public class EventBus : IEventBus
     {
         var eventType = typeof(T);
 
-        if (!_subscribers.TryGetValue(eventType, out var handlers))
+        List<Delegate> snapshot;
+        lock (_lock)
         {
-            _logger.LogDebug("No handlers registered for event type {EventType}", eventType.Name);
-            return;
+            if (!_subscribers.TryGetValue(eventType, out var handlers))
+            {
+                _logger.LogDebug("No handlers registered for event type {EventType}", eventType.Name);
+                return;
+            }
+
+            snapshot = handlers.ToList();
         }
 
-        _logger.LogInformation("Publishing event {EventType} with {HandlerCount} handlers", eventType.Name, handlers.Count);
+        _logger.LogInformation("Publishing event {EventType} with {HandlerCount} handlers", eventType.Name, snapshot.Count);
 
         var tasks = new List<Task>();
 
-        foreach (var handler in handlers.ToList())
+        foreach (var handler in snapshot)
         {
             try
             {
@@ -99,9 +105,12 @@ sealed public class EventBus : IEventBus
     {
         var eventType = typeof(T);
 
-        if (_subscribers.TryGetValue(eventType, out var handlers))
+        lock (_lock)
         {
-            return handlers.OfType<Func<T, Task>>();
+            if (_subscribers.TryGetValue(eventType, out var handlers))
+            {
+                return handlers.OfType<Func<T, Task>>().ToList();
+            }
         }
 
         return Enumerable.Empty<Func<T, Task>>();

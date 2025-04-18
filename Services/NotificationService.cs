@@ -20,7 +20,7 @@ public interface INotificationService
 /// <summary>
 /// Notification object.
 /// </summary>
-sealed public class Notification
+public sealed class Notification
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Type { get; set; } = string.Empty;
@@ -35,7 +35,7 @@ sealed public class Notification
 /// This service could integrate with external notification systems (e.g., email, SMS, push notifications).
 /// For now, it logs notifications.
 /// </summary>
-sealed public class NotificationService : INotificationService
+public sealed class NotificationService : INotificationService
 {
     private readonly ILogger<NotificationService> _logger;
 
@@ -46,6 +46,8 @@ sealed public class NotificationService : INotificationService
 
     public Task NotifyAsync(Notification notification)
     {
+        ArgumentNullException.ThrowIfNull(notification);
+
         _logger.LogInformation(
             "Sending notification (Type: {Type}, Severity: {Severity}, Message: {Message}, Metadata: {Metadata})",
             notification.Type, notification.Severity, notification.Message,
@@ -55,6 +57,9 @@ sealed public class NotificationService : INotificationService
 
     public Task NotifyAsync(string type, object payload)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(type);
+        ArgumentNullException.ThrowIfNull(payload);
+
         _logger.LogInformation("Sending notification (Type: {Type}, Payload: {Payload})",
             type, JsonSerializer.Serialize(payload));
         return Task.CompletedTask;
