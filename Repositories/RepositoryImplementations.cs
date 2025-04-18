@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for ConfigurationKey entity
 /// </summary>
-sealed public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey>, IConfigurationKeyRepository
+public sealed class ConfigurationKeyRepository : BaseRepository<ConfigurationKey>, IConfigurationKeyRepository
 {
     public ConfigurationKeyRepository(ApplicationDbContext context, ILogger<ConfigurationKeyRepository> logger)
         : base(context, logger) { }
@@ -58,7 +58,7 @@ sealed public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey
 /// <summary>
 /// Repository for ConfigurationVersion entity
 /// </summary>
-sealed public class ConfigurationVersionRepository : BaseRepository<ConfigurationVersion>, IConfigurationVersionRepository
+public sealed class ConfigurationVersionRepository : BaseRepository<ConfigurationVersion>, IConfigurationVersionRepository
 {
     public ConfigurationVersionRepository(ApplicationDbContext context, ILogger<ConfigurationVersionRepository> logger)
         : base(context, logger) { }
@@ -80,12 +80,21 @@ sealed public class ConfigurationVersionRepository : BaseRepository<Configuratio
         return await _dbSet.FirstOrDefaultAsync(v =>
             v.ConfigurationId == configurationId && v.VersionNumber == versionNumber);
     }
+
+    public async Task<List<ConfigurationVersion>> GetOlderThanAsync(DateTime cutoff)
+    {
+        return await _dbSet.Where(v =>
+                v.CreatedAt < cutoff &&
+                v.Status != ConfigurationVersionStatus.Active &&
+                v.Status != ConfigurationVersionStatus.Archived)
+            .ToListAsync();
+    }
 }
 
 /// <summary>
 /// Repository for WebhookSubscription entity
 /// </summary>
-sealed public class WebhookSubscriptionRepository : BaseRepository<WebhookSubscription>, IWebhookSubscriptionRepository
+public sealed class WebhookSubscriptionRepository : BaseRepository<WebhookSubscription>, IWebhookSubscriptionRepository
 {
     public WebhookSubscriptionRepository(ApplicationDbContext context, ILogger<WebhookSubscriptionRepository> logger)
         : base(context, logger) { }
@@ -101,12 +110,22 @@ sealed public class WebhookSubscriptionRepository : BaseRepository<WebhookSubscr
         return await _dbSet.Where(w => w.IsActive && w.Status == WebhookStatus.Active)
             .ToListAsync();
     }
+
+    public async Task<List<WebhookSubscription>> GetByApplicationIdAsync(Guid applicationId)
+    {
+        var configurationIds = _context.Set<Configuration>()
+            .Where(c => c.ApplicationId == applicationId)
+            .Select(c => c.Id);
+
+        return await _dbSet.Where(w => configurationIds.Contains(w.ConfigurationId))
+            .OrderBy(w => w.Name).ToListAsync();
+    }
 }
 
 /// <summary>
 /// Repository for WebhookDelivery entity
 /// </summary>
-sealed public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>, IWebhookDeliveryRepository
+public sealed class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>, IWebhookDeliveryRepository
 {
     public WebhookDeliveryRepository(ApplicationDbContext context, ILogger<WebhookDeliveryRepository> logger)
         : base(context, logger) { }
@@ -134,12 +153,25 @@ sealed public class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>,
         return await _dbSet.FirstOrDefaultAsync(d =>
             d.EventId == eventId && d.WebhookSubscriptionId == subscriptionId);
     }
+
+    public async Task<List<WebhookDelivery>> GetFailedDeliveriesAsync(int maxRetries, int maxAgeHours)
+    {
+        var now = DateTime.UtcNow;
+        var oldestCreatedAt = now.AddHours(-maxAgeHours);
+
+        return await _dbSet.Where(d =>
+                d.Status == WebhookDeliveryStatus.Failed &&
+                d.AttemptNumber < maxRetries &&
+                d.CreatedAt >= oldestCreatedAt &&
+                (d.NextRetryAt == null || d.NextRetryAt <= now))
+            .OrderBy(d => d.NextRetryAt).ToListAsync();
+    }
 }
 
 /// <summary>
 /// Repository for ConfigurationDiff entity
 /// </summary>
-sealed public class ConfigurationDiffRepository : BaseRepository<ConfigurationDiff>, IConfigurationDiffRepository
+public sealed class ConfigurationDiffRepository : BaseRepository<ConfigurationDiff>, IConfigurationDiffRepository
 {
     public ConfigurationDiffRepository(ApplicationDbContext context, ILogger<ConfigurationDiffRepository> logger)
         : base(context, logger) { }
@@ -161,7 +193,7 @@ sealed public class ConfigurationDiffRepository : BaseRepository<ConfigurationDi
 /// <summary>
 /// Repository for AuditLog entity
 /// </summary>
-sealed public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
+public sealed class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepository
 {
     public AuditLogRepository(ApplicationDbContext context, ILogger<AuditLogRepository> logger)
         : base(context, logger) { }
@@ -183,12 +215,18 @@ sealed public class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepo
         return await _dbSet.Where(a => a.EntityType == entityType && a.EntityId == entityId)
             .OrderByDescending(a => a.Timestamp).ToListAsync();
     }
+
+    public async Task<List<AuditLog>> GetByEntityIdAsync(string entityId)
+    {
+        return await _dbSet.Where(a => a.EntityId == entityId)
+            .OrderByDescending(a => a.Timestamp).ToListAsync();
+    }
 }
 
 /// <summary>
 /// Repository for EncryptionKey entity
 /// </summary>
-sealed public class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEncryptionKeyRepository
+public sealed class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEncryptionKeyRepository
 {
     public EncryptionKeyRepository(ApplicationDbContext context, ILogger<EncryptionKeyRepository> logger)
         : base(context, logger) { }
@@ -221,7 +259,7 @@ sealed public class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEn
 /// <summary>
 /// Repository for Application entity
 /// </summary>
-sealed public class ApplicationRepository : BaseRepository<Application>, IApplicationRepository
+public sealed class ApplicationRepository : BaseRepository<Application>, IApplicationRepository
 {
     public ApplicationRepository(ApplicationDbContext context, ILogger<ApplicationRepository> logger)
         : base(context, logger) { }

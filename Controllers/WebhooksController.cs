@@ -18,7 +18,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-sealed public class WebhooksController : ControllerBase
+public sealed class WebhooksController : ControllerBase
 {
     private readonly IWebhookSubscriptionRepository _repository;
     private readonly IWebhookService _webhookService;
@@ -124,7 +124,7 @@ sealed public class WebhooksController : ControllerBase
                 return NotFound(new { error = "Webhook subscription not found" });
 
             existing.Url = subscription.Url;
-            existing.Events = subscription.Events;
+            existing.TriggerEvents = subscription.TriggerEvents;
             existing.Secret = subscription.Secret;
             existing.IsActive = subscription.IsActive;
             existing.UpdatedAt = DateTime.UtcNow;
@@ -209,8 +209,8 @@ sealed public class WebhooksController : ControllerBase
     {
         try
         {
-            var deliveries = await _repository.GetDeliveriesBySubscriptionAsync(id);
-            var recent = deliveries.OrderByDescending(d => d.DeliveredAt).Take(limit).ToList();
+            var deliveries = await _webhookService.GetDeliveriesAsync(id);
+            var recent = deliveries.OrderByDescending(d => d.SentAt ?? d.CreatedAt).Take(limit).ToList();
 
             return Ok(recent);
         }
@@ -222,7 +222,7 @@ sealed public class WebhooksController : ControllerBase
     }
 }
 
-sealed public class WebhookTestResult
+public sealed class WebhookTestResult
 {
     public bool Success { get; set; }
     public DateTime Timestamp { get; set; }

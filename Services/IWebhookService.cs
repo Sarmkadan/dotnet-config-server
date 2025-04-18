@@ -97,4 +97,19 @@ public interface IWebhookService
     /// <param name="eventType">The type of event.</param>
     /// <param name="payload">The domain event payload.</param>
     Task NotifyAsync(string eventType, DomainEvent payload);
+
+    /// <summary>
+    /// Retries a single webhook delivery.
+    /// </summary>
+    /// <param name="deliveryId">The ID of the delivery to retry.</param>
+    /// <returns>True if the delivery succeeded, otherwise false.</returns>
+    Task<bool> RetryWebhookDeliveryAsync(Guid deliveryId);
+
+    /// <summary>
+    /// Sends a test payload to a webhook subscription without recording a delivery.
+    /// </summary>
+    /// <param name="subscription">The subscription to test.</param>
+    /// <param name="payload">The test payload to send.</param>
+    /// <returns>True if the endpoint responded with a success status code.</returns>
+    Task<bool> TestWebhookAsync(WebhookSubscription subscription, object payload);
 }

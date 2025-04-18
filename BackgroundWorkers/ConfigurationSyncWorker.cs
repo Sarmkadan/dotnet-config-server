@@ -13,7 +13,7 @@ namespace DotnetConfigServer.BackgroundWorkers;
 /// Background worker that periodically syncs configuration state.
 /// Cleans up stale entries, archives old versions, and optimizes cache.
 /// </summary>
-sealed public class ConfigurationSyncWorker : BackgroundService
+public sealed class ConfigurationSyncWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ConfigurationSyncWorker> _logger;
@@ -61,7 +61,7 @@ sealed public class ConfigurationSyncWorker : BackgroundService
             var archivedCount = 0;
             foreach (var version in oldVersions)
             {
-                version.IsArchived = true;
+                version.Archive("system");
                 await versionRepository.UpdateAsync(version);
                 archivedCount++;
             }
@@ -97,17 +97,4 @@ sealed public class ConfigurationSyncWorker : BackgroundService
             throw;
         }
     }
-}
-
-/// <summary>
-/// Extension interface for repository to support sync operations.
-/// </summary>
-public interface IConfigurationVersionRepository : IRepository<ConfigurationVersion>
-{
-    Task<List<ConfigurationVersion>> GetOlderThanAsync(DateTime date);
-}
-
-public interface IConfigurationRepository : IRepository<Configuration>
-{
-    Task<List<Configuration>> GetDeletedBeforeAsync(DateTime date);
 }

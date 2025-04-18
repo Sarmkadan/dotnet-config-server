@@ -26,12 +26,6 @@
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="examples/**/*.cs" />
     <Compile Remove="benchmarks/**/*.cs" />
-    <Compile Remove="Events/EventHandlers.cs" />
-    <Compile Remove="BackgroundWorkers/ConfigurationSyncWorker.cs" />
-    <Compile Remove="BackgroundWorkers/WebhookRetryWorker.cs" />
-    <Compile Remove="Controllers/WebhooksController.cs" />
-    <Compile Remove="Controllers/AuditLogsController.cs" />
-    <Compile Remove="Infrastructure/ServiceExtensions.cs" />
   </ItemGroup>
 
   <ItemGroup>

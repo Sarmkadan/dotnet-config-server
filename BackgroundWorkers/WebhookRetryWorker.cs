@@ -14,7 +14,7 @@ namespace DotnetConfigServer.BackgroundWorkers;
 /// Background worker that retries failed webhook deliveries.
 /// Uses exponential backoff to avoid overwhelming external endpoints.
 /// </summary>
-sealed public class WebhookRetryWorker : BackgroundService
+public sealed class WebhookRetryWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<WebhookRetryWorker> _logger;
@@ -75,7 +75,7 @@ sealed public class WebhookRetryWorker : BackgroundService
             {
                 try
                 {
-                    var backoffDelay = GetExponentialBackoffDelay(delivery.RetryCount);
+                    var backoffDelay = GetExponentialBackoffDelay(delivery.AttemptNumber);
                     await Task.Delay(backoffDelay, cancellationToken);
 
                     var success = await webhookService.RetryWebhookDeliveryAsync(delivery.Id);
@@ -118,12 +118,4 @@ sealed public class WebhookRetryWorker : BackgroundService
         var delay = baseDelay * (int)Math.Pow(2, retryCount);
         return Math.Min(delay, maxDelay);
     }
-}
-
-/// <summary>
-/// Repository interface for webhook delivery operations.
-/// </summary>
-public interface IWebhookDeliveryRepository : IRepository<WebhookDelivery>
-{
-    Task<List<WebhookDelivery>> GetFailedDeliveriesAsync(int maxRetries, int maxAgeHours);
 }

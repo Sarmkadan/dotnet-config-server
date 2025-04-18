@@ -11,6 +11,8 @@ using DotnetConfigServer.Caching;
 using DotnetConfigServer.Events;
 using DotnetConfigServer.Services;
 using DotnetConfigServer.Integration;
+using DotnetConfigServer.Infrastructure;
+using DotnetConfigServer.BackgroundWorkers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +46,7 @@ try
     builder.Services.AddScoped<IRollbackService, RollbackService>();
     builder.Services.AddScoped<IValidationRuleService, ValidationRuleService>();
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
+    builder.Services.AddSingleton(new ExternalApiClientOptions());
     builder.Services.AddScoped<ExternalApiClient>();
     // Add HTTP clients
     builder.Services.AddHttpClient<ExternalApiClient>()
@@ -51,6 +54,14 @@ try
         {
             client.Timeout = TimeSpan.FromSeconds(30);
         });
+
+    builder.Services.AddDataServices(builder.Configuration);
+    builder.Services.AddBusinessServices();
+    builder.Services.AddWebhookClient();
+    builder.Services.AddSwaggerConfiguration();
+    builder.Services.AddScoped<ConfigurationEventHandlers>();
+    builder.Services.AddHostedService<ConfigurationSyncWorker>();
+    builder.Services.AddHostedService<WebhookRetryWorker>();
 
     builder.Services.AddControllers();
     builder.Services.AddOptions<DotnetConfigServerOptions>()
@@ -70,6 +81,35 @@ try
     builder.Services.AddHealthChecks();
 
     var app = builder.Build();
+
+    // Wire domain event handlers to the event bus
+    var eventBus = app.Services.GetRequiredService<IEventBus>();
+    var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+
+    eventBus.Subscribe<ConfigurationCreatedEvent>(async e =>
+    {
+        using var scope = scopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
+            .HandleConfigurationCreatedAsync(e);
+    });
+    eventBus.Subscribe<ConfigurationUpdatedEvent>(async e =>
+    {
+        using var scope = scopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
+            .HandleConfigurationUpdatedAsync(e);
+    });
+    eventBus.Subscribe<ConfigurationKeyChangedEvent>(async e =>
+    {
+        using var scope = scopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
+            .HandleConfigurationKeyChangedAsync(e);
+    });
+    eventBus.Subscribe<ConfigurationDeletedEvent>(async e =>
+    {
+        using var scope = scopeFactory.CreateScope();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
+            .HandleConfigurationDeletedAsync(e);
+    });
 
     // Configure middleware
     app.UseMiddleware<ErrorHandlingMiddleware>();

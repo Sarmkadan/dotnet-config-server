@@ -28,6 +28,7 @@ public interface IConfigurationRepository : IRepository<Models.Configuration>
     Task<Models.Configuration?> GetByNameAsync(string name, Guid applicationId);
     Task<List<Models.Configuration>> SearchAsync(string query, Guid? applicationId = null);
     Task<int> GetCountByApplicationAsync(Guid applicationId);
+    Task<List<Models.Configuration>> GetDeletedBeforeAsync(DateTime cutoff);
 }
 
 /// <summary>
@@ -49,6 +50,7 @@ public interface IConfigurationVersionRepository : IRepository<Models.Configurat
     Task<List<Models.ConfigurationVersion>> GetByConfigurationAsync(Guid configurationId);
     Task<Models.ConfigurationVersion?> GetActiveVersionAsync(Guid configurationId);
     Task<Models.ConfigurationVersion?> GetByVersionNumberAsync(Guid configurationId, string versionNumber);
+    Task<List<Models.ConfigurationVersion>> GetOlderThanAsync(DateTime cutoff);
 }
 
 /// <summary>
@@ -58,6 +60,7 @@ public interface IWebhookSubscriptionRepository : IRepository<Models.WebhookSubs
 {
     Task<List<Models.WebhookSubscription>> GetByConfigurationAsync(Guid configurationId);
     Task<List<Models.WebhookSubscription>> GetActiveWebhooksAsync();
+    Task<List<Models.WebhookSubscription>> GetByApplicationIdAsync(Guid applicationId);
 }
 
 /// <summary>
@@ -69,6 +72,7 @@ public interface IWebhookDeliveryRepository : IRepository<Models.WebhookDelivery
     Task<List<Models.WebhookDelivery>> GetFailedDeliveriesAsync();
     Task<List<Models.WebhookDelivery>> GetPendingDeliveriesAsync();
     Task<Models.WebhookDelivery?> GetByEventAndSubscriptionAsync(Guid eventId, Guid subscriptionId);
+    Task<List<Models.WebhookDelivery>> GetFailedDeliveriesAsync(int maxRetries, int maxAgeHours);
 }
 
 /// <summary>
@@ -88,6 +92,7 @@ public interface IAuditLogRepository : IRepository<Models.AuditLog>
     Task<List<Models.AuditLog>> GetByConfigurationAsync(Guid configurationId);
     Task<List<Models.AuditLog>> GetByUserAsync(string userId);
     Task<List<Models.AuditLog>> GetByEntityAsync(string entityType, string entityId);
+    Task<List<Models.AuditLog>> GetByEntityIdAsync(string entityId);
 }
 
 /// <summary>

@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Events;
 /// Event handlers that respond to domain events.
 /// These handlers perform side effects like cache invalidation and notifications.
 /// </summary>
-sealed public class ConfigurationEventHandlers
+public sealed class ConfigurationEventHandlers
 {
     private readonly ICacheService _cache;
     private readonly IWebhookService _webhookService;

@@ -86,24 +86,24 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection AddSwaggerConfiguration(this IServiceCollection services)
     {
-        services.AddOpenApi();
-        services.AddSwaggerGen(c =>
+        services.AddOpenApi(options =>
         {
-            c.SwaggerDoc("v1", new()
+            options.AddDocumentTransformer((document, context, cancellationToken) =>
             {
-                Title = "Dotnet Config Server API",
-                Version = "v1",
-                Description = "Centralized configuration server for .NET microservices",
-                Contact = new()
+                document.Info.Title = "Dotnet Config Server API";
+                document.Info.Version = "v1";
+                document.Info.Description = "Centralized configuration server for .NET microservices";
+                document.Info.Contact = new()
                 {
                     Name = "Vladyslav Zaiets",
                     Url = new Uri("https://sarmkadan.com")
-                },
-                License = new()
+                };
+                document.Info.License = new()
                 {
                     Name = "MIT",
                     Url = new Uri("https://opensource.org/licenses/MIT")
-                }
+                };
+                return Task.CompletedTask;
             });
         });
 

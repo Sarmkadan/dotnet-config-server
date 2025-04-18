@@ -17,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-sealed public class AuditLogsController : ControllerBase
+public sealed class AuditLogsController : ControllerBase
 {
     private readonly IAuditLogRepository _repository;
     private readonly ILogger<AuditLogsController> _logger;
@@ -43,7 +43,7 @@ sealed public class AuditLogsController : ControllerBase
             var logs = await _repository.GetByEntityIdAsync(entityId);
             var total = logs.Count;
             var items = logs
-                .OrderByDescending(l => l.CreatedAt)
+                .OrderByDescending(l => l.Timestamp)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -77,10 +77,10 @@ sealed public class AuditLogsController : ControllerBase
     {
         try
         {
-            var logs = await _repository.GetByUserIdAsync(userId);
+            var logs = await _repository.GetByUserAsync(userId);
             var total = logs.Count;
             var items = logs
-                .OrderByDescending(l => l.CreatedAt)
+                .OrderByDescending(l => l.Timestamp)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -118,17 +118,17 @@ sealed public class AuditLogsController : ControllerBase
 
             // Apply filters
             if (from.HasValue)
-                logs = logs.Where(l => l.CreatedAt >= from).ToList();
+                logs = logs.Where(l => l.Timestamp >= from).ToList();
 
             if (to.HasValue)
-                logs = logs.Where(l => l.CreatedAt <= to).ToList();
+                logs = logs.Where(l => l.Timestamp <= to).ToList();
 
             if (!string.IsNullOrEmpty(action))
-                logs = logs.Where(l => l.Action.Contains(action, StringComparison.OrdinalIgnoreCase)).ToList();
+                logs = logs.Where(l => l.ActionType.ToString().Contains(action, StringComparison.OrdinalIgnoreCase)).ToList();
 
             var total = logs.Count;
             var items = logs
-                .OrderByDescending(l => l.CreatedAt)
+                .OrderByDescending(l => l.Timestamp)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -182,16 +182,16 @@ sealed public class AuditLogsController : ControllerBase
         {
             var since = DateTime.UtcNow.AddDays(-days);
             var logs = await _repository.GetAllAsync();
-            var recentLogs = logs.Where(l => l.CreatedAt >= since).ToList();
+            var recentLogs = logs.Where(l => l.Timestamp >= since).ToList();
 
             var summary = new AuditSummary
             {
                 TotalChanges = recentLogs.Count,
-                CreateCount = recentLogs.Count(l => l.Action.Contains("Created")),
-                UpdateCount = recentLogs.Count(l => l.Action.Contains("Updated")),
-                DeleteCount = recentLogs.Count(l => l.Action.Contains("Deleted")),
+                CreateCount = recentLogs.Count(l => l.ActionType == Common.AuditActionType.ConfigurationCreated),
+                UpdateCount = recentLogs.Count(l => l.ActionType == Common.AuditActionType.ConfigurationUpdated),
+                DeleteCount = recentLogs.Count(l => l.ActionType == Common.AuditActionType.ConfigurationDeleted),
                 UniqueUsers = recentLogs.Select(l => l.UserId).Distinct().Count(),
-                LastChange = recentLogs.OrderByDescending(l => l.CreatedAt).FirstOrDefault()?.CreatedAt
+                LastChange = recentLogs.OrderByDescending(l => l.Timestamp).FirstOrDefault()?.Timestamp
             };
 
             return Ok(summary);
@@ -204,7 +204,7 @@ sealed public class AuditLogsController : ControllerBase
     }
 }
 
-sealed public class AuditSummary
+public sealed class AuditSummary
 {
     public int TotalChanges { get; set; }
     public int CreateCount { get; set; }

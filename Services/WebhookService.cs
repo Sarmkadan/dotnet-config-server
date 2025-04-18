@@ -19,7 +19,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing webhooks and their delivery
 /// </summary>
-sealed public class WebhookService : IWebhookService
+public sealed class WebhookService : IWebhookService
 {
     private readonly IWebhookSubscriptionRepository _subscriptionRepository;
     private readonly IWebhookDeliveryRepository _deliveryRepository;
@@ -236,7 +236,21 @@ sealed public class WebhookService : IWebhookService
                 await _deliveryRepository.AddAsync(delivery);
                 await _deliveryRepository.SaveChangesAsync();
 
-                _ = SendWebhookAsync(subscription, delivery);
+                try
+                {
+                    await SendWebhookAsync(subscription, delivery);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Failed to deliver webhook for event {EventId} to subscription {SubscriptionId}",
+                        payload.Id, subscription.Id);
+                    delivery.MarkFailed(ex.Message);
+                    delivery.ScheduleRetry();
+                    await _deliveryRepository.UpdateAsync(delivery);
+                }
+
+                await _deliveryRepository.SaveChangesAsync();
             }
             finally
             {
@@ -330,10 +344,83 @@ sealed public class WebhookService : IWebhookService
         return subscription;
     }
 
+    /// <summary>
+    /// Retries a single webhook delivery.
+    /// </summary>
+    /// <param name="deliveryId">The ID of the delivery to retry.</param>
+    /// <returns>True if the delivery succeeded, otherwise false.</returns>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the delivery does not exist.</exception>
+    public async Task<bool> RetryWebhookDeliveryAsync(Guid deliveryId)
+    {
+        ArgumentOutOfRangeException.ThrowIfEqual(deliveryId, Guid.Empty);
+
+        var delivery = await _deliveryRepository.GetByIdAsync(deliveryId);
+        if (delivery is null)
+            throw new ConfigurationNotFoundException(deliveryId.ToString());
+
+        var subscription = await _subscriptionRepository.GetByIdAsync(delivery.WebhookSubscriptionId);
+        if (subscription is null || !subscription.IsActive)
+            return false;
+
+        delivery.AttemptNumber++;
+
+        try
+        {
+            await SendWebhookAsync(subscription, delivery);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Retry failed for delivery {DeliveryId}", deliveryId);
+            delivery.MarkFailed(ex.Message);
+            delivery.ScheduleRetry();
+            await _deliveryRepository.UpdateAsync(delivery);
+        }
+
+        await _deliveryRepository.SaveChangesAsync();
+        return delivery.Status == WebhookDeliveryStatus.Success;
+    }
+
+    /// <summary>
+    /// Sends a test payload to a webhook subscription without recording a delivery.
+    /// </summary>
+    /// <param name="subscription">The subscription to test.</param>
+    /// <param name="payload">The test payload to send.</param>
+    /// <returns>True if the endpoint responded with a success status code.</returns>
+    public async Task<bool> TestWebhookAsync(WebhookSubscription subscription, object payload)
+    {
+        ArgumentNullException.ThrowIfNull(subscription);
+        ArgumentNullException.ThrowIfNull(payload);
+
+        var body = JsonSerializer.Serialize(payload);
+        using var request = new HttpRequestMessage(HttpMethod.Post, subscription.Url)
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+
+        if (subscription.VerifySignature && !string.IsNullOrEmpty(subscription.Secret))
+            request.Headers.Add("X-Webhook-Signature", subscription.GenerateSignature(body));
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request);
+            return response.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Webhook test failed for subscription {WebhookId}", subscription.Id);
+            return false;
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Webhook test timed out for subscription {WebhookId}", subscription.Id);
+            return false;
+        }
+    }
+
     private async Task SendWebhookAsync(WebhookSubscription subscription, WebhookDelivery delivery)
     {
         var startTime = DateTime.UtcNow;
-        var request = new HttpRequestMessage(HttpMethod.Post, subscription.Url)
+        using var request = new HttpRequestMessage(HttpMethod.Post, subscription.Url)
         {
             Content = new StringContent(delivery.Payload, Encoding.UTF8, "application/json")
         };
@@ -354,7 +441,7 @@ sealed public class WebhookService : IWebhookService
             request.Headers.Add("X-Webhook-Signature", signature);
         }
 
-        var response = await _httpClient.SendAsync(request);
+        using var response = await _httpClient.SendAsync(request);
         var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
 
         if (response.IsSuccessStatusCode)

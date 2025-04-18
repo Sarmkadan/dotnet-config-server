@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for Configuration entity
 /// </summary>
-sealed public class ConfigurationRepository : BaseRepository<Configuration>, IConfigurationRepository
+public sealed class ConfigurationRepository : BaseRepository<Configuration>, IConfigurationRepository
 {
     public ConfigurationRepository(ApplicationDbContext context, ILogger<ConfigurationRepository> logger)
         : base(context, logger) { }
@@ -54,5 +54,11 @@ sealed public class ConfigurationRepository : BaseRepository<Configuration>, ICo
     public async Task<int> GetCountByApplicationAsync(Guid applicationId)
     {
         return await _dbSet.CountAsync(c => c.ApplicationId == applicationId && c.IsActive);
+    }
+
+    public async Task<List<Configuration>> GetDeletedBeforeAsync(DateTime cutoff)
+    {
+        return await _dbSet.Where(c => !c.IsActive && c.DeletedAt != null && c.DeletedAt < cutoff)
+            .ToListAsync();
     }
 }
