@@ -101,3 +101,5 @@ appsettings.Development.json
 
 # Rider/IntelliJ settings
 *.DotSettings.user
+BenchmarkDotNet.Artifacts/
+.aider*
