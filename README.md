@@ -888,7 +888,16 @@ Response: 200 OK
 
 The application uses the `IOptions<DotnetConfigServerOptions>` pattern for type-safe, validated configuration. Settings must be nested under the `DotnetConfigServer` section in `appsettings.json`.
 
-### appsettings.json
+All configuration options support environment variable overrides using double underscores as separators. For example:
+
+```bash
+# Override specific settings
+DotnetConfigServer__ApplicationSettings__ApiVersion=v2
+DotnetConfigServer__Encryption__Algorithm=AES192
+DotnetConfigServer__RateLimit__RequestsPerMinute=200
+```
+
+### Complete Configuration Schema
 
 ```json
 {
@@ -908,7 +917,10 @@ The application uses the `IOptions<DotnetConfigServerOptions>` pattern for type-
       "ApiVersion": "v1",
       "MaxVersionHistory": 100,
       "EnableCors": true,
-      "EnableSwagger": true
+      "EnableSwagger": true,
+      "EnableDetailedErrors": false,
+      "EnableRequestLogging": true,
+      "EnablePerformanceMonitoring": true
     },
     "Encryption": {
       "KeySize": 256,
@@ -919,20 +931,143 @@ The application uses the `IOptions<DotnetConfigServerOptions>` pattern for type-
     "Webhook": {
       "MaxRetries": 5,
       "TimeoutSeconds": 30,
-      "BatchSize": 100
+      "BatchSize": 100,
+      "EnableSignatureVerification": true,
+      "EnableAutoRetry": true
     },
     "RateLimit": {
       "RequestsPerMinute": 100,
-      "RetryAfterSeconds": 60
+      "RetryAfterSeconds": 60,
+      "EnableRateLimiting": true,
+      "RateLimitExemptPaths": ["/health", "/metrics"]
     },
     "Cache": {
-      "DefaultDurationSeconds": 300
+      "DefaultDurationSeconds": 300,
+      "EnableDistributedCache": false,
+      "DistributedCacheDurationSeconds": 3600
+    },
+    "Database": {
+      "EnableConnectionPooling": true,
+      "ConnectionTimeoutSeconds": 30,
+      "CommandTimeoutSeconds": 30,
+      "EnableAutomaticMigration": true
+    },
+    "Performance": {
+      "EnableMetrics": true,
+      "MetricsSampleRate": 0.1,
+      "EnableRequestTracing": false,
+      "MaxRequestBodySizeKb": 1024
+    },
+    "Security": {
+      "EnableHttpsRedirection": true,
+      "EnableRequestValidation": true,
+      "EnableCorsPolicy": true,
+      "TrustedOrigins": ["https://your-trusted-domain.com"]
     }
   }
 }
 ```
 
+### Configuration Options Reference
+
+#### ApplicationSettings
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `ApiVersion` | string | "v1" | API version identifier |
+| `MaxVersionHistory` | int | 100 | Maximum number of version history entries to keep (1-1000) |
+| `EnableCors` | bool | true | Enable CORS for cross-origin requests |
+| `EnableSwagger` | bool | true | Enable Swagger/OpenAPI documentation |
+| `EnableDetailedErrors` | bool | false | Enable detailed error responses in development |
+| `EnableRequestLogging` | bool | true | Enable request logging middleware |
+| `EnablePerformanceMonitoring` | bool | true | Enable performance monitoring middleware |
+
+#### Encryption
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `KeySize` | int | 256 | Encryption key size in bits (128, 192, or 256) |
+| `SaltSize` | int | 16 | Salt size in bytes (8-64) |
+| `Iterations` | int | 10000 | Number of PBKDF2 iterations (1000-1000000) |
+| `Algorithm` | string | "AES256" | Encryption algorithm to use (AES256, AES192, or AES128) |
+
+#### Webhook
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `MaxRetries` | int | 5 | Maximum number of retry attempts for failed deliveries (0-10) |
+| `TimeoutSeconds` | int | 30 | Webhook request timeout in seconds (1-300) |
+| `BatchSize` | int | 100 | Batch size for webhook delivery processing (1-1000) |
+| `EnableSignatureVerification` | bool | true | Enable HMAC signature verification for webhooks |
+| `EnableAutoRetry` | bool | true | Enable automatic webhook retries |
+
+#### RateLimit
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `RequestsPerMinute` | int | 100 | Maximum requests per minute per client (1-10000) |
+| `RetryAfterSeconds` | int | 60 | Retry-After header value in seconds when rate limited (1-3600) |
+| `EnableRateLimiting` | bool | true | Enable rate limiting |
+| `RateLimitExemptPaths` | string[] | ["/health", "/metrics"] | Paths exempt from rate limiting |
+
+#### Cache
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `DefaultDurationSeconds` | int | 300 | Cache duration in seconds (1-3600 seconds / 1 hour) |
+| `EnableDistributedCache` | bool | false | Enable distributed caching (Redis, etc.) |
+| `DistributedCacheDurationSeconds` | int | 3600 | Distributed cache duration in seconds (1-86400 / 24 hours) |
+
+#### Database
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `EnableConnectionPooling` | bool | true | Enable database connection pooling |
+| `ConnectionTimeoutSeconds` | int | 30 | Connection timeout in seconds |
+| `CommandTimeoutSeconds` | int | 30 | Command timeout in seconds |
+| `EnableAutomaticMigration` | bool | true | Enable automatic database migration on startup |
+
+#### Performance
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `EnableMetrics` | bool | true | Enable performance metrics collection |
+| `MetricsSampleRate` | double | 0.1 | Sample rate for performance monitoring (0.0-1.0) |
+| `EnableRequestTracing` | bool | false | Enable request tracing |
+| `MaxRequestBodySizeKb` | int | 1024 | Maximum request body size in kilobytes |
+
+#### Security
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `EnableHttpsRedirection` | bool | true | Enable HTTPS redirection |
+| `EnableRequestValidation` | bool | true | Enable request validation |
+| `EnableCorsPolicy` | bool | true | Enable CORS policy |
+| `TrustedOrigins` | string[] | ["https://your-trusted-domain.com"] | Trusted origins for CORS |
+
 ### Environment Variables
+
+All settings can be overridden via environment variables using the double underscore (`__`) separator:
+
+```bash
+# Example overrides
+DotnetConfigServer__ApplicationSettings__ApiVersion=v2
+DotnetConfigServer__Encryption__Algorithm=AES192
+DotnetConfigServer__Webhook__MaxRetries=10
+DotnetConfigServer__RateLimit__RequestsPerMinute=500
+```
+
+### Validation
+
+The application performs runtime validation of all configuration options using DataAnnotations. Invalid configurations will cause the application to fail on startup with detailed validation errors.
+
+### Best Practices
+
+1. **Development**: Use `EnableDetailedErrors=true` and `EnableSwagger=true`
+2. **Production**: Set `EnableDetailedErrors=false`, `EnableSwagger=false`, and configure proper `TrustedOrigins`
+3. **Security**: Always enable `EnableHttpsRedirection` and `EnableRequestValidation` in production
+4. **Performance**: Adjust `RequestsPerMinute` based on expected traffic and `Cache.DefaultDurationSeconds` for optimal performance
+5. **Encryption**: Use `KeySize=256` and `Iterations=10000` for production environments
 
 Override any setting with environment variables using double underscores as separators:
 
