@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an application that can have configurations
 /// </summary>
-public class Application
+sealed public class Application
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -162,7 +163,7 @@ public class Application
 /// <summary>
 /// Summary view of an application
 /// </summary>
-public class ApplicationSummary
+sealed public class ApplicationSummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Events;
 /// Event handlers that respond to domain events.
 /// These handlers perform side effects like cache invalidation and notifications.
 /// </summary>
-public class ConfigurationEventHandlers
+sealed public class ConfigurationEventHandlers
 {
     private readonly ICacheService _cache;
     private readonly IWebhookService _webhookService;
@@ -165,7 +166,7 @@ public interface INotificationService
 /// <summary>
 /// Notification object.
 /// </summary>
-public class Notification
+sealed public class Notification
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Type { get; set; } = string.Empty;

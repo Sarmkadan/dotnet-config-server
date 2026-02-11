@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,7 +16,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/batch")]
 [Produces("application/json")]
-public class BatchOperationsController : ControllerBase
+sealed public class BatchOperationsController : ControllerBase
 {
     private readonly IBatchOperationService _batchService;
     private readonly ILogger<BatchOperationsController> _logger;

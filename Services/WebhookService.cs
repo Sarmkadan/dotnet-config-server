@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,7 +16,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing webhooks and their delivery
 /// </summary>
-public class WebhookService : IWebhookService
+sealed public class WebhookService : IWebhookService
 {
     private readonly IWebhookSubscriptionRepository _subscriptionRepository;
     private readonly IWebhookDeliveryRepository _deliveryRepository;

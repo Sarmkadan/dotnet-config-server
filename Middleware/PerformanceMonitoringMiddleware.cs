@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Middleware that monitors performance metrics like request duration,
 /// memory usage, and CPU time. Useful for identifying bottlenecks in the application.
 /// </summary>
-public class PerformanceMonitoringMiddleware
+sealed public class PerformanceMonitoringMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<PerformanceMonitoringMiddleware> _logger;
@@ -66,7 +67,7 @@ public class PerformanceMonitoringMiddleware
     }
 }
 
-public class PerformanceMetrics
+sealed public class PerformanceMetrics
 {
     private readonly ConcurrentQueue<RequestMetric> _metrics = new();
     private readonly int _maxMetrics = 1000;
@@ -121,7 +122,7 @@ public class PerformanceMetrics
     }
 }
 
-public class RequestMetric
+sealed public class RequestMetric
 {
     public string Path { get; set; } = string.Empty;
     public string Method { get; set; } = string.Empty;

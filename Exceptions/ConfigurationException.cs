@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,7 +9,7 @@ namespace DotnetConfigServer.Exceptions;
 /// <summary>
 /// Represents errors that occur during configuration operations
 /// </summary>
-public class ConfigurationException : Exception
+sealed public class ConfigurationException : Exception
 {
     public string? ErrorCode { get; set; }
     public object? Details { get; set; }
@@ -33,7 +34,7 @@ public class ConfigurationException : Exception
 /// <summary>
 /// Thrown when a requested configuration is not found
 /// </summary>
-public class ConfigurationNotFoundException : ConfigurationException
+sealed public class ConfigurationNotFoundException : ConfigurationException
 {
     public ConfigurationNotFoundException(string configId)
         : base($"Configuration '{configId}' not found", "CONFIG_NOT_FOUND", new { ConfigurationId = configId })
@@ -44,7 +45,7 @@ public class ConfigurationNotFoundException : ConfigurationException
 /// <summary>
 /// Thrown when a configuration key is not found
 /// </summary>
-public class ConfigurationKeyNotFoundException : ConfigurationException
+sealed public class ConfigurationKeyNotFoundException : ConfigurationException
 {
     public ConfigurationKeyNotFoundException(string key)
         : base($"Configuration key '{key}' not found", "KEY_NOT_FOUND", new { Key = key })
@@ -55,7 +56,7 @@ public class ConfigurationKeyNotFoundException : ConfigurationException
 /// <summary>
 /// Thrown when encryption or decryption fails
 /// </summary>
-public class EncryptionException : ConfigurationException
+sealed public class EncryptionException : ConfigurationException
 {
     public EncryptionException(string message)
         : base(message, "ENCRYPTION_FAILED")
@@ -72,7 +73,7 @@ public class EncryptionException : ConfigurationException
 /// <summary>
 /// Thrown when validation fails
 /// </summary>
-public class ValidationException : ConfigurationException
+sealed public class ValidationException : ConfigurationException
 {
     public Dictionary<string, List<string>> Errors { get; set; }
 
@@ -92,7 +93,7 @@ public class ValidationException : ConfigurationException
 /// <summary>
 /// Thrown when database operation fails
 /// </summary>
-public class DatabaseException : ConfigurationException
+sealed public class DatabaseException : ConfigurationException
 {
     public DatabaseException(string message)
         : base(message, "DATABASE_ERROR")
@@ -109,7 +110,7 @@ public class DatabaseException : ConfigurationException
 /// <summary>
 /// Thrown when webhook operation fails
 /// </summary>
-public class WebhookException : ConfigurationException
+sealed public class WebhookException : ConfigurationException
 {
     public WebhookException(string message)
         : base(message, "WEBHOOK_ERROR")
