@@ -116,7 +116,7 @@ namespace DotnetConfigServer.Examples
                     change.Key,
                     change.NewValue ?? "null");
 
-                if (change.NewValue != null)
+                if (change.NewValue is not null)
                     _configuration[change.Key] = change.NewValue;
                 else
                     _configuration.Remove(change.Key);

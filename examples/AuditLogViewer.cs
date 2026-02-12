@@ -171,7 +171,7 @@ namespace DotnetConfigServer.Examples
             // Most changed keys
             Console.WriteLine("\nMost Changed Keys:");
             var keyChanges = logs
-                .Where(l => l.Changes != null)
+                .Where(l => l.Changes is not null)
                 .SelectMany(l => l.Changes.Keys)
                 .GroupBy(k => k)
                 .OrderByDescending(g => g.Count())

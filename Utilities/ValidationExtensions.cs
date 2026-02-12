@@ -111,7 +111,7 @@ public static class ValidationExtensions
     /// </summary>
     public static ValidationResult ValidateNotEmpty<T>(this IEnumerable<T>? collection, string fieldName)
     {
-        if (collection == null || !collection.Any())
+        if (collection is null || !collection.Any())
             return new ValidationResult { IsValid = false, ErrorMessage = $"{fieldName} cannot be empty" };
 
         return new ValidationResult { IsValid = true };

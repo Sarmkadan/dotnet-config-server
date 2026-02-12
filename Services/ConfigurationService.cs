@@ -71,7 +71,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task<Configuration?> GetByIdAsync(Guid id)
     {
         var config = await _configRepository.GetByIdAsync(id);
-        if (config?.DeletedAt != null)
+        if (config?.DeletedAt is not null)
             return null;
         return config;
     }
@@ -90,7 +90,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task<Configuration> UpdateAsync(Guid id, Configuration configuration, string userId)
     {
         var existing = await _configRepository.GetByIdAsync(id);
-        if (existing == null)
+        if (existing is null)
             throw new ConfigurationNotFoundException(id.ToString());
 
         existing.Update(configuration.Name, configuration.Description, userId);
@@ -123,7 +123,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task DeleteAsync(Guid id, string userId)
     {
         var config = await _configRepository.GetByIdAsync(id);
-        if (config == null)
+        if (config is null)
             throw new ConfigurationNotFoundException(id.ToString());
 
         config.Delete(userId);
@@ -152,7 +152,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKey key, string userId)
     {
         var config = await _configRepository.GetByIdAsync(configurationId);
-        if (config == null)
+        if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
         key.Validate();
@@ -179,7 +179,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task<ConfigurationKey> UpdateKeyAsync(Guid keyId, string value, string userId)
     {
         var key = await _keyRepository.GetByIdAsync(keyId);
-        if (key == null)
+        if (key is null)
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
 
         var oldValue = key.Value;
@@ -216,7 +216,7 @@ sealed public class ConfigurationService : IConfigurationService
     public async Task DeleteKeyAsync(Guid keyId, string userId)
     {
         var key = await _keyRepository.GetByIdAsync(keyId);
-        if (key == null)
+        if (key is null)
             throw new ConfigurationKeyNotFoundException(keyId.ToString());
 
         key.Delete();

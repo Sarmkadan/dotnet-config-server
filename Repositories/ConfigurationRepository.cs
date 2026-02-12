@@ -29,7 +29,7 @@ sealed public class ConfigurationRepository : BaseRepository<Configuration>, ICo
         try
         {
             return await _dbSet
-                .Where(c => c.ApplicationId == applicationId && c.DeletedAt == null)
+                .Where(c => c.ApplicationId == applicationId && c.DeletedAt is null)
                 .OrderByDescending(c => c.UpdatedAt)
                 .ToListAsync();
         }
@@ -48,7 +48,7 @@ sealed public class ConfigurationRepository : BaseRepository<Configuration>, ICo
         try
         {
             return await _dbSet
-                .Where(c => c.Name == name && c.ApplicationId == applicationId && c.DeletedAt == null)
+                .Where(c => c.Name == name && c.ApplicationId == applicationId && c.DeletedAt is null)
                 .FirstOrDefaultAsync();
         }
         catch (Exception ex)
@@ -65,7 +65,7 @@ sealed public class ConfigurationRepository : BaseRepository<Configuration>, ICo
     {
         try
         {
-            var dbQuery = _dbSet.Where(c => c.DeletedAt == null);
+            var dbQuery = _dbSet.Where(c => c.DeletedAt is null);
 
             if (applicationId.HasValue)
                 dbQuery = dbQuery.Where(c => c.ApplicationId == applicationId.Value);
@@ -91,7 +91,7 @@ sealed public class ConfigurationRepository : BaseRepository<Configuration>, ICo
         try
         {
             return await _dbSet
-                .Where(c => c.ApplicationId == applicationId && c.DeletedAt == null)
+                .Where(c => c.ApplicationId == applicationId && c.DeletedAt is null)
                 .CountAsync();
         }
         catch (Exception ex)

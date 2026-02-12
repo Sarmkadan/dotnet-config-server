@@ -122,7 +122,7 @@ namespace DotnetConfigServer.Examples
                     }
                 }
 
-                if (lastException != null)
+                if (lastException is not null)
                     throw lastException;
 
                 return response;

@@ -159,7 +159,7 @@ sealed public class AuditLogsController : ControllerBase
         try
         {
             var log = await _repository.GetByIdAsync(id);
-            if (log == null)
+            if (log is null)
                 return NotFound(new { error = "Audit log not found" });
 
             return Ok(log);
