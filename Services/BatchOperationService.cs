@@ -115,7 +115,7 @@ sealed public class BatchOperationService : IBatchOperationService
             context.Status = context.IsCancelled ? "cancelled" : "completed";
 
             result.SuccessCount = processed;
-            result.ErrorCount = updates.Count - processed;
+            result.ErrorCount = result.Errors.Count;
             result.Success = result.ErrorCount == 0 && !context.IsCancelled;
 
             _logger.LogInformation(
@@ -190,7 +190,7 @@ sealed public class BatchOperationService : IBatchOperationService
             context.Status = context.IsCancelled ? "cancelled" : "completed";
 
             result.SuccessCount = deleted;
-            result.ErrorCount = keyIds.Count - deleted;
+            result.ErrorCount = result.Errors.Count;
             result.Success = result.ErrorCount == 0 && !context.IsCancelled;
 
             _logger.LogInformation(
@@ -281,4 +281,5 @@ sealed public class BatchOperationStatus
     public DateTime StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public string? Error { get; set; }
+    public TimeSpan Elapsed => (CompletedAt ?? DateTime.UtcNow) - StartedAt;
 }
