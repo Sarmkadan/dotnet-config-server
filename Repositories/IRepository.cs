@@ -108,3 +108,12 @@ public interface IApplicationRepository : IRepository<Models.Application>
     Task<Models.Application?> GetByApiKeyAsync(string apiKey);
     Task<List<Models.Application>> GetActiveApplicationsAsync();
 }
+
+/// <summary>
+/// Configuration snapshot repository interface
+/// </summary>
+public interface IConfigurationSnapshotRepository : IRepository<Models.ConfigurationSnapshot>
+{
+    Task<List<Models.ConfigurationSnapshot>> GetByConfigurationAsync(Guid configurationId);
+    Task<Models.ConfigurationSnapshot?> GetLatestSnapshotAsync(Guid configurationId);
+}
