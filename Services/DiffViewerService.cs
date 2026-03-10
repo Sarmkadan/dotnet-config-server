@@ -19,6 +19,7 @@ sealed public class DiffViewerService : IDiffViewerService
     private readonly IVersioningService _versioningService;
     private readonly IConfigurationDiffRepository _diffRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
+    private readonly IConfigurationService _configurationService; // Add IConfigurationService
     private readonly ILogger<DiffViewerService> _logger;
 
     /// <summary>
@@ -28,11 +29,13 @@ sealed public class DiffViewerService : IDiffViewerService
         IVersioningService versioningService,
         IConfigurationDiffRepository diffRepository,
         IConfigurationKeyRepository keyRepository,
+        IConfigurationService configurationService, // Inject IConfigurationService
         ILogger<DiffViewerService> logger)
     {
         _versioningService = versioningService;
         _diffRepository = diffRepository;
         _keyRepository = keyRepository;
+        _configurationService = configurationService; // Assign
         _logger = logger;
     }
 
@@ -50,6 +53,22 @@ sealed public class DiffViewerService : IDiffViewerService
         if (fromVersion is null || toVersion is null)
             throw new ConfigurationNotFoundException("One or both versions not found");
 
+        // Fetch the actual configurations to check for parent-child relationship
+        var fromConfig = await _configurationService.GetByIdAsync(fromVersion.ConfigurationId);
+        var toConfig = await _configurationService.GetByIdAsync(toVersion.ConfigurationId);
+
+        if (fromConfig is null || toConfig is null)
+            throw new ConfigurationNotFoundException("One or both configurations not found");
+
+        // Determine parent keys for `toConfig` if inheritance is enabled
+        Dictionary<string, ConfigurationKey>? parentKeysDict = null;
+        if (toConfig.ParentConfigurationId.HasValue)
+        {
+            // GetKeysAsync resolves inheritance by default, so we get the fully resolved parent config
+            var parentKeys = await _configurationService.GetKeysAsync(toConfig.ParentConfigurationId.Value, null, true);
+            parentKeysDict = parentKeys.ToDictionary(k => k.Key, k => k);
+        }
+
         var cached = await _diffRepository.GetByVersionsAsync(fromVersionId, toVersionId);
 
         List<DiffEntry> changes;
@@ -66,7 +85,7 @@ sealed public class DiffViewerService : IDiffViewerService
         {
             var fromKeys = await _keyRepository.GetByVersionAsync(fromVersionId);
             var toKeys = await _keyRepository.GetByVersionAsync(toVersionId);
-            changes = ComputeChanges(fromKeys, toKeys);
+            changes = ComputeChanges(fromKeys, toKeys, parentKeysDict); // Pass parentKeysDict
             generatedAt = DateTime.UtcNow;
             diffId = Guid.NewGuid();
         }
@@ -117,9 +136,22 @@ sealed public class DiffViewerService : IDiffViewerService
             };
         }
 
+        // Fetch the actual configuration for the active version to check for parent-child relationship
+        var activeConfig = await _configurationService.GetByIdAsync(activeVersion.ConfigurationId);
+        if (activeConfig is null)
+             throw new ConfigurationNotFoundException("Active configuration not found for rollback preview.");
+
+        Dictionary<string, ConfigurationKey>? activeConfigParentKeysDict = null;
+        if (activeConfig.ParentConfigurationId.HasValue)
+        {
+            var parentKeys = await _configurationService.GetKeysAsync(activeConfig.ParentConfigurationId.Value, null, true);
+            activeConfigParentKeysDict = parentKeys.ToDictionary(k => k.Key, k => k);
+        }
+
+
         var activeKeys = await _keyRepository.GetByVersionAsync(activeVersion.Id);
         var targetKeys = await _keyRepository.GetByVersionAsync(targetVersionId);
-        var changes = ComputeChanges(activeKeys, targetKeys);
+        var changes = ComputeChanges(activeKeys, targetKeys, activeConfigParentKeysDict); // Pass parent keys for rollback preview as well
 
         var warnings = activeKeys
             .Where(k => k.IsRequired && !targetKeys.Any(t => t.Key == k.Key))
@@ -176,9 +208,10 @@ sealed public class DiffViewerService : IDiffViewerService
         return timeline;
     }
 
-    private static List<DiffEntry> ComputeChanges(
+    private List<DiffEntry> ComputeChanges(
         IEnumerable<ConfigurationKey> fromKeys,
-        IEnumerable<ConfigurationKey> toKeys)
+        IEnumerable<ConfigurationKey> toKeys,
+        Dictionary<string, ConfigurationKey>? parentKeysDict)
     {
         var from = fromKeys.ToList();
         var to = toKeys.ToList();
@@ -187,22 +220,74 @@ sealed public class DiffViewerService : IDiffViewerService
         foreach (var toKey in to)
         {
             var match = from.FirstOrDefault(k => k.Key == toKey.Key);
+            ConfigurationKey? parentKey = null;
+            parentKeysDict?.TryGetValue(toKey.Key, out parentKey);
+
             if (match is null)
-                changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value, toKey.IsEncrypted));
+            {
+                // Key added or inherited
+                if (parentKey is not null && parentKey.Value == toKey.Value)
+                {
+                    changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value, toKey.IsEncrypted, DiffEntryOrigin.Inherited));
+                }
+                else
+                {
+                    changes.Add(MakeEntry(toKey.Key, ChangeType.Added, null, toKey.Value, toKey.IsEncrypted, DiffEntryOrigin.Direct));
+                }
+            }
             else if (match.Value != toKey.Value)
-                changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value, toKey.IsEncrypted));
+            {
+                // Key modified or overridden
+                if (parentKey is not null && parentKey.Value == toKey.Value)
+                {
+                    changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value, toKey.IsEncrypted, DiffEntryOrigin.Overridden)); // Overridden value now matches parent
+                }
+                else if (parentKey is not null && parentKey.Value != toKey.Value && match.Value == parentKey.Value)
+                {
+                    changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value, toKey.IsEncrypted, DiffEntryOrigin.Overridden)); // Inherited value explicitly overridden
+                }
+                else
+                {
+                    changes.Add(MakeEntry(toKey.Key, ChangeType.Modified, match.Value, toKey.Value, toKey.IsEncrypted, DiffEntryOrigin.Direct));
+                }
+            }
+            else if (parentKey is not null && match.Value == parentKey.Value)
+            {
+                // Value is the same, and it's inherited from parent
+                // Add an entry to show it's inherited, even if unchanged from parent, for clarity in diff.
+                // This might be considered a 'NoChange' or 'InheritedUnchanged' type.
+                // For now, only show changes as requested by issue.
+                // If the goal is to show *all* keys and their origins, this would be uncommented.
+                // For a diff, we only care about actual changes.
+            }
         }
 
+        // Find deleted keys
         foreach (var fromKey in from)
         {
             if (!to.Any(k => k.Key == fromKey.Key))
-                changes.Add(MakeEntry(fromKey.Key, ChangeType.Deleted, fromKey.Value, null, fromKey.IsEncrypted));
+            {
+                ConfigurationKey? parentKey = null;
+                parentKeysDict?.TryGetValue(fromKey.Key, out parentKey);
+
+                if (parentKey is not null)
+                {
+                    // If deleted key was inherited from parent, and it's now deleted,
+                    // it means it's no longer overridden but is now simply inherited from parent, effectively a deletion from this config's direct scope.
+                    // Or, if it was directly defined and deleted.
+                    changes.Add(MakeEntry(fromKey.Key, ChangeType.Deleted, fromKey.Value, null, fromKey.IsEncrypted, DiffEntryOrigin.Direct));
+                }
+                else
+                {
+                    changes.Add(MakeEntry(fromKey.Key, ChangeType.Deleted, fromKey.Value, null, fromKey.IsEncrypted, DiffEntryOrigin.Direct));
+                }
+            }
         }
 
         return changes;
     }
 
-    private static DiffEntry MakeEntry(string key, ChangeType changeType, string? oldValue, string? newValue, bool isEncrypted) =>
+    private static DiffEntry MakeEntry(string key, ChangeType changeType, string? oldValue, string? newValue, bool isEncrypted, DiffEntryOrigin origin) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -211,7 +296,8 @@ sealed public class DiffViewerService : IDiffViewerService
             ChangeType = changeType,
             OldValue = isEncrypted ? "[ENCRYPTED]" : oldValue,
             NewValue = isEncrypted ? "[ENCRYPTED]" : newValue,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Origin = origin
         };
 }
 
