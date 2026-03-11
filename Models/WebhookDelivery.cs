@@ -28,6 +28,9 @@ sealed public class WebhookDelivery
     public WebhookDeliveryStatus Status { get; set; } = WebhookDeliveryStatus.Pending;
 
     [Required]
+    public Guid EventId { get; set; } // Link to the original DomainEvent ID
+
+    [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? SentAt { get; set; }

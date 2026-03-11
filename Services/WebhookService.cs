@@ -11,6 +11,8 @@ using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
 
 using DotnetConfigServer.Exceptions;
+using DotnetConfigServer.Events; // Add this using directive for DomainEvent types
+
 namespace DotnetConfigServer.Services;
 
 /// <summary>
@@ -119,7 +121,7 @@ sealed public class WebhookService : IWebhookService
     }
 
     /// <summary>
-    /// Delivers webhook to a subscription
+    /// Delivers webhook to a specific subscription
     /// </summary>
     public async Task<WebhookDelivery> DeliverAsync(Guid subscriptionId, string payload, Guid versionId)
     {
@@ -155,6 +157,56 @@ sealed public class WebhookService : IWebhookService
 
         return delivery;
     }
+    
+    /// <summary>
+    /// Notifies relevant webhook subscriptions about a domain event.
+    /// </summary>
+    public async Task NotifyAsync(string eventType, DomainEvent payload)
+    {
+        var subscriptions = await _subscriptionRepository.GetActiveWebhooksAsync();
+        var serializedPayload = JsonSerializer.Serialize(payload);
+
+        foreach (var subscription in subscriptions)
+        {
+            if (subscription.TriggerEvents.Contains(eventType))
+            {
+                // Idempotency check:
+                // Check if a delivery for this event and subscription already exists and is pending or successful.
+                var existingDelivery = await _deliveryRepository.GetByEventAndSubscriptionAsync(payload.Id, subscription.Id);
+                if (existingDelivery is not null &&
+                    (existingDelivery.Status == WebhookDeliveryStatus.Pending || existingDelivery.Status == WebhookDeliveryStatus.Success))
+                {
+                    _logger.LogInformation(
+                        "Skipping duplicate webhook delivery for event {EventId} to subscription {SubscriptionId}. Existing status: {Status}",
+                        payload.Id, subscription.Id, existingDelivery.Status);
+                    continue;
+                }
+
+                var delivery = new WebhookDelivery
+                {
+                    WebhookSubscriptionId = subscription.Id,
+                    Payload = serializedPayload,
+                    EventType = eventType,
+                    Url = subscription.Url,
+                    NextRetryAt = DateTime.UtcNow,
+                    EventId = payload.Id, // Assign EventId from DomainEvent
+                    // Heuristic for ConfigurationVersionId as DomainEvent does not directly carry it
+                    ConfigurationVersionId = payload is ConfigurationVersionCreatedEvent versionEvent
+                                             ? versionEvent.VersionId
+                                             : (payload is ConfigurationUpdatedEvent updatedEvent
+                                                ? updatedEvent.ConfigurationId // This is ConfigurationId, not VersionId, but best available for now.
+                                                : Guid.Empty)
+                };
+
+                await _deliveryRepository.AddAsync(delivery);
+                await _deliveryRepository.SaveChangesAsync(); // Save immediately to track pending delivery
+                
+                // For immediate dispatch, consider adding to a background queue
+                _ = SendWebhookAsync(delivery, subscription); // Using the existing SendWebhookAsync
+            }
+        }
+    }
+
 
     /// <summary>
     /// Gets webhook delivery history
