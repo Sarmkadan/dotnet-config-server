@@ -36,6 +36,23 @@ sealed public class ConfigurationKeyRepository : BaseRepository<ConfigurationKey
         return await _dbSet.FirstOrDefaultAsync(k =>
             k.ConfigurationId == configurationId && k.Key == keyName && k.IsActive);
     }
+
+    public async Task<List<ConfigurationKey>> SearchAsync(string? query, string? prefix, Guid? configurationId)
+    {
+        var keys = _dbSet.Where(k => k.IsActive);
+
+        if (configurationId.HasValue)
+            keys = keys.Where(k => k.ConfigurationId == configurationId.Value);
+
+        if (!string.IsNullOrWhiteSpace(prefix))
+            keys = keys.Where(k => k.Key.StartsWith(prefix));
+
+        if (!string.IsNullOrWhiteSpace(query))
+            keys = keys.Where(k => k.Key.Contains(query) || k.Value.Contains(query) ||
+                                   (k.Description != null && k.Description.Contains(query)));
+
+        return await keys.OrderBy(k => k.Key).ToListAsync();
+    }
 }
 
 /// <summary>

@@ -222,4 +222,26 @@ sealed public class ConfigurationsController : ControllerBase
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
+
+    /// <summary>
+    /// Searches configuration keys by text and/or key prefix
+    /// </summary>
+    [HttpGet("keys/search")]
+    [ProducesResponseType(typeof(List<ConfigurationKey>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SearchKeys(
+        [FromQuery] string? q = null,
+        [FromQuery] string? prefix = null,
+        [FromQuery] Guid? configurationId = null)
+    {
+        try
+        {
+            var results = await _configurationService.SearchKeysAsync(q, prefix, configurationId);
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error searching configuration keys");
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
 }
