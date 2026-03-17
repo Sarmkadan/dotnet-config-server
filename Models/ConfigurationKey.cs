@@ -73,6 +73,32 @@ sealed public class ConfigurationKey
     public int? MaxLength { get; set; }
 
     /// <summary>
+    /// Comma-separated list of allowed values for enum validation.
+    /// When set, the value must be one of these options.
+    /// </summary>
+    public string? AllowedValues { get; set; }
+
+    /// <summary>
+    /// Minimum numeric value (inclusive). Applied when ValueType is Integer or Decimal.
+    /// </summary>
+    public decimal? MinValue { get; set; }
+
+    /// <summary>
+    /// Maximum numeric value (inclusive). Applied when ValueType is Integer or Decimal.
+    /// </summary>
+    public decimal? MaxValue { get; set; }
+
+    /// <summary>
+    /// When true, the value must be a well-formed absolute URL.
+    /// </summary>
+    public bool ValidateAsUrl { get; set; } = false;
+
+    /// <summary>
+    /// When true, the value must be valid JSON.
+    /// </summary>
+    public bool ValidateAsJson { get; set; } = false;
+
+    /// <summary>
     /// Validates the configuration key
     /// </summary>
     public void Validate()
@@ -113,6 +139,52 @@ sealed public class ConfigurationKey
 
         if (MaxLength.HasValue && Value?.Length > MaxLength.Value)
             errors.AddError("Value", $"Value length cannot exceed {MaxLength} characters");
+
+        // Enum validation: value must be one of the allowed options
+        if (!string.IsNullOrWhiteSpace(AllowedValues) && !string.IsNullOrEmpty(Value))
+        {
+            var allowed = AllowedValues.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (!allowed.Contains(Value, StringComparer.OrdinalIgnoreCase))
+                errors.AddError("Value", $"Value must be one of: {string.Join(", ", allowed)}");
+        }
+
+        // Numeric range validation
+        if ((MinValue.HasValue || MaxValue.HasValue) && !string.IsNullOrEmpty(Value))
+        {
+            if (decimal.TryParse(Value, System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture, out var numericValue))
+            {
+                if (MinValue.HasValue && numericValue < MinValue.Value)
+                    errors.AddError("Value", $"Value must be greater than or equal to {MinValue}");
+                if (MaxValue.HasValue && numericValue > MaxValue.Value)
+                    errors.AddError("Value", $"Value must be less than or equal to {MaxValue}");
+            }
+            else
+            {
+                errors.AddError("Value", "Value must be a valid number for range validation");
+            }
+        }
+
+        // URL validation
+        if (ValidateAsUrl && !string.IsNullOrEmpty(Value))
+        {
+            if (!Uri.TryCreate(Value, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                errors.AddError("Value", "Value must be a well-formed absolute URL (http or https)");
+        }
+
+        // JSON validation
+        if (ValidateAsJson && !string.IsNullOrEmpty(Value))
+        {
+            try
+            {
+                System.Text.Json.JsonDocument.Parse(Value);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                errors.AddError("Value", "Value must be valid JSON");
+            }
+        }
 
         if (errors.Count > 0)
             throw new Exceptions.ValidationException("Configuration key validation failed", errors);
