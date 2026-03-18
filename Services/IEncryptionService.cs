@@ -57,4 +57,10 @@ public interface IEncryptionService
     /// Rotates an encryption key
     /// </summary>
     Task RotateKeyAsync(string oldKeyId, string userId);
+
+    /// <summary>
+    /// Re-encrypts all configuration key values with the current primary key.
+    /// Call after a key rotation to migrate stored ciphertext to the new key.
+    /// </summary>
+    Task ReEncryptConfigurationAsync(Guid configurationId, IEnumerable<ConfigurationKey> keys, string userId);
 }

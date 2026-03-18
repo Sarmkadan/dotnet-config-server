@@ -170,6 +170,36 @@ await _encryptionService.GenerateNewKeyAsync();
 // New values use the new key
 ```
 
+### Q: How does key rotation work with multiple consumers?
+
+**A:** Key rotation is a two-phase process designed for zero-downtime deployments across many services:
+
+**Phase 1 – Create and promote the new key (no downtime)**
+1. Generate a new encryption key and persist it as the new primary.
+2. Call `RotateKeyAsync(oldKeyId)` – this marks the old key as *rotated* (no longer primary) but keeps it **active**.
+3. New values written after this point are encrypted with the new key. Consumers that hold cached decrypted values are unaffected.
+
+**Phase 2 – Re-encrypt existing values (optional but recommended)**
+```csharp
+// After rotating, migrate stored ciphertext to the new key
+var keys = await configService.GetKeysAsync(configurationId);
+await encryptionService.ReEncryptConfigurationAsync(configurationId, keys, userId);
+```
+`ReEncryptConfigurationAsync` decrypts each value (using the still-active old key) and immediately re-encrypts it with the new primary key, then saves the updated ciphertext.
+
+**Phase 3 – Deactivate the old key**
+Once all consumers have reloaded their configuration and all ciphertext has been migrated, deactivate the old key.
+
+**Why does `DecryptAsync` work during the transition?**
+`DecryptAsync` tries the primary key first; if that fails it falls back to all remaining active keys. This means services that cached ciphertext produced by the old key can still decrypt it throughout the transition window.
+
+**Quarterly rotation checklist**
+1. Generate and persist new key → set as primary.
+2. Call `RotateKeyAsync` on the old key ID.
+3. Call `ReEncryptConfigurationAsync` for each affected configuration.
+4. Wait for all 5 consumer services to pick up the updated configuration (via webhook or polling).
+5. Deactivate the old key.
+
 ### Q: Is authentication required?
 
 **A:** Not by default. For production, add authentication:

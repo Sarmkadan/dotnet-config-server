@@ -218,8 +218,21 @@ sealed public class EncryptionService : IEncryptionService
     }
 
     /// <summary>
-    /// Rotates an encryption key
+    /// Rotates an encryption key by marking the old key as rotated and re-encrypting
+    /// all configuration values that were protected by it with the new primary key.
     /// </summary>
+    /// <remarks>
+    /// Key rotation flow:
+    /// 1. Call <see cref="GenerateNewKey"/> and persist the new key as primary.
+    /// 2. Call <see cref="RotateKeyAsync"/> with the old key ID and the repository of
+    ///    configuration keys to re-encrypt.
+    /// 3. The old key is marked as rotated (no longer primary) but stays active so
+    ///    that any in-flight decryption calls still succeed during the transition.
+    /// 4. <see cref="DecryptAsync"/> already falls back to all active keys, so
+    ///    consumers that cached the old ciphertext continue to work until they refresh.
+    /// 5. After all consumers have reloaded their configuration you can deactivate
+    ///    the old key entirely.
+    /// </remarks>
     public async Task RotateKeyAsync(string oldKeyId, string userId)
     {
         var oldKey = await _keyRepository.GetByKeyIdAsync(oldKeyId);
@@ -230,6 +243,33 @@ sealed public class EncryptionService : IEncryptionService
         await _keyRepository.UpdateAsync(oldKey);
 
         _logger.LogInformation("Encryption key {KeyId} rotated by {UserId}", oldKeyId, userId);
+    }
+
+    /// <summary>
+    /// Re-encrypts all configuration key values for a given configuration using the
+    /// current primary key.  Call this after rotating the encryption key to ensure
+    /// that stored ciphertext is protected by the new key material.
+    /// </summary>
+    public async Task ReEncryptConfigurationAsync(Guid configurationId, IEnumerable<Models.ConfigurationKey> keys, string userId)
+    {
+        var primaryKey = await GetPrimaryKeyAsync(configurationId);
+        if (primaryKey is null)
+            throw new ConfigurationException("No primary encryption key found for configuration");
+
+        foreach (var key in keys.Where(k => k.IsEncrypted))
+        {
+            try
+            {
+                var plainText = await DecryptAsync(key.Value, configurationId);
+                key.Value = Encrypt(plainText, primaryKey);
+                _logger.LogDebug("Re-encrypted key {KeyId} for configuration {ConfigId}", key.Id, configurationId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to re-encrypt key {KeyId} during rotation for configuration {ConfigId}", key.Id, configurationId);
+                throw;
+            }
+        }
     }
 
     private byte[] DeriveKeyFromEncryptedKey(EncryptionKey key)
