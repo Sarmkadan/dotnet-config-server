@@ -356,6 +356,60 @@ private string ComputeHMACSHA256(object payload, string secret)
 
 ## Performance & Scaling
 
+### Q: Best practice for client-side caching with hot reload?
+
+**A:** There are two complementary mechanisms and the recommended pattern combines both.
+
+**1. Webhook push (primary)**
+Subscribe to `ConfigurationUpdated` webhooks. When the server fires a webhook, your client invalidates its local cache and fetches the latest values immediately. This gives sub-second propagation with no polling overhead.
+
+```csharp
+[HttpPost("/config-webhook")]
+public async Task<IActionResult> OnConfigChange([FromBody] WebhookPayload payload)
+{
+    // 1. Validate HMAC signature (see "How do I verify webhook authenticity?")
+    // 2. Invalidate local cache for the affected configuration
+    _configCache.Remove(payload.ConfigurationId.ToString());
+    // 3. Eagerly pre-warm the cache so the next request is fast
+    await _configClient.GetKeysAsync(payload.ConfigurationId);
+    return Ok();
+}
+```
+
+**Handling the gap between webhook and fetch:**
+The webhook fires *after* the change is committed to the database, so by the time your handler calls `GET /api/v1/configurations/{id}/keys` the new values are already there. If you receive the webhook but the fetch returns stale data (e.g. due to a database read replica lag), retry with a short back-off (200 ms → 400 ms → 800 ms, 3 attempts).
+
+**2. Polling fallback (safety net)**
+Even with webhooks, always add a periodic poll as a safety net for missed deliveries or network partitions. Recommended interval:
+- **Development**: 30 seconds
+- **Staging / non-critical production**: 60 seconds
+- **Critical production**: 30 seconds (combine with webhooks, not instead of them)
+
+```csharp
+// Register a background service that polls every 60 s
+services.AddHostedService<ConfigPollingService>();
+
+public class ConfigPollingService : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {
+        while (!ct.IsCancellationRequested)
+        {
+            await _configClient.RefreshAsync();
+            await Task.Delay(TimeSpan.FromSeconds(60), ct);
+        }
+    }
+}
+```
+
+**3. Client library**
+There is no official NuGet client package yet. The recommended pattern is a thin `IConfiguration` provider backed by `HttpClient` that:
+- Implements `IConfigurationProvider` (standard .NET abstraction)
+- Exposes a `RefreshAsync()` method called by the polling service and webhook handler
+- Uses `IMemoryCache` or `IDistributedCache` with a configurable TTL
+
+See `examples/WebhookConfigurationReloader.cs` and `examples/BasicConfigurationClient.cs` in the repository for reference implementations.
+
 ### Q: Can I run multiple instances?
 
 **A:** Yes, behind a load balancer:
