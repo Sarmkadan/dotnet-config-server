@@ -1,0 +1,125 @@
+{
+  "configurationId": "550e8400-e29b-41d4-a716-446655440001",
+  "keys": [
+    {
+      "key": "Database:Host",
+      "value": "prod-db.example.com",
+      "isEncrypted": false,
+      "description": "Primary database server hostname"
+    },
+    {
+      "key": "Database:Port",
+      "value": "1433",
+      "isEncrypted": false,
+      "description": "Database server port"
+    },
+    {
+      "key": "Database:Name",
+      "value": "OrderServiceDb",
+      "isEncrypted": false,
+      "description": "Database name"
+    },
+    {
+      "key": "Database:ConnectionString",
+      "value": "Server=prod-db.example.com;Database=OrderServiceDb;User Id=sa;Password=SecurePassword123!;",
+      "isEncrypted": true,
+      "description": "Full database connection string (encrypted)"
+    },
+    {
+      "key": "Database:PoolSize",
+      "value": "50",
+      "isEncrypted": false,
+      "description": "Database connection pool size"
+    },
+    {
+      "key": "Database:CommandTimeout",
+      "value": "30",
+      "isEncrypted": false,
+      "description": "Command timeout in seconds"
+    },
+    {
+      "key": "Features:EnableNewCheckout",
+      "value": "true",
+      "isEncrypted": false,
+      "description": "Enable new checkout flow"
+    },
+    {
+      "key": "Features:EnableNewPaymentGateway",
+      "value": "false",
+      "isEncrypted": false,
+      "description": "Enable new payment gateway integration"
+    },
+    {
+      "key": "Features:BetaUI",
+      "value": "true",
+      "isEncrypted": false,
+      "description": "Enable beta user interface"
+    },
+    {
+      "key": "Logging:Level",
+      "value": "Information",
+      "isEncrypted": false,
+      "description": "Application logging level"
+    },
+    {
+      "key": "Logging:IncludeScopes",
+      "value": "true",
+      "isEncrypted": false,
+      "description": "Include scopes in log output"
+    },
+    {
+      "key": "ApiKey:ThirdPartyService",
+      "value": "sk-1234567890abcdef",
+      "isEncrypted": true,
+      "description": "Third-party service API key (encrypted)"
+    },
+    {
+      "key": "Email:SmtpHost",
+      "value": "smtp.example.com",
+      "isEncrypted": false,
+      "description": "SMTP server hostname"
+    },
+    {
+      "key": "Email:SmtpPort",
+      "value": "587",
+      "isEncrypted": false,
+      "description": "SMTP server port"
+    },
+    {
+      "key": "Email:SmtpPassword",
+      "value": "EmailServicePassword123!",
+      "isEncrypted": true,
+      "description": "SMTP password (encrypted)"
+    },
+    {
+      "key": "Cache:Enabled",
+      "value": "true",
+      "isEncrypted": false,
+      "description": "Enable caching"
+    },
+    {
+      "key": "Cache:DurationSeconds",
+      "value": "300",
+      "isEncrypted": false,
+      "description": "Cache expiration duration in seconds"
+    },
+    {
+      "key": "RateLimit:RequestsPerMinute",
+      "value": "300",
+      "isEncrypted": false,
+      "description": "API rate limit requests per minute"
+    },
+    {
+      "key": "Webhook:MaxRetries",
+      "value": "5",
+      "isEncrypted": false,
+      "description": "Maximum webhook delivery retries"
+    },
+    {
+      "key": "Webhook:TimeoutSeconds",
+      "value": "30",
+      "isEncrypted": false,
+      "description": "Webhook delivery timeout in seconds"
+    }
+  ]
+}
