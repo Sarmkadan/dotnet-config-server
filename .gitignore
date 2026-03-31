@@ -65,8 +65,6 @@ npm-debug.log
 yarn-error.log
 
 # IDE settings
-.editorconfig
-
 # Logs
 logs/
 *.log
