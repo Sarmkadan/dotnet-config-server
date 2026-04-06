@@ -39,6 +39,7 @@ try
     builder.Services.AddScoped<IHealthCheckService, HealthCheckService>();
     builder.Services.AddScoped<IConfigurationImportService, ConfigurationImportService>();
     builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
+    builder.Services.AddScoped<IDiffViewerService, DiffViewerService>();
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
     builder.Services.AddScoped<ExternalApiClient>();
     // Add HTTP clients
