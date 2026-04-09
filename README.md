@@ -90,6 +90,7 @@ Dotnet Config Server provides:
 - **Environment Isolation**: Separate configurations per environment (dev, staging, prod)
 - **Centralized API**: RESTful API with OpenAPI/Swagger documentation
 - **Configuration Validation**: Built-in validation with custom rules
+- **Rule-Based Validation**: Regex, length, JSON, URL, numeric range, allowed values, and cross-key validation rules
 
 ### Security & Encryption
 - **AES-256 Encryption**: Encrypt sensitive configuration values
@@ -101,10 +102,12 @@ Dotnet Config Server provides:
 - **Full Version Control**: Create, update, and manage configuration versions
 - **Automatic Snapshots**: Each change creates a snapshot for rollback
 - **Version Lifecycle**: Draft → Published → Archived → Deleted
-- **Rollback Support**: Instant rollback to any previous version
+- **Rollback Support**: Instant rollback to any previous version with preview and history
+- **Rollback Audit Trail**: Track who performed a rollback, when it happened, and why
 
 ### Change Tracking & Diffs
 - **Visual Diffs**: See exactly what changed between versions
+- **Diff Viewer API**: Dedicated endpoints for enriched diffs, version timelines, and rollback previews
 - **Change History**: Complete audit trail with timestamps
 - **Comparison Tools**: Built-in diff engine for quick analysis
 - **Change Notifications**: Immediate alerts on configuration changes
@@ -196,14 +199,20 @@ Dotnet Config Server provides:
 **Presentation Layer** (Controllers)
 - `ConfigurationsController.cs` - Configuration CRUD operations
 - `VersionsController.cs` - Version management
+- `DiffViewerController.cs` - Enriched diff and version timeline endpoints
+- `RollbackController.cs` - Rollback preview, execution, and history
+- `ValidationRulesController.cs` - Validation rule CRUD and configuration validation
 - `WebhooksController.cs` - Webhook subscriptions
 - `AuditLogsController.cs` - Audit trail retrieval
 
 **Business Logic Layer** (Services)
 - `ConfigurationService` - Core configuration operations
 - `VersioningService` - Version lifecycle management
-- `EncryptionService` - AES-256 encryption/decryption
 - `DiffService` - Configuration comparison
+- `DiffViewerService` - Enriched diff visualization and rollback preview
+- `RollbackService` - Rollback execution with audit history
+- `ValidationRuleService` - Rule CRUD and configuration validation
+- `EncryptionService` - AES-256 encryption/decryption
 - `WebhookService` - Event notification delivery
 
 **Data Access Layer** (Repositories)
@@ -378,19 +387,16 @@ await client.PostAsync(
 ### Example 4: Comparing Versions (Diffs)
 
 ```csharp
-// Get diff between two versions
+// Get enriched diff between two versions
 var diffResponse = await client.GetAsync(
-    $"/api/v1/configurations/{configId}/versions/{fromVersionId}/diff/{toVersionId}");
+    $"/api/v1/configurations/{configId}/diff-viewer/{fromVersionId}/{toVersionId}");
 
-var diffs = await diffResponse.Content.ReadAsAsync<List<ConfigurationDiff>>();
+var diff = await diffResponse.Content.ReadAsAsync<EnrichedDiff>();
+Console.WriteLine($"Added: {diff.AddedCount}, Modified: {diff.ModifiedCount}, Deleted: {diff.DeletedCount}");
 
-foreach (var diff in diffs)
-{
-    Console.WriteLine($"Key: {diff.Key}");
-    Console.WriteLine($"  Type: {diff.ChangeType}"); // Created, Modified, Deleted
-    Console.WriteLine($"  Old: {diff.OldValue}");
-    Console.WriteLine($"  New: {diff.NewValue}");
-}
+// Inspect the version timeline
+var timeline = await client.GetFromJsonAsync<List<VersionTimelineEntry>>(
+    $"/api/v1/configurations/{configId}/diff-viewer/timeline");
 ```
 
 ### Example 5: Setting Up Webhooks
@@ -432,29 +438,44 @@ public async Task ReceiveConfigurationChange([FromBody] WebhookPayload payload)
 ### Example 6: Rollback Operations
 
 ```csharp
-// List all versions to find one to rollback to
-var versions = await client.GetAsync(
-    $"/api/v1/configurations/{configId}/versions");
-var versionList = await versions.Content.ReadAsAsync<List<ConfigurationVersion>>();
+// Preview a rollback before executing it
+var rollbackVersionId = "...";
+var preview = await client.GetFromJsonAsync<RollbackPreview>(
+    $"/api/v1/configurations/{configId}/rollback/preview/{rollbackVersionId}");
+Console.WriteLine($"Rollback safe: {preview!.IsRollbackSafe}");
 
-// Display version history
-foreach (var v in versionList)
-{
-    Console.WriteLine($"{v.Version}: {v.Description} (Created: {v.CreatedAt})");
-}
+// Execute the rollback with an audit reason
+var rollbackResponse = await client.PostAsJsonAsync(
+    $"/api/v1/configurations/{configId}/rollback/{rollbackVersionId}",
+    new { reason = "Restore stable production settings" });
+var rollback = await rollbackResponse.Content.ReadAsAsync<RollbackResult>();
 
-// Rollback to a specific version
-var previousVersionId = "...";
-var rollbackRequest = new { reason = "Reverting breaking configuration changes" };
-
-await client.PostAsJsonAsync(
-    $"/api/v1/configurations/{configId}/versions/{previousVersionId}/rollback",
-    rollbackRequest);
-
-Console.WriteLine("Rollback completed successfully");
+// Review rollback history
+var history = await client.GetFromJsonAsync<List<RollbackRecord>>(
+    $"/api/v1/configurations/{configId}/rollback/history");
 ```
 
-### Example 7: Batch Operations
+### Example 7: Validation Rules
+
+```csharp
+// Create a validation rule for service URLs
+await client.PostAsJsonAsync(
+    $"/api/v1/configurations/{configId}/validation-rules",
+    new
+    {
+        name = "Service URL rule",
+        description = "All service URL keys must contain absolute URLs",
+        ruleType = ValidationRuleType.Url,
+        targetKeyPattern = ".*ServiceUrl$"
+    });
+
+// Validate the active configuration
+var validationResult = await client.PostAsJsonAsync(
+    $"/api/v1/configurations/{configId}/validation-rules/validate",
+    new { });
+```
+
+### Example 8: Batch Operations
 
 ```csharp
 // Import multiple configurations at once
@@ -483,7 +504,7 @@ if (result.FailureCount > 0)
 }
 ```
 
-### Example 8: Audit Log Retrieval
+### Example 9: Audit Log Retrieval
 
 ```csharp
 // Get audit logs for a configuration
@@ -499,7 +520,7 @@ foreach (var log in auditLogs.Items)
 }
 ```
 
-### Example 9: Configuration Export
+### Example 10: Configuration Export
 
 ```csharp
 // Export configuration as JSON
@@ -517,7 +538,7 @@ var yaml = await yamlResponse.Content.ReadAsStringAsync();
 File.WriteAllText("config-backup.yaml", yaml);
 ```
 
-### Example 10: Health Check & Status
+### Example 11: Health Check & Status
 
 ```csharp
 // Check server health
@@ -709,37 +730,87 @@ Content-Type: application/json
 Response: 200 OK
 ```
 
-#### Rollback Version
-```http
-POST /configurations/{configurationId}/versions/{versionId}/rollback
-Content-Type: application/json
-
-{
-  "reason": "Breaking changes in new version",
-  "notifyWebhooks": true
-}
-
-Response: 200 OK
-```
-
 #### Get Diff
 ```http
 GET /configurations/{configurationId}/versions/{fromVersionId}/diff/{toVersionId}
 
 Response: 200 OK
-[
-  {
-    "key": "Database:Pool",
-    "changeType": "Modified",
-    "oldValue": "10",
-    "newValue": "20"
-  },
-  {
-    "key": "Feature:Beta",
-    "changeType": "Added",
-    "newValue": "true"
-  }
-]
+```
+
+#### Get Enriched Diff
+```http
+GET /configurations/{configurationId}/diff-viewer/{fromVersionId}/{toVersionId}
+
+Response: 200 OK
+```
+
+#### Get Version Timeline
+```http
+GET /configurations/{configurationId}/diff-viewer/timeline
+
+Response: 200 OK
+```
+
+#### Preview Rollback
+```http
+GET /configurations/{configurationId}/diff-viewer/rollback-preview/{targetVersionId}
+GET /configurations/{configurationId}/rollback/preview/{targetVersionId}
+
+Response: 200 OK
+```
+
+#### Rollback Version
+```http
+POST /configurations/{configurationId}/rollback/{targetVersionId}
+Content-Type: application/json
+
+{
+  "reason": "Breaking changes in new version"
+}
+
+Response: 200 OK
+```
+
+#### Rollback History
+```http
+GET /configurations/{configurationId}/rollback/history
+
+Response: 200 OK
+```
+
+### Validation Rules
+
+#### List Rules
+```http
+GET /configurations/{configurationId}/validation-rules
+
+Response: 200 OK
+```
+
+#### Create Rule
+```http
+POST /configurations/{configurationId}/validation-rules
+Content-Type: application/json
+
+{
+  "name": "Service URL rule",
+  "ruleType": "Url",
+  "targetKeyPattern": ".*ServiceUrl$"
+}
+
+Response: 201 Created
+```
+
+#### Validate Configuration
+```http
+POST /configurations/{configurationId}/validation-rules/validate
+Content-Type: application/json
+
+{
+  "versionId": "optional-version-id"
+}
+
+Response: 200 OK
 ```
 
 ### Webhooks

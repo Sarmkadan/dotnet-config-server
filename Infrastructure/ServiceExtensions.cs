@@ -43,7 +43,8 @@ public static class ServiceExtensions
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
         services.AddScoped<IConfigurationSnapshotRepository, ConfigurationSnapshotRepository>();
         services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
-
+        services.AddScoped<IValidationRuleRepository, ValidationRuleRepository>();
+ 
         return services;
     }
 
@@ -58,6 +59,7 @@ public static class ServiceExtensions
         services.AddScoped<IDiffService, DiffService>();
         services.AddScoped<IDiffViewerService, DiffViewerService>();
         services.AddScoped<IRollbackService, RollbackService>();
+        services.AddScoped<IValidationRuleService, ValidationRuleService>();
         services.AddScoped<IWebhookService, WebhookService>();
         services.AddScoped<ChangeRequestService>();
 

@@ -29,6 +29,7 @@ sealed public class ApplicationDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; } = null!;
     public DbSet<EncryptionKey> EncryptionKeys { get; set; } = null!;
     public DbSet<ChangeRequest> ChangeRequests { get; set; } = null!;
+    public DbSet<ValidationRule> ValidationRules { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -145,6 +146,18 @@ sealed public class ApplicationDbContext : DbContext
             entity.HasIndex(r => new { r.ConfigurationId, r.Status });
             entity.Property(r => r.RequestedBy).IsRequired().HasMaxLength(256);
             entity.Property(r => r.Payload).IsRequired();
+        });
+
+        // Configure ValidationRule
+        modelBuilder.Entity<ValidationRule>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.HasIndex(r => r.ConfigurationId);
+            entity.HasIndex(r => new { r.ConfigurationId, r.IsActive });
+            entity.Property(r => r.Name).IsRequired().HasMaxLength(256);
+            entity.Property(r => r.Description).HasMaxLength(1024);
+            entity.Property(r => r.CreatedBy).IsRequired();
+            entity.Property(r => r.TargetKeyPattern).HasMaxLength(512);
         });
     }
 }
