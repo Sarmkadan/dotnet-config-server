@@ -73,7 +73,7 @@ sealed public class ApplicationsController : ControllerBase
         try
         {
             var application = await _repository.GetByIdAsync(id);
-            if (application == null)
+            if (application is null)
                 return NotFound(new { error = "Application not found" });
 
             return Ok(application);
@@ -124,7 +124,7 @@ sealed public class ApplicationsController : ControllerBase
         try
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
+            if (existing is null)
                 return NotFound(new { error = "Application not found" });
 
             existing.Name = application.Name;
@@ -155,7 +155,7 @@ sealed public class ApplicationsController : ControllerBase
         try
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
+            if (existing is null)
                 return NotFound(new { error = "Application not found" });
 
             await _repository.DeleteAsync(existing);

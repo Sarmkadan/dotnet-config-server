@@ -60,7 +60,7 @@ sealed public class CliArgumentParser
     public bool GetBoolValue(string key, bool defaultValue = false)
     {
         var value = GetValue(key);
-        return value == null ? defaultValue : bool.TryParse(value, out var result) ? result : defaultValue;
+        return value is null ? defaultValue : bool.TryParse(value, out var result) ? result : defaultValue;
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ Examples:
     /// </summary>
     public bool ValidateRequired(params string[] requiredArgs)
     {
-        var missing = requiredArgs.Where(arg => !HasFlag(arg) && GetValue(arg) == null).ToList();
+        var missing = requiredArgs.Where(arg => !HasFlag(arg) && GetValue(arg) is null).ToList();
 
         if (missing.Count > 0)
         {

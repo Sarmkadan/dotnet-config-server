@@ -97,7 +97,7 @@ sealed public class PerformanceMetrics
     public double GetAverageDurationMs(string? path = null)
     {
         var query = _metrics.AsEnumerable();
-        if (path != null)
+        if (path is not null)
             query = query.Where(m => m.Path == path);
 
         return query.Any() ? query.Average(m => m.DurationMs) : 0;

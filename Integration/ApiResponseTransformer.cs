@@ -73,7 +73,7 @@ sealed public class ApiResponseTransformer : IApiResponseTransformer
                 if (fieldMapping.TryGetValue(property.Name, out var jsonPath))
                 {
                     var value = ExtractValue(doc.RootElement, jsonPath);
-                    if (value != null)
+                    if (value is not null)
                     {
                         try
                         {

@@ -78,7 +78,7 @@ sealed public class WebhooksController : ControllerBase
         try
         {
             var subscription = await _repository.GetByIdAsync(id);
-            if (subscription == null)
+            if (subscription is null)
                 return NotFound(new { error = "Webhook subscription not found" });
 
             return Ok(subscription);
@@ -120,7 +120,7 @@ sealed public class WebhooksController : ControllerBase
         try
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null)
+            if (existing is null)
                 return NotFound(new { error = "Webhook subscription not found" });
 
             existing.Url = subscription.Url;
@@ -153,7 +153,7 @@ sealed public class WebhooksController : ControllerBase
         try
         {
             var subscription = await _repository.GetByIdAsync(id);
-            if (subscription == null)
+            if (subscription is null)
                 return NotFound(new { error = "Webhook subscription not found" });
 
             await _repository.DeleteAsync(subscription);
@@ -180,7 +180,7 @@ sealed public class WebhooksController : ControllerBase
         try
         {
             var subscription = await _repository.GetByIdAsync(id);
-            if (subscription == null)
+            if (subscription is null)
                 return NotFound(new { error = "Webhook subscription not found" });
 
             var testPayload = new { message = "Webhook test", timestamp = DateTime.UtcNow };

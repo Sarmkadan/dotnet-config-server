@@ -81,7 +81,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<WebhookSubscription> UpdateSubscriptionAsync(Guid subscriptionId, WebhookSubscription subscription, string userId)
     {
         var existing = await _subscriptionRepository.GetByIdAsync(subscriptionId);
-        if (existing == null)
+        if (existing is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
 
         existing.Name = subscription.Name;
@@ -107,7 +107,7 @@ sealed public class WebhookService : IWebhookService
     public async Task DeleteSubscriptionAsync(Guid subscriptionId, string userId)
     {
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
-        if (subscription == null)
+        if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
 
         subscription.IsActive = false;
@@ -124,7 +124,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<WebhookDelivery> DeliverAsync(Guid subscriptionId, string payload, Guid versionId)
     {
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
-        if (subscription == null)
+        if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
 
         var delivery = new WebhookDelivery
@@ -177,7 +177,7 @@ sealed public class WebhookService : IWebhookService
             if (delivery.AttemptNumber < maxRetries)
             {
                 var subscription = await _subscriptionRepository.GetByIdAsync(delivery.WebhookSubscriptionId);
-                if (subscription != null && subscription.IsActive)
+                if (subscription is not null && subscription.IsActive)
                 {
                     try
                     {
@@ -204,7 +204,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<WebhookSubscription> ActivateAsync(Guid subscriptionId, string userId)
     {
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
-        if (subscription == null)
+        if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
 
         subscription.Activate();
@@ -220,7 +220,7 @@ sealed public class WebhookService : IWebhookService
     public async Task<WebhookSubscription> DeactivateAsync(Guid subscriptionId, string userId)
     {
         var subscription = await _subscriptionRepository.GetByIdAsync(subscriptionId);
-        if (subscription == null)
+        if (subscription is null)
             throw new ConfigurationNotFoundException(subscriptionId.ToString());
 
         subscription.Deactivate();
@@ -239,7 +239,7 @@ sealed public class WebhookService : IWebhookService
         };
 
         // Add custom headers
-        if (subscription.CustomHeaders != null)
+        if (subscription.CustomHeaders is not null)
         {
             foreach (var header in subscription.CustomHeaders)
             {

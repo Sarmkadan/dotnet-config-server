@@ -63,7 +63,7 @@ public static class CollectionExtensions
     /// </summary>
     public static bool IsNullOrEmpty<T>(this IEnumerable<T>? source)
     {
-        return source == null || !source.Any();
+        return source is null || !source.Any();
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public static class CollectionExtensions
         {
             var key = keySelector(enumerator.Current);
 
-            if (!key?.Equals(currentKey) ?? currentKey != null)
+            if (!key?.Equals(currentKey) ?? currentKey is not null)
             {
                 yield return new ConsecutiveGroup<TKey, T>(currentKey, group);
                 group = new List<T>();
