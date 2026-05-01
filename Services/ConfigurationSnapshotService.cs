@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -36,7 +37,7 @@ public interface IConfigurationSnapshotService
     Task RestoreFromSnapshotAsync(Guid snapshotId, string userId, string reason);
 }
 
-public class ConfigurationSnapshotService : IConfigurationSnapshotService
+sealed public class ConfigurationSnapshotService : IConfigurationSnapshotService
 {
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
@@ -118,7 +119,7 @@ public class ConfigurationSnapshotService : IConfigurationSnapshotService
     }
 }
 
-public class ConfigurationSnapshot
+sealed public class ConfigurationSnapshot
 {
     public Guid Id { get; set; }
     public Guid ConfigurationId { get; set; }

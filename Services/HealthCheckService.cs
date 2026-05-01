@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -30,7 +31,7 @@ public interface IHealthCheckService
     Task<bool> IsAliveAsync();
 }
 
-public class HealthCheckService : IHealthCheckService
+sealed public class HealthCheckService : IHealthCheckService
 {
     private readonly ILogger<HealthCheckService> _logger;
     private readonly ICacheService? _cacheService;
@@ -133,7 +134,7 @@ public class HealthCheckService : IHealthCheckService
     }
 }
 
-public class HealthReport
+sealed public class HealthReport
 {
     public string Status { get; set; } = "healthy"; // healthy, degraded, unhealthy
     public DateTime Timestamp { get; set; }
@@ -144,7 +145,7 @@ public class HealthReport
     public Dictionary<string, HealthCheck> Checks { get; set; } = new();
 }
 
-public class HealthCheck
+sealed public class HealthCheck
 {
     public string Status { get; set; } = string.Empty; // healthy, warning, unhealthy
     public string Message { get; set; } = string.Empty;

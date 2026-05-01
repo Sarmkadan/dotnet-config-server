@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -157,7 +158,7 @@ public static class ValidationExtensions
 /// <summary>
 /// Result of a validation operation.
 /// </summary>
-public class ValidationResult
+sealed public class ValidationResult
 {
     public bool IsValid { get; set; }
     public string? ErrorMessage { get; set; }

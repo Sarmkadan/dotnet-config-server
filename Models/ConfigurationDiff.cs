@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents the difference between two configuration versions
 /// </summary>
-public class ConfigurationDiff
+sealed public class ConfigurationDiff
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -121,7 +122,7 @@ public class ConfigurationDiff
 /// <summary>
 /// Represents a single change in a diff
 /// </summary>
-public class DiffEntry
+sealed public class DiffEntry
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -184,7 +185,7 @@ public class DiffEntry
 /// <summary>
 /// Summary view of a configuration diff
 /// </summary>
-public class ConfigurationDiffSummary
+sealed public class ConfigurationDiffSummary
 {
     public Guid Id { get; set; }
     public int TotalChanges { get; set; }

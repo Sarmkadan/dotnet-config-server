@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ namespace DotnetConfigServer.Data;
 /// <summary>
 /// Entity Framework DbContext for the configuration server
 /// </summary>
-public class ApplicationDbContext : DbContext
+sealed public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {

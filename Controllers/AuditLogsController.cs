@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,7 +17,7 @@ namespace DotnetConfigServer.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Produces("application/json")]
-public class AuditLogsController : ControllerBase
+sealed public class AuditLogsController : ControllerBase
 {
     private readonly IAuditLogRepository _repository;
     private readonly ILogger<AuditLogsController> _logger;
@@ -203,7 +204,7 @@ public class AuditLogsController : ControllerBase
     }
 }
 
-public class AuditSummary
+sealed public class AuditSummary
 {
     public int TotalChanges { get; set; }
     public int CreateCount { get; set; }

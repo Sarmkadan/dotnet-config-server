@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,7 +16,7 @@ namespace DotnetConfigServer.Examples
     /// Basic client for retrieving configurations from Dotnet Config Server.
     /// Demonstrates simple HTTP-based configuration retrieval.
     /// </summary>
-    public class BasicConfigurationClient
+    sealed public class BasicConfigurationClient
     {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
@@ -79,7 +80,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    public class Configuration
+    sealed public class Configuration
     {
         public Guid Id { get; set; }
         public Guid ApplicationId { get; set; }
@@ -93,7 +94,7 @@ namespace DotnetConfigServer.Examples
             Keys.Find(k => k.Key == keyName)?.Value ?? throw new KeyNotFoundException($"Key '{keyName}' not found");
     }
 
-    public class ConfigurationKey
+    sealed public class ConfigurationKey
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -102,7 +103,7 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    public class PagedResult<T>
+    sealed public class PagedResult<T>
     {
         public List<T> Items { get; set; }
         public int TotalCount { get; set; }
@@ -111,7 +112,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // Example usage
-    public class Program
+    sealed public class Program
     {
         public static async Task Main(string[] args)
         {

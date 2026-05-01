@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a version of a configuration with associated keys
 /// </summary>
-public class ConfigurationVersion
+sealed public class ConfigurationVersion
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -165,7 +166,7 @@ public class ConfigurationVersion
 /// <summary>
 /// Summary view of a configuration version
 /// </summary>
-public class ConfigurationVersionSummary
+sealed public class ConfigurationVersionSummary
 {
     public Guid Id { get; set; }
     public string VersionNumber { get; set; } = string.Empty;

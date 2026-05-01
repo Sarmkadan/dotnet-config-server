@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents an encryption key used for configuration encryption
 /// </summary>
-public class EncryptionKey
+sealed public class EncryptionKey
 {
     [Key]
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -29,10 +30,10 @@ public class EncryptionKey
     public EncryptionAlgorithm Algorithm { get; set; } = EncryptionAlgorithm.AES256;
 
     [Required]
-    public byte[] EncryptedKey { get; set; } = Array.Empty<byte>();
+    public byte[] EncryptedKey { get; set; } = [];
 
     [Required]
-    public byte[] Salt { get; set; } = Array.Empty<byte>();
+    public byte[] Salt { get; set; } = [];
 
     [StringLength(1024)]
     public string? Description { get; set; }
@@ -168,7 +169,7 @@ public class EncryptionKey
 /// <summary>
 /// Summary view of an encryption key (safe for sharing)
 /// </summary>
-public class EncryptionKeySummary
+sealed public class EncryptionKeySummary
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

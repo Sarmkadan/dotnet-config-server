@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,7 +12,7 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-public class ConfigurationModelTests
+sealed public class ConfigurationModelTests
 {
     private static Configuration CreateValidConfiguration() => new()
     {
