@@ -13,7 +13,7 @@ using DotnetConfigServer.Exceptions;
 namespace DotnetConfigServer.Services;
 
 /// <summary>
-/// Service for managing configurations
+/// Service for managing configurations.
 /// </summary>
 public sealed class ConfigurationService : IConfigurationService
 {
@@ -24,6 +24,15 @@ public sealed class ConfigurationService : IConfigurationService
     private readonly IEventBus _eventBus;
     private readonly ILogger<ConfigurationService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigurationService"/> class.
+    /// </summary>
+    /// <param name="configRepository">The configuration repository.</param>
+    /// <param name="keyRepository">The configuration key repository.</param>
+    /// <param name="encryptionService">The encryption service.</param>
+    /// <param name="auditLogRepository">The audit log repository.</param>
+    /// <param name="eventBus">The event bus.</param>
+    /// <param name="logger">The logger instance.</param>
     public ConfigurationService(
         IConfigurationRepository configRepository,
         IConfigurationKeyRepository keyRepository,
@@ -40,9 +49,7 @@ public sealed class ConfigurationService : IConfigurationService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Creates a new configuration
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<Configuration> CreateAsync(Configuration configuration, string userId)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -81,9 +88,7 @@ public sealed class ConfigurationService : IConfigurationService
         return configuration;
     }
 
-    /// <summary>
-    /// Gets a configuration by ID
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<Configuration?> GetByIdAsync(Guid id)
     {
         var config = await _configRepository.GetByIdAsync(id);
@@ -92,9 +97,7 @@ public sealed class ConfigurationService : IConfigurationService
         return config;
     }
 
-    /// <summary>
-    /// Gets all configurations for an application
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<List<Configuration>> GetByApplicationAsync(Guid applicationId)
     {
         return await _configRepository.GetByApplicationIdAsync(applicationId);

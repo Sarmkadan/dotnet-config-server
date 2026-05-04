@@ -36,15 +36,23 @@ public interface IConfigurationImportService
     Task<ImportValidationResult> ValidateAsync(string data, string format);
 }
 
+/// <summary>
+/// Service for importing configurations from various formats.
+/// </summary>
 public sealed class ConfigurationImportService : IConfigurationImportService
 {
     private readonly ILogger<ConfigurationImportService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigurationImportService"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
     public ConfigurationImportService(ILogger<ConfigurationImportService> logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromJsonAsync(string json, Guid configurationId)
     {
         try
@@ -79,6 +87,7 @@ public sealed class ConfigurationImportService : IConfigurationImportService
         }
     }
 
+    /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromCsvAsync(string csv, Guid configurationId)
     {
         var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -115,6 +124,7 @@ public sealed class ConfigurationImportService : IConfigurationImportService
         return await Task.FromResult(keys);
     }
 
+    /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromEnvAsync(string envContent, Guid configurationId)
     {
         var lines = envContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -144,6 +154,7 @@ public sealed class ConfigurationImportService : IConfigurationImportService
         return await Task.FromResult(keys);
     }
 
+    /// <inheritdoc/>
     public async Task<ImportValidationResult> ValidateAsync(string data, string format)
     {
         var result = new ImportValidationResult { IsValid = true };
@@ -201,9 +212,23 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     }
 }
 
+/// <summary>
+/// Represents the result of an import validation.
+/// </summary>
 public sealed class ImportValidationResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the import data is valid.
+    /// </summary>
     public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of validation errors.
+    /// </summary>
     public List<string> Errors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the estimated row count for the import.
+    /// </summary>
     public int EstimatedRowCount { get; set; }
 }
