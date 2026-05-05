@@ -97,3 +97,9 @@ coverage/
 *.pem
 *.key
 *.crt
+
+# Development settings
+appsettings.Development.json
+
+# Rider/IntelliJ settings
+*.DotSettings.user
