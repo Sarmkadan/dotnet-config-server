@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Repositories;
 /// <summary>
 /// Repository for Configuration entity
 /// </summary>
-public class ConfigurationRepository : BaseRepository<Configuration>, IConfigurationRepository
+sealed public class ConfigurationRepository : BaseRepository<Configuration>, IConfigurationRepository
 {
     public ConfigurationRepository(ApplicationDbContext context, ILogger<ConfigurationRepository> logger)
         : base(context, logger)

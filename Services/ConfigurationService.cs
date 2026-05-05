@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,7 +14,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Service for managing configurations
 /// </summary>
-public class ConfigurationService : IConfigurationService
+sealed public class ConfigurationService : IConfigurationService
 {
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;

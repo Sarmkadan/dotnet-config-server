@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,7 +16,7 @@ namespace DotnetConfigServer.Examples
     /// Factory for creating and managing HTTP clients for Config Server API.
     /// Handles authentication, retry logic, and error handling.
     /// </summary>
-    public class ConfigurationClientFactory
+    sealed public class ConfigurationClientFactory
     {
         private readonly string _baseUrl;
         private readonly string _apiKey;
@@ -149,7 +150,7 @@ namespace DotnetConfigServer.Examples
     /// <summary>
     /// Implementation of strongly-typed client.
     /// </summary>
-    public class ConfigurationServerClient : IConfigurationServerClient
+    sealed public class ConfigurationServerClient : IConfigurationServerClient
     {
         private readonly HttpClient _httpClient;
 
@@ -205,7 +206,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // DTOs
-    public class Configuration
+    sealed public class Configuration
     {
         public Guid Id { get; set; }
         public Guid ApplicationId { get; set; }
@@ -214,7 +215,7 @@ namespace DotnetConfigServer.Examples
         public System.Collections.Generic.List<ConfigurationKey> Keys { get; set; } = new();
     }
 
-    public class ConfigurationKey
+    sealed public class ConfigurationKey
     {
         public Guid Id { get; set; }
         public string Key { get; set; }
@@ -223,14 +224,14 @@ namespace DotnetConfigServer.Examples
         public string Description { get; set; }
     }
 
-    public class CreateConfigurationRequest
+    sealed public class CreateConfigurationRequest
     {
         public Guid ApplicationId { get; set; }
         public string Environment { get; set; }
         public string Description { get; set; }
     }
 
-    public class ConfigurationKeyRequest
+    sealed public class ConfigurationKeyRequest
     {
         public string Key { get; set; }
         public string Value { get; set; }

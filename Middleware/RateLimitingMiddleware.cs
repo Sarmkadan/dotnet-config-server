@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,7 +13,7 @@ namespace DotnetConfigServer.Middleware;
 /// Rate limiting middleware using token bucket algorithm per IP address.
 /// Prevents abuse by limiting requests per client within a time window.
 /// </summary>
-public class RateLimitingMiddleware
+sealed public class RateLimitingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly RateLimitOptions _options;
@@ -47,13 +48,13 @@ public class RateLimitingMiddleware
     }
 }
 
-public class RateLimitOptions
+sealed public class RateLimitOptions
 {
     public int RequestsPerMinute { get; set; } = 100;
     public int RetryAfterSeconds { get; set; } = 60;
 }
 
-public class RateLimitBucket
+sealed public class RateLimitBucket
 {
     private readonly int _capacity;
     private double _tokens;

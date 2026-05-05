@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -20,7 +21,7 @@ namespace DotnetConfigServer.Examples
     /// When configuration changes in the server, clients receive immediate notifications
     /// and can update their in-memory configuration without restarting.
     /// </summary>
-    public class WebhookConfigurationReloader
+    sealed public class WebhookConfigurationReloader
     {
         private readonly ILogger<WebhookConfigurationReloader> _logger;
         private readonly string _webhookSecret;
@@ -151,7 +152,7 @@ namespace DotnetConfigServer.Examples
         }
     }
 
-    public class WebhookPayload
+    sealed public class WebhookPayload
     {
         public string EventId { get; set; }
         public string EventType { get; set; }
@@ -161,7 +162,7 @@ namespace DotnetConfigServer.Examples
         public List<ConfigurationChange> Changes { get; set; }
     }
 
-    public class ConfigurationChange
+    sealed public class ConfigurationChange
     {
         public string Key { get; set; }
         public string OldValue { get; set; }
@@ -169,7 +170,7 @@ namespace DotnetConfigServer.Examples
     }
 
     // ASP.NET Core startup example
-    public class WebhookStartup
+    sealed public class WebhookStartup
     {
         public void ConfigureServices(IServiceCollection services)
         {
