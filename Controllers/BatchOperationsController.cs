@@ -39,7 +39,7 @@ sealed public class BatchOperationsController : ControllerBase
     {
         try
         {
-            if (updates == null || updates.Count == 0)
+            if (updates is null || updates.Count == 0)
                 return BadRequest(new { error = "At least one update is required" });
 
             if (updates.Count > 1000)
@@ -68,7 +68,7 @@ sealed public class BatchOperationsController : ControllerBase
     {
         try
         {
-            if (keyIds == null || keyIds.Count == 0)
+            if (keyIds is null || keyIds.Count == 0)
                 return BadRequest(new { error = "At least one key ID is required" });
 
             if (keyIds.Count > 1000)

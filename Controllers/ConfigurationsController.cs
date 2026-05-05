@@ -72,7 +72,7 @@ sealed public class ConfigurationsController : ControllerBase
         try
         {
             var config = await _configurationService.GetByIdAsync(id);
-            if (config == null)
+            if (config is null)
                 return NotFound(new { error = "Configuration not found" });
 
             return Ok(config);

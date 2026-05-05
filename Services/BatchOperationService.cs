@@ -78,7 +78,7 @@ sealed public class BatchOperationService : IBatchOperationService
                 try
                 {
                     var key = await _keyRepository.GetByIdAsync(update.KeyId);
-                    if (key != null)
+                    if (key is not null)
                     {
                         key.Value = update.NewValue;
                         key.UpdatedBy = userId;
@@ -151,7 +151,7 @@ sealed public class BatchOperationService : IBatchOperationService
                 try
                 {
                     var key = await _keyRepository.GetByIdAsync(keyId);
-                    if (key != null)
+                    if (key is not null)
                     {
                         await _keyRepository.DeleteAsync(key);
                         deleted++;
