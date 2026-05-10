@@ -3,6 +3,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Common;
 using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
 using Microsoft.EntityFrameworkCore;

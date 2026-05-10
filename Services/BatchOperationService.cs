@@ -3,6 +3,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Repositories;
+
 namespace DotnetConfigServer.Services;
 
 /// <summary>

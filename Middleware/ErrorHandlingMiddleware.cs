@@ -50,11 +50,10 @@ public class ErrorHandlingMiddleware
         // Match specific exception types to appropriate HTTP status codes
         context.Response.StatusCode = exception switch
         {
+            ValidationException => StatusCodes.Status422UnprocessableEntity,
             ConfigurationNotFoundException => StatusCodes.Status404NotFound,
             ConfigurationKeyNotFoundException => StatusCodes.Status404NotFound,
-            ApplicationNotFoundException => StatusCodes.Status404NotFound,
             ConfigurationException => StatusCodes.Status400BadRequest,
-            ValidationException => StatusCodes.Status422UnprocessableEntity,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             _ => StatusCodes.Status500InternalServerError
         };
@@ -75,5 +74,5 @@ public class ErrorResponse
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public string TraceId { get; set; } = string.Empty;
-    public Dictionary<string, string>? Errors { get; set; }
+    public Dictionary<string, List<string>>? Errors { get; set; }
 }

@@ -7,6 +7,7 @@ using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
 using Microsoft.EntityFrameworkCore;
 
+using DotnetConfigServer.Exceptions;
 namespace DotnetConfigServer.Repositories;
 
 /// <summary>

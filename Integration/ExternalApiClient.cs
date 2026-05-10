@@ -39,7 +39,7 @@ public class ExternalApiClient
             var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsAsync<T>();
+            return await response.Content.ReadFromJsonAsync<T>();
         }
         catch (Exception ex)
         {
@@ -51,7 +51,7 @@ public class ExternalApiClient
     /// <summary>
     /// Makes a POST request to an external API.
     /// </summary>
-    public async Task<T?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
+    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
         try
         {
@@ -62,7 +62,7 @@ public class ExternalApiClient
             var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsAsync<TResponse>();
+            return await response.Content.ReadFromJsonAsync<TResponse>();
         }
         catch (Exception ex)
         {
@@ -74,7 +74,7 @@ public class ExternalApiClient
     /// <summary>
     /// Makes a PUT request to an external API.
     /// </summary>
-    public async Task<T?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
+    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
         try
         {
@@ -85,7 +85,7 @@ public class ExternalApiClient
             var response = await ExecuteWithRetryAsync(() => _httpClient.SendAsync(request));
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsAsync<TResponse>();
+            return await response.Content.ReadFromJsonAsync<TResponse>();
         }
         catch (Exception ex)
         {

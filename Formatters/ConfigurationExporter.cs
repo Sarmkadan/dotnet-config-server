@@ -86,7 +86,7 @@ public class ConfigurationExporter
                 EscapeCsvValue(config.ApplicationId.ToString()),
                 EscapeCsvValue(config.Name),
                 EscapeCsvValue(config.Description ?? string.Empty),
-                EscapeCsvValue(config.Environment),
+                EscapeCsvValue(config.Environment.ToString()),
                 config.IsActive.ToString(),
                 config.IsEncrypted.ToString(),
                 config.CreatedAt.ToString("O"),

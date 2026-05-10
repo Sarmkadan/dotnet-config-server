@@ -15,6 +15,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
+    <Compile Remove="examples/**/*.cs" />
+    <Compile Remove="Events/EventHandlers.cs" />
+    <Compile Remove="BackgroundWorkers/ConfigurationSyncWorker.cs" />
+    <Compile Remove="BackgroundWorkers/WebhookRetryWorker.cs" />
+    <Compile Remove="Controllers/WebhooksController.cs" />
+    <Compile Remove="Controllers/AuditLogsController.cs" />
+    <Compile Remove="Infrastructure/ServiceExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.8" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.1.0" />

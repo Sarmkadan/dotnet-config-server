@@ -3,6 +3,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 
 namespace DotnetConfigServer.Middleware;
@@ -129,5 +130,3 @@ public class RequestMetric
     public long MemoryUsedBytes { get; set; }
     public DateTime Timestamp { get; set; }
 }
-
-using System.Collections.Concurrent;

@@ -108,12 +108,12 @@ public class MemoryCacheService : ICacheService
         );
     }
 
-    public async Task<CacheStats> GetStatsAsync()
+    public Task<CacheStats> GetStatsAsync()
     {
         lock (_statsLock)
         {
             _stats.Size = _cache.Count;
-            return await Task.FromResult(_stats);
+            return Task.FromResult(_stats);
         }
     }
 

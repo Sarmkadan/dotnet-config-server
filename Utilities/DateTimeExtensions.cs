@@ -21,13 +21,19 @@ public static class DateTimeExtensions
         return timeSpan.TotalSeconds switch
         {
             < 60 => "just now",
-            < 3600 => $"{(int)timeSpan.TotalMinutes} minute{(int)timeSpan.TotalMinutes != 1 ? "s" : ""} ago",
-            < 86400 => $"{(int)timeSpan.TotalHours} hour{(int)timeSpan.TotalHours != 1 ? "s" : ""} ago",
-            < 604800 => $"{(int)timeSpan.TotalDays} day{(int)timeSpan.TotalDays != 1 ? "s" : ""} ago",
-            < 2592000 => $"{(int)(timeSpan.TotalDays / 7)} week{(int)(timeSpan.TotalDays / 7) != 1 ? "s" : ""} ago",
-            < 31536000 => $"{(int)(timeSpan.TotalDays / 30)} month{(int)(timeSpan.TotalDays / 30) != 1 ? "s" : ""} ago",
-            _ => $"{(int)(timeSpan.TotalDays / 365)} year{(int)(timeSpan.TotalDays / 365) != 1 ? "s" : ""} ago"
+            < 3600 => Pluralize((int)timeSpan.TotalMinutes, "minute"),
+            < 86400 => Pluralize((int)timeSpan.TotalHours, "hour"),
+            < 604800 => Pluralize((int)timeSpan.TotalDays, "day"),
+            < 2592000 => Pluralize((int)(timeSpan.TotalDays / 7), "week"),
+            < 31536000 => Pluralize((int)(timeSpan.TotalDays / 30), "month"),
+            _ => Pluralize((int)(timeSpan.TotalDays / 365), "year")
         };
+    }
+
+    private static string Pluralize(int count, string unit)
+    {
+        var suffix = count != 1 ? "s" : string.Empty;
+        return $"{count} {unit}{suffix} ago";
     }
 
     /// <summary>
