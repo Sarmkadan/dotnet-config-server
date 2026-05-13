@@ -5,14 +5,22 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>Zaiets.dotnet.config.server</PackageId>
     <Version>1.0.0</Version>
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Centralized configuration server for .NET microservices - hot reload, encryption, versioning, diff, webhook notify</Description>
+    <PackageTags>dotnet config microservices hot-reload encryption versioning webhooks</PackageTags>
     <PackageProjectUrl>https://github.com/sarmkadan/dotnet-config-server</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/sarmkadan/dotnet-config-server</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="tests/**/*.cs" />
