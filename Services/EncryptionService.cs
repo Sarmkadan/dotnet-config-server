@@ -234,8 +234,9 @@ sealed public class EncryptionService : IEncryptionService
 
     private byte[] DeriveKeyFromEncryptedKey(EncryptionKey key)
     {
+        // Use actual key material for derivation, not the KeyId string
         using (var pbkdf2 = new Rfc2898DeriveBytes(
-            key.KeyId,
+            key.EncryptedKey,
             key.Salt,
             AppConstants.Encryption.AesIterations,
             HashAlgorithmName.SHA256))
