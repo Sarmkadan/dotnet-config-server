@@ -15,7 +15,7 @@ namespace DotnetConfigServer.Services;
 /// <summary>
 /// Manages configuration change requests and the approval workflow.
 /// </summary>
-public sealed class ChangeRequestService
+public sealed class ChangeRequestService : IChangeRequestService
 {
     private readonly IChangeRequestRepository _repository;
     private readonly IConfigurationService _configurationService;

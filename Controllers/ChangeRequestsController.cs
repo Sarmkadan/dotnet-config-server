@@ -22,10 +22,10 @@ namespace DotnetConfigServer.Controllers;
 [Produces("application/json")]
 public sealed class ChangeRequestsController : ControllerBase
 {
-    private readonly ChangeRequestService _service;
+    private readonly IChangeRequestService _service;
     private readonly ILogger<ChangeRequestsController> _logger;
 
-    public ChangeRequestsController(ChangeRequestService service, ILogger<ChangeRequestsController> logger)
+    public ChangeRequestsController(IChangeRequestService service, ILogger<ChangeRequestsController> logger)
     {
         _service = service;
         _logger = logger;

@@ -61,7 +61,7 @@ public static class ServiceExtensions
         services.AddScoped<IRollbackService, RollbackService>();
         services.AddScoped<IValidationRuleService, ValidationRuleService>();
         services.AddScoped<IWebhookService, WebhookService>();
-        services.AddScoped<ChangeRequestService>();
+        services.AddScoped<IChangeRequestService, ChangeRequestService>();
 
         return services;
     }
