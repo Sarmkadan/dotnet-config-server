@@ -126,6 +126,8 @@ Dotnet Config Server provides:
 
 ## Architecture
 
+For the full picture - module breakdown, design decisions with rationale, data flow, extension points, and known limitations - see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The short version:
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                          Client Services                         │
