@@ -42,9 +42,6 @@ try
     builder.Services.AddScoped<IHealthCheckService, HealthCheckService>();
     builder.Services.AddScoped<IConfigurationImportService, ConfigurationImportService>();
     builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
-    builder.Services.AddScoped<IDiffViewerService, DiffViewerService>();
-    builder.Services.AddScoped<IRollbackService, RollbackService>();
-    builder.Services.AddScoped<IValidationRuleService, ValidationRuleService>();
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
     builder.Services.AddSingleton(new ExternalApiClientOptions());
     builder.Services.AddScoped<ExternalApiClient>();
