@@ -8,10 +8,14 @@ using DotnetConfigServer.Utilities;
 using FluentAssertions;
 using Xunit;
 
-namespace DotnetConfigServer.Tests;
-
+/// <summary>
+/// Tests for the CollectionExtensions class.
+/// </summary>
 public sealed class CollectionExtensionsTests
 {
+    /// <summary>
+    /// Tests that the Batch method produces full batches when the collection is divisible by the batch size.
+    /// </summary>
     [Fact]
     public void Batch_CollectionDivisibleByBatchSize_ProducesFullBatches()
     {
@@ -24,6 +28,9 @@ public sealed class CollectionExtensionsTests
         batches[1].Should().Equal(4, 5, 6);
     }
 
+    /// <summary>
+    /// Tests that the Batch method produces a smaller last batch when the collection is not divisible by the batch size.
+    /// </summary>
     [Fact]
     public void Batch_CollectionNotDivisibleByBatchSize_LastBatchIsSmaller()
     {
@@ -35,6 +42,9 @@ public sealed class CollectionExtensionsTests
         batches[2].Should().HaveCount(1).And.Equal(7);
     }
 
+    /// <summary>
+    /// Tests that the Batch method returns no batches for an empty collection.
+    /// </summary>
     [Fact]
     public void Batch_EmptyCollection_ReturnsNoBatches()
     {
@@ -43,6 +53,9 @@ public sealed class CollectionExtensionsTests
         batches.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that the Batch method throws an ArgumentException for an invalid batch size.
+    /// </summary>
     [Fact]
     public void Batch_InvalidBatchSize_ThrowsArgumentException()
     {
@@ -53,6 +66,9 @@ public sealed class CollectionExtensionsTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that the ForEach method executes the action for each element in the collection.
+    /// </summary>
     [Fact]
     public void ForEach_Action_ExecutesForEachElement()
     {
@@ -64,6 +80,9 @@ public sealed class CollectionExtensionsTests
         results.Should().Equal(10, 20, 30);
     }
 
+    /// <summary>
+    /// Tests that the ForEach method passes the correct indices to the action.
+    /// </summary>
     [Fact]
     public void ForEach_ActionWithIndex_PassesCorrectIndices()
     {
@@ -75,6 +94,9 @@ public sealed class CollectionExtensionsTests
         indices.Should().Equal(0, 1, 2);
     }
 
+    /// <summary>
+    /// Tests that the IsNullOrEmpty method returns true for a null collection.
+    /// </summary>
     [Fact]
     public void IsNullOrEmpty_NullCollection_ReturnsTrue()
     {
@@ -83,54 +105,81 @@ public sealed class CollectionExtensionsTests
         source.IsNullOrEmpty().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that the IsNullOrEmpty method returns true for an empty collection.
+    /// </summary>
     [Fact]
     public void IsNullOrEmpty_EmptyCollection_ReturnsTrue()
     {
         new List<int>().IsNullOrEmpty().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that the IsNullOrEmpty method returns false for a non-empty collection.
+    /// </summary>
     [Fact]
     public void IsNullOrEmpty_NonEmptyCollection_ReturnsFalse()
     {
         new[] { 1, 2 }.IsNullOrEmpty().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the IsSingle method returns true for a collection with one element.
+    /// </summary>
     [Fact]
     public void IsSingle_CollectionWithOneElement_ReturnsTrue()
     {
         new[] { 42 }.IsSingle().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that the IsSingle method returns false for a collection with multiple elements.
+    /// </summary>
     [Fact]
     public void IsSingle_CollectionWithMultipleElements_ReturnsFalse()
     {
         new[] { 1, 2 }.IsSingle().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the IsSingle method returns false for an empty collection.
+    /// </summary>
     [Fact]
     public void IsSingle_EmptyCollection_ReturnsFalse()
     {
         new int[0].IsSingle().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the HasMultiple method returns true for a collection with multiple elements.
+    /// </summary>
     [Fact]
     public void HasMultiple_CollectionWithMultipleElements_ReturnsTrue()
     {
         new[] { 1, 2, 3 }.HasMultiple().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that the HasMultiple method returns false for a collection with one element.
+    /// </summary>
     [Fact]
     public void HasMultiple_CollectionWithOneElement_ReturnsFalse()
     {
         new[] { 1 }.HasMultiple().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the HasMultiple method returns false for an empty collection.
+    /// </summary>
     [Fact]
     public void HasMultiple_EmptyCollection_ReturnsFalse()
     {
         new int[0].HasMultiple().Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that the SkipLast method omits the last element for a collection with multiple elements.
+    /// </summary>
     [Fact]
     public void SkipLast_MultipleElements_OmitsLastElement()
     {
@@ -139,6 +188,9 @@ public sealed class CollectionExtensionsTests
         result.Should().Equal(1, 2, 3);
     }
 
+    /// <summary>
+    /// Tests that the SkipLast method returns an empty collection for a collection with one element.
+    /// </summary>
     [Fact]
     public void SkipLast_SingleElement_ReturnsEmpty()
     {
@@ -147,6 +199,9 @@ public sealed class CollectionExtensionsTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that the SkipLast method returns an empty collection for an empty collection.
+    /// </summary>
     [Fact]
     public void SkipLast_EmptyCollection_ReturnsEmpty()
     {
@@ -155,6 +210,9 @@ public sealed class CollectionExtensionsTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that the DistinctBy method returns the first occurrence of each key.
+    /// </summary>
     [Fact]
     public void DistinctBy_DuplicateKeys_ReturnsFirstOccurrence()
     {
@@ -172,6 +230,9 @@ public sealed class CollectionExtensionsTests
         result.Should().NotContain(x => x.Name == "duplicate");
     }
 
+    /// <summary>
+    /// Tests that the DistinctBy method returns all elements when all keys are unique.
+    /// </summary>
     [Fact]
     public void DistinctBy_AllUniqueKeys_ReturnsAllElements()
     {
@@ -182,6 +243,9 @@ public sealed class CollectionExtensionsTests
         result.Should().HaveCount(4);
     }
 
+    /// <summary>
+    /// Tests that the ZipWith method creates correct pairs from two collections.
+    /// </summary>
     [Fact]
     public void ZipWith_TwoCollections_CreatesCorrectPairs()
     {
@@ -196,6 +260,9 @@ public sealed class CollectionExtensionsTests
         pairs[2].Should().Be((3, "c"));
     }
 
+    /// <summary>
+    /// Tests that the FirstOrDefault method returns the default value when the collection is empty.
+    /// </summary>
     [Fact]
     public void FirstOrDefault_WithDefaultValue_ReturnsDefaultWhenEmpty()
     {
@@ -206,6 +273,9 @@ public sealed class CollectionExtensionsTests
         result.Should().Be("fallback");
     }
 
+    /// <summary>
+    /// Tests that the FirstOrDefault method returns the first element when the collection is not empty.
+    /// </summary>
     [Fact]
     public void FirstOrDefault_NonEmptyCollection_ReturnsFirstElement()
     {
@@ -216,6 +286,9 @@ public sealed class CollectionExtensionsTests
         result.Should().Be("alpha");
     }
 
+    /// <summary>
+    /// Tests that the Shuffle method produces all original elements in a random order.
+    /// </summary>
     [Fact]
     public void Shuffle_ProducesAllOriginalElements()
     {
@@ -227,6 +300,9 @@ public sealed class CollectionExtensionsTests
         shuffled.Should().BeEquivalentTo(source);
     }
 
+    /// <summary>
+    /// Tests that the GroupConsecutive method groups consecutive elements with the same value.
+    /// </summary>
     [Fact]
     public void GroupConsecutive_ConsecutiveSameValues_GroupsCorrectly()
     {
