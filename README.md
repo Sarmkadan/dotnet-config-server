@@ -1489,6 +1489,87 @@ Benchmarks measured on a single instance (4 vCPUs, 8 GB RAM, SQL Server on the s
 
 To baseline your own deployment run `GET /metrics` for live request-duration histograms collected by `PerformanceMonitoringMiddleware`.
 
+## ConfigurationDiffTests
+
+The `ConfigurationDiffTests` class provides comprehensive unit tests for the `ConfigurationDiff` class, which is responsible for tracking and calculating differences between configuration versions. It validates diff calculation functionality including added, modified, and deleted key detection, change tracking, and validation of diff entries.
+
+### Public Members
+
+- `AddChange_SingleAddedEntry_IncrementsOnlyAddedCounter` - Tests single added entry tracking
+- `AddChange_MixedChangeTypes_TotalReflectsAllCounters` - Tests mixed change type tracking
+- `GetChangesByType_FiltersBySpecifiedType` - Tests filtering changes by type
+- `GetSummary_ReflectsAccumulatedCounts` - Tests summary generation
+- `DiffEntry_Validate_AddedEntryWithNullNewValue_ThrowsValidationException` - Tests validation of added entries
+- `DiffEntry_Validate_DeletedEntryWithNullOldValue_ThrowsValidationException` - Tests validation of deleted entries
+- `DiffEntry_Validate_ModifiedEntryWithBothValues_DoesNotThrow` - Tests validation of modified entries
+- `DiffEntry_GetChangeDescription_ModifiedEntry_ContainsBothOldAndNewValues` - Tests change description generation for modified entries
+- `DiffEntry_GetChangeDescription_AddedEntry_FormatsCorrectly` - Tests change description formatting for added entries
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Common;
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Tests;
+using FluentAssertions;
+
+// Create a diff instance
+var diff = new ConfigurationDiff
+{
+    ConfigurationId = Guid.NewGuid(),
+    FromVersionId = Guid.NewGuid(),
+    ToVersionId = Guid.NewGuid(),
+    CreatedBy = "test-user"
+};
+
+// Add changes of different types
+diff.AddChange("database.host", ChangeType.Added, null, "localhost");
+diff.AddChange("cache.ttl", ChangeType.Modified, "300", "600");
+diff.AddChange("legacy.endpoint", ChangeType.Deleted, "old-url");
+
+// Verify counters
+Console.WriteLine($"Total changes: {diff.TotalChanges}"); // Output: Total changes: 3
+Console.WriteLine($"Added: {diff.AddedCount}"); // Output: Added: 1
+Console.WriteLine($"Modified: {diff.ModifiedCount}"); // Output: Modified: 1
+Console.WriteLine($"Deleted: {diff.DeletedCount}"); // Output: Deleted: 1
+
+// Get changes by type
+var addedChanges = diff.GetChangesByType(ChangeType.Added);
+var modifiedChanges = diff.GetChangesByType(ChangeType.Modified);
+var deletedChanges = diff.GetChangesByType(ChangeType.Deleted);
+
+// Get summary
+var summary = diff.GetSummary();
+Console.WriteLine($"Summary created by: {summary.CreatedBy}"); // Output: Summary created by: test-user
+
+// Validate diff entries
+var addedEntry = new DiffEntry
+{
+    Key = "feature.flag",
+    ChangeType = ChangeType.Added,
+    NewValue = "true"
+};
+
+var deletedEntry = new DiffEntry
+{
+    Key = "old.key",
+    ChangeType = ChangeType.Deleted,
+    OldValue = "value"
+};
+
+var modifiedEntry = new DiffEntry
+{
+    Key = "db.timeout",
+    ChangeType = ChangeType.Modified,
+    OldValue = "30",
+    NewValue = "60"
+};
+
+// Get change descriptions
+Console.WriteLine(addedEntry.GetChangeDescription()); // Output: Added: feature.flag = true
+Console.WriteLine(modifiedEntry.GetChangeDescription()); // Output: Modified: db.timeout from 30 to 60
+```
+
 ## CachingBenchmarks
 
 The `CachingBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance and behavior of caching strategies in the configuration server. It includes scenarios for cache hits, cache misses, cache-aside implementation efficiency, cache eviction, and cache size management.
