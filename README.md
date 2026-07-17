@@ -1990,6 +1990,31 @@ catch (ConfigurationException ex) when (ex.TryGetConfigurationId(out var configI
 }
 ```
 
+## NotFoundException
+
+The `NotFoundException` is thrown when the requested resource is not found.
+
+Example usage:
+```csharp
+var notFoundException = new NotFoundException("Resource not found");
+
+// Application-specific exceptions
+var appException = new ApplicationNotFoundException("app-123");
+var appGuidException = new ApplicationNotFoundException(Guid.Parse("123e4567-e89b-12d3-a456-426614174000"));
+
+// User-specific exceptions  
+var userException = new UserNotFoundException("user-456");
+var userGuidException = new UserNotFoundException(Guid.Parse("123e4567-e89b-12d3-a456-426614174001"));
+
+// Webhook delivery exceptions
+var deliveryException = new WebhookDeliveryNotFoundException("delivery-789");
+var deliveryGuidException = new WebhookDeliveryNotFoundException(Guid.Parse("123e4567-e89b-12d3-a456-426614174002"));
+
+// Change request exceptions
+var changeRequestException = new ChangeRequestNotFoundException("change-101");
+var changeRequestGuidException = new ChangeRequestNotFoundException(Guid.Parse("123e4567-e89b-12d3-a456-426614174003"));
+```
+
 ## ValidationResult
 
 `ValidationResult` is a sealed record used to represent the outcome of validation operations throughout the Dotnet Config Server application. It provides a simple way to indicate whether validation succeeded or failed, and includes methods for serializing/deserializing validation results to/from JSON.
