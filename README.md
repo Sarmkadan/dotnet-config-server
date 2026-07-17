@@ -56,6 +56,73 @@ curl -s -X POST https://localhost:5001/api/v1/configurations \
   -d '{"applicationId":"<id>","environment":"Development","description":"Dev config"}' | jq .
 ```
 
+## Application
+
+The `Application` class represents a client application that can have configurations managed by the Dotnet Config Server. It serves as the container for all configuration data and provides essential metadata including API keys, webhook URLs, and version history settings. Applications can be activated or deactivated, and each maintains a count of its configurations for quick reference.
+
+Each application has a unique identifier, a human-readable name, a URL-friendly slug, and optional description. It includes security credentials (API key and optional secret key), configuration limits (max version history), and auto-reload capabilities for real-time configuration updates.
+
+
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a new application for an order processing service
+var orderServiceApp = new Application
+{
+    Name = "OrderProcessingService",
+    Description = "Order processing microservice with payment integration",
+    Slug = "order-processing-service",
+    CreatedBy = "backend-team@example.com",
+    IsActive = true,
+    EnableAutoReload = true,
+    MaxVersionHistory = 50, // Keep 50 versions of configuration history
+    WebhookUrl = "https://order-service.example.com/config/webhook"
+};
+
+// Generate secure API keys for authentication
+orderServiceApp.GenerateNewApiKey();
+orderServiceApp.GenerateNewSecretKey(); // Optional for additional security
+
+Console.WriteLine($"Created application: {orderServiceApp.Name}");
+Console.WriteLine($"API Key: {orderServiceApp.ApiKey}");
+Console.WriteLine($"Secret Key: {orderServiceApp.SecretKey}");
+Console.WriteLine($"Configuration Count: {orderServiceApp.ConfigurationCount}");
+
+// Validate the application configuration
+try
+{
+    orderServiceApp.Validate();
+    Console.WriteLine("Application configuration is valid!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($"  {error.Key}: {error.Value}");
+    }
+}
+
+// Update last accessed timestamp
+orderServiceApp.UpdateLastAccess();
+
+// Deactivate the application when it's no longer needed
+orderServiceApp.Deactivate("admin@example.com");
+Console.WriteLine($"Application active status: {orderServiceApp.IsActive}");
+
+// Activate the application when needed
+orderServiceApp.Activate("admin@example.com");
+Console.WriteLine($"Application active status: {orderServiceApp.IsActive}");
+
+// Get a summary view (without sensitive data)
+var summary = orderServiceApp.GetSummary();
+Console.WriteLine($"Application summary - {summary.Name} ({summary.Id}): {summary.ConfigurationCount} configurations");
+```
+
 ## Overview
 
 **Dotnet Config Server** is an enterprise-ready centralized configuration management solution designed for modern microservice architectures. It addresses the complexity of managing configurations across multiple applications, environments, and deployment stages by providing a single source of truth with advanced features like encryption, versioning, and real-time notifications.
