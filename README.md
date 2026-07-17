@@ -644,6 +644,78 @@ Console.WriteLine($"Version summary - v{summary.VersionNumber} ({summary.Status}
 - `GetSummary()` - Returns a summary view of the version
 
 
+## MultiEnvironmentManager
+
+The `MultiEnvironmentManager` class provides utilities for managing configurations across multiple environments (Development, Staging, Production). It simplifies common multi-environment operations like promoting configurations between environments, synchronizing feature flags, and comparing environment configurations. This manager handles environment-specific configuration management through a centralized API interface.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Initialize the manager with your application ID and server URL
+var appId = "550e8400-e29b-41d4-a716-446655440000"; // Your application ID
+var manager = new MultiEnvironmentManager("https://localhost:5001", appId);
+
+// Example 1: Display promotion workflow
+await manager.DisplayPromotionWorkflowAsync();
+
+// Example 2: Compare configurations between two environments
+await manager.DisplayEnvironmentComparisonAsync("Development", "Production");
+
+// Example 3: Promote configuration from Development to Staging
+// int promotedCount = await manager.PromoteAsync(
+//     "Development", 
+//     "Staging", 
+//     overwrite: true
+// );
+
+// Example 4: Promote specific keys from Staging to Production
+// int promotedCount = await manager.PromoteAsync(
+//     "Staging",
+//     "Production",
+//     overwrite: false,
+//     keyFilter: new List<string> { "Database:Host", "Features:EnableNewCheckout" }
+// );
+
+// Example 5: Synchronize a feature flag across all environments
+// await manager.SynchronizeKeyAsync(
+//     "Features:MaintenanceMode", 
+//     "false",
+//     isEncrypted: false
+// );
+
+// Example 6: Get or create environment configuration
+// string configId = await manager.GetOrCreateEnvironmentConfigAsync("Development", "Dev configuration");
+
+// Example 7: List all environment configurations
+// var configs = await manager.ListEnvironmentConfigurationsAsync();
+// foreach (var config in configs) {
+//     Console.WriteLine($"[{config.Environment}] {config.Id} - {config.KeyCount} keys");
+// }
+```
+
+### Public Members
+
+- `MultiEnvironmentManager(string baseUrl, string applicationId)` - Constructor that initializes the manager with server URL and application ID
+- `GetOrCreateEnvironmentConfigAsync(string environment, string description = null)` - Get existing configuration or create new one for the specified environment
+- `ListEnvironmentConfigurationsAsync()` - List all configurations for this application across all environments
+- `PromoteAsync(string sourceEnvironment, string targetEnvironment, bool overwrite = true, List<string> keyFilter = null)` - Promote configuration from source to target environment
+- `DisplayEnvironmentComparisonAsync(string env1, string env2)` - Compare configurations between two environments
+- `SynchronizeKeyAsync(string keyName, string value, bool isEncrypted = false)` - Synchronize a specific key across all environments
+- `DisplayPromotionWorkflowAsync()` - Display the environment promotion workflow
+
+### DTO Classes
+
+The manager uses the following data transfer objects:
+
+- `ConfigurationDto` - Basic configuration information with properties: `Id`, `Environment`, `Description`, `KeyCount`, `CreatedAt`
+- `ConfigurationDetailsDto` - Detailed configuration with properties: `Id`, `Environment`, `Keys` (list of `ConfigurationKeyDto`)
+- `ConfigurationKeyDto` - Configuration key with properties: `Key`, `Value`, `IsEncrypted`, `Description`
+- `PagedResult<T>` - Pagination wrapper with properties: `Items` (list of T), `TotalCount`
+
 ## RollbackResult
 
 The `RollbackResult` class represents the outcome of an executed rollback operation. It contains comprehensive information about the rollback including the configuration involved, the new version created, the version that was restored from, the reason for the rollback, who performed it, when it occurred, and how many keys were restored.
