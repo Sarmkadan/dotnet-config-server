@@ -223,6 +223,83 @@ await encryptionService.RotateKeyAsync(encryptionKey.KeyId, "admin@example.com")
 // await encryptionService.ReEncryptConfigurationAsync(configurationId, configurationKeys, "admin@example.com");
 ```
 
+### ValidationRuleService
+
+The `ValidationRuleService` manages validation rules and validates configuration values against them. It supports various rule types including regex patterns, length constraints, numeric ranges, allowed values, URL validation, JSON validation, and cross-key comparisons. The service provides CRUD operations for validation rules and performs validation checks on configurations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IValidationRuleRepository, ValidationRuleRepository>();
+services.AddSingleton<IConfigurationService, ConfigurationService>();
+services.AddSingleton<IVersioningService, VersioningService>();
+services.AddSingleton<ValidationRuleService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var validationRuleService = serviceProvider.GetRequiredService<ValidationRuleService>();
+
+// Create a new validation rule for a configuration
+var rule = new ValidationRule
+{
+    Name = "DatabaseConnectionStringFormat",
+    Description = "Ensures database connection strings follow the correct format",
+    RuleType = ValidationRuleType.Regex,
+    Parameters = @"^Server=[^;]+;Database=[^;]+;User Id=[^;]+;Password=[^;]+;$",
+    TargetKeyPattern = "ConnectionStrings:*",
+    IsActive = true
+};
+
+var createdRule = await validationRuleService.CreateRuleAsync(rule, "admin@example.com");
+Console.WriteLine($"Created rule: {createdRule.Id}");
+
+// Get a specific rule
+var retrievedRule = await validationRuleService.GetRuleAsync(createdRule.Id);
+Console.WriteLine($"Retrieved rule: {retrievedRule?.Name}");
+
+// Get all rules for a configuration
+var rules = await validationRuleService.GetRulesAsync(configurationId);
+Console.WriteLine($"Total rules: {rules.Count}");
+
+// Update a rule
+createdRule.Description = "Updated: Ensures database connection strings follow the correct format";
+var updatedRule = await validationRuleService.UpdateRuleAsync(createdRule.Id, createdRule, "admin@example.com");
+Console.WriteLine($"Updated rule: {updatedRule.Description}");
+
+// Validate a configuration against all rules
+var validationResult = await validationRuleService.ValidateConfigurationAsync(configurationId);
+Console.WriteLine($"Is valid: {validationResult.IsValid}");
+if (!validationResult.IsValid)
+{
+    foreach (var violation in validationResult.Violations)
+    {
+        Console.WriteLine($"Violation: {violation.KeyName} - {violation.Message}");
+    }
+}
+
+// Delete a rule
+await validationRuleService.DeleteRuleAsync(createdRule.Id);
+Console.WriteLine("Rule deleted");
+```
+
+### Rule Types Supported
+
+- **Required**: Ensures keys exist and have non-empty values
+- **Regex**: Validates values against a regular expression pattern
+- **MinLength/MaxLength**: Validates string length constraints
+- **AllowedValues**: Validates that values are in a predefined set
+- **NumericRange**: Validates numeric values fall within a specified range (Min/Max)
+- **URL**: Validates that values are well-formed absolute URLs
+- **JSON**: Validates that values are valid JSON
+- **CrossKey**: Validates relationships between different configuration keys
+
 ### Key Management
 
 The service supports:
