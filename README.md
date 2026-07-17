@@ -1488,6 +1488,85 @@ if (result.FailureCount > 0)
 }
 ```
 
+## RollbackService
+
+The `RollbackService` class handles executing configuration rollbacks and maintaining a complete audit trail of all rollback operations. It coordinates with the versioning system to restore previous configuration states and records the rollback metadata in the audit log for compliance and debugging purposes.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// In your application's service configuration
+var services = new ServiceCollection();
+
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IVersioningService, VersioningService>();
+services.AddSingleton<IAuditLogRepository, AuditLogRepository>();
+services.AddSingleton<RollbackService>();
+
+var provider = services.BuildServiceProvider();
+var rollbackService = provider.GetRequiredService<RollbackService>();
+
+// Execute a rollback to a previous configuration version
+var result = await rollbackService.ExecuteRollbackAsync(
+    configurationId: Guid.Parse("550e8400-e29b-41d4-a716-446655440001"),
+    targetVersionId: Guid.Parse("456e4567-e89b-12d3-a456-426614174001"),
+    reason: "Reverting breaking changes introduced in version 3",
+    userId: "admin@example.com"
+);
+
+Console.WriteLine($"Rollback successful!");
+Console.WriteLine($"Configuration: {result.ConfigurationId}");
+Console.WriteLine($"New version: {result.NewVersion.VersionNumber} ({result.NewVersion.Status})");
+Console.WriteLine($"Restored from: v{result.RestoredFromVersion.VersionNumber}");
+Console.WriteLine($"Keys restored: {result.KeysRestored}");
+Console.WriteLine($"Performed by: {result.PerformedBy} at {result.PerformedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Reason: {result.Reason}");
+
+// Retrieve rollback history for a configuration
+var history = await rollbackService.GetRollbackHistoryAsync(
+    Guid.Parse("550e8400-e29b-41d4-a716-446655440001")
+);
+
+foreach (var record in history)
+{
+    Console.WriteLine($"Rollback #{record.Id}: {record.PerformedBy} restored v{record.RestoredFromVersionId} -> v{record.NewVersionId}");
+}
+```
+
+### Public Members
+
+- `ExecuteRollbackAsync(Guid configurationId, Guid targetVersionId, string reason, string userId)` - Executes a rollback operation to restore a previous configuration version
+- `GetRollbackHistoryAsync(Guid configurationId)` - Retrieves the complete rollback history for a configuration
+
+### RollbackResult Properties
+
+The `ExecuteRollbackAsync` method returns a `RollbackResult` object with these properties:
+
+- `ConfigurationId` - The identifier of the configuration that was rolled back
+- `NewVersion` - The newly created version produced by the rollback operation
+- `RestoredFromVersion` - The version that was restored during the rollback
+- `Reason` - The reason provided for performing the rollback
+- `PerformedBy` - The user who executed the rollback
+- `PerformedAt` - When the rollback was executed
+- `KeysRestored` - The number of keys restored into the new version
+
+### RollbackRecord Properties
+
+The `GetRollbackHistoryAsync` method returns a list of `RollbackRecord` objects with these properties:
+
+- `Id` - The rollback record identifier
+- `ConfigurationId` - The configuration identifier
+- `NewVersionId` - The new version created by the rollback
+- `RestoredFromVersionId` - The restored source version identifier
+- `Reason` - The rollback reason
+- `PerformedBy` - The user who performed the rollback
+- `PerformedAt` - When the rollback was executed
+
 ## IConfigurationManager
 
 The `IConfigurationManager` interface provides a type-safe abstraction for accessing configuration values from the Dotnet Config Server. It supports both synchronous access to cached values and event-based notifications when configuration changes occur. This interface is designed for integration into .NET services that need to dynamically access configuration without direct HTTP calls.
