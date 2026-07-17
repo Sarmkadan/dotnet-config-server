@@ -4,21 +4,21 @@
 // CTO & Software Architect
 // =============================================================================
 
-using System.Globalization;
+using System.Collections;
 
 namespace DotnetConfigServer.Exceptions;
 
 /// <summary>
-/// Provides validation helpers for <see cref="ConfigurationException"/> and its derived exception types
+/// Provides validation helpers for <see cref="ConfigurationException"/> and its derived exception types.
 /// </summary>
 public static class ConfigurationExceptionValidation
 {
     /// <summary>
     /// Validates a <see cref="ConfigurationException"/> instance and returns a list of human-readable validation problems.
     /// </summary>
-    /// <param name="value">The exception to validate</param>
-    /// <returns>An empty list if valid, otherwise a list of validation error messages</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
+    /// <param name="value">The exception to validate.</param>
+    /// <returns>An empty list if valid; otherwise, a list of validation error messages.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
     public static IReadOnlyList<string> Validate(this ConfigurationException? value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -31,30 +31,32 @@ public static class ConfigurationExceptionValidation
             errors.Add("Exception message cannot be null, empty, or whitespace.");
         }
 
-        // Validate ConfigurationException-specific properties
-        if (value is ConfigurationNotFoundException configNotFound)
+        // Validate ConfigurationException-specific properties using pattern matching
+        switch (value)
         {
-            ValidateConfigurationNotFoundException(configNotFound, errors);
-        }
-        else if (value is ConfigurationKeyNotFoundException keyNotFound)
-        {
-            ValidateConfigurationKeyNotFoundException(keyNotFound, errors);
-        }
-        else if (value is EncryptionException encryption)
-        {
-            ValidateEncryptionException(encryption, errors);
-        }
-        else if (value is ConfigurationSnapshotNotFoundException snapshotNotFound)
-        {
-            ValidateConfigurationSnapshotNotFoundException(snapshotNotFound, errors);
-        }
-        else if (value is ConfigurationVersionNotFoundException versionNotFound)
-        {
-            ValidateConfigurationVersionNotFoundException(versionNotFound, errors);
-        }
-        else if (value is WebhookException webhook)
-        {
-            ValidateWebhookException(webhook, errors);
+            case ConfigurationNotFoundException configNotFound:
+                ValidateConfigurationNotFoundException(configNotFound, errors);
+                break;
+
+            case ConfigurationKeyNotFoundException keyNotFound:
+                ValidateConfigurationKeyNotFoundException(keyNotFound, errors);
+                break;
+
+            case EncryptionException encryption:
+                ValidateEncryptionException(encryption, errors);
+                break;
+
+            case ConfigurationSnapshotNotFoundException snapshotNotFound:
+                ValidateConfigurationSnapshotNotFoundException(snapshotNotFound, errors);
+                break;
+
+            case ConfigurationVersionNotFoundException versionNotFound:
+                ValidateConfigurationVersionNotFoundException(versionNotFound, errors);
+                break;
+
+            case WebhookException webhook:
+                ValidateWebhookException(webhook, errors);
+                break;
         }
 
         return errors.AsReadOnly();
@@ -63,9 +65,9 @@ public static class ConfigurationExceptionValidation
     /// <summary>
     /// Determines whether the specified <see cref="ConfigurationException"/> instance is valid.
     /// </summary>
-    /// <param name="value">The exception to check</param>
-    /// <returns>True if valid; otherwise, false</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
+    /// <param name="value">The exception to check.</param>
+    /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
     public static bool IsValid(this ConfigurationException? value)
     {
         return Validate(value).Count == 0;
@@ -75,9 +77,9 @@ public static class ConfigurationExceptionValidation
     /// Ensures that the specified <see cref="ConfigurationException"/> instance is valid, throwing an <see cref="ArgumentException"/>
     /// if it is not.
     /// </summary>
-    /// <param name="value">The exception to validate</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
-    /// <exception cref="ArgumentException">Thrown if the exception is invalid, containing validation errors</exception>
+    /// <param name="value">The exception to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown if the exception is invalid, containing validation errors.</exception>
     public static void EnsureValid(this ConfigurationException? value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -100,16 +102,16 @@ public static class ConfigurationExceptionValidation
     {
         if (exception.Details is not null)
         {
-            if (exception.Details is not object)
-            {
-                errors.Add("ConfigurationNotFoundException.Details must be a valid object.");
-            }
-            else if (exception.Details is IDictionary<string, object> dict)
+            if (exception.Details is IDictionary<string, object> dict)
             {
                 if (!dict.TryGetValue("ConfigurationId", out var configId) || configId is not string)
                 {
                     errors.Add("ConfigurationNotFoundException.Details must contain a valid 'ConfigurationId' string property.");
                 }
+            }
+            else
+            {
+                errors.Add("ConfigurationNotFoundException.Details must be a dictionary when provided.");
             }
         }
     }
@@ -120,19 +122,24 @@ public static class ConfigurationExceptionValidation
     {
         if (exception.Details is not null)
         {
-            if (exception.Details is not object)
+            if (exception.Details is IDictionary<string, object> dict)
             {
-                errors.Add("ConfigurationKeyNotFoundException.Details must be a valid object.");
-            }
-            else if (exception.Details is IDictionary<string, object> dict)
-            {
-                if (!dict.TryGetValue("Key", out var key) || key is not string)
+                if (dict.TryGetValue("Key", out var key) && key is string)
                 {
-                    if (!dict.TryGetValue("KeyId", out var keyId) || keyId is not Guid)
-                    {
-                        errors.Add("ConfigurationKeyNotFoundException.Details must contain either a valid 'Key' string or 'KeyId' Guid property.");
-                    }
+                    // Valid Key property present
                 }
+                else if (dict.TryGetValue("KeyId", out var keyId) && keyId is Guid)
+                {
+                    // Valid KeyId property present
+                }
+                else
+                {
+                    errors.Add("ConfigurationKeyNotFoundException.Details must contain either a valid 'Key' string or 'KeyId' Guid property.");
+                }
+            }
+            else
+            {
+                errors.Add("ConfigurationKeyNotFoundException.Details must be a dictionary when provided.");
             }
         }
     }
@@ -151,16 +158,16 @@ public static class ConfigurationExceptionValidation
     {
         if (exception.Details is not null)
         {
-            if (exception.Details is not object)
-            {
-                errors.Add("ConfigurationSnapshotNotFoundException.Details must be a valid object.");
-            }
-            else if (exception.Details is IDictionary<string, object> dict)
+            if (exception.Details is IDictionary<string, object> dict)
             {
                 if (!dict.TryGetValue("SnapshotId", out var snapshotId) || snapshotId is not string)
                 {
                     errors.Add("ConfigurationSnapshotNotFoundException.Details must contain a valid 'SnapshotId' string property.");
                 }
+            }
+            else
+            {
+                errors.Add("ConfigurationSnapshotNotFoundException.Details must be a dictionary when provided.");
             }
         }
     }
@@ -171,16 +178,16 @@ public static class ConfigurationExceptionValidation
     {
         if (exception.Details is not null)
         {
-            if (exception.Details is not object)
-            {
-                errors.Add("ConfigurationVersionNotFoundException.Details must be a valid object.");
-            }
-            else if (exception.Details is IDictionary<string, object> dict)
+            if (exception.Details is IDictionary<string, object> dict)
             {
                 if (!dict.TryGetValue("VersionId", out var versionId) || versionId is not string)
                 {
                     errors.Add("ConfigurationVersionNotFoundException.Details must contain a valid 'VersionId' string property.");
                 }
+            }
+            else
+            {
+                errors.Add("ConfigurationVersionNotFoundException.Details must be a dictionary when provided.");
             }
         }
     }
@@ -191,16 +198,16 @@ public static class ConfigurationExceptionValidation
     {
         if (exception.Details is not null)
         {
-            if (exception.Details is not object)
-            {
-                errors.Add("WebhookException.Details must be a valid object.");
-            }
-            else if (exception.Details is IDictionary<string, object> dict)
+            if (exception.Details is IDictionary<string, object> dict)
             {
                 if (!dict.TryGetValue("WebhookId", out var webhookId) || webhookId is not string)
                 {
                     errors.Add("WebhookException.Details must contain a valid 'WebhookId' string property when provided.");
                 }
+            }
+            else
+            {
+                errors.Add("WebhookException.Details must be a dictionary when provided.");
             }
         }
     }
