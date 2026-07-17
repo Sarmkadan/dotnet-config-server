@@ -941,6 +941,86 @@ Content-Type: application/json
 Response: 200 OK
 ```
 
+### AuditLog
+
+The `AuditLog` class represents a comprehensive audit trail entry that tracks all changes and actions performed within the configuration server. It maintains a complete history of configuration modifications, user actions, timestamps, and contextual information including IP addresses and user agents. Audit logs are automatically created for all configuration operations and can be queried to provide compliance reports, security investigations, and change tracking.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create an audit log entry for a configuration creation
+var createLog = AuditLog.CreateEntry(
+    configurationId: Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    entityType: "Configuration",
+    entityId: "123e4567-e89b-12d3-a456-426614174001",
+    entityName: "Production Settings",
+    userId: "admin@example.com",
+    userEmail: "admin@example.com",
+    details: "Created new production configuration",
+    newValues: "{\"Name\":\"Production Settings\",\"Environment\":\"Production\"}"
+);
+
+// Set request context with IP address and user agent
+createLog.SetRequestContext("192.168.1.100", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+
+Console.WriteLine($"Created at: {createLog.Timestamp:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Action: {createLog.ActionType}");
+Console.WriteLine($"Status: {createLog.Status}");
+
+// Create an audit log entry for a configuration update
+var updateLog = AuditLog.UpdateEntry(
+    configurationId: Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    entityType: "Configuration",
+    entityId: "123e4567-e89b-12d3-a456-426614174001",
+    entityName: "Production Settings",
+    userId: "backend-team@example.com",
+    userEmail: "backend-team@example.com",
+    oldValues: "{\"Database:Host\":\"localhost\"}",
+    newValues: "{\"Database:Host\":\"prod-db.example.com\"}",
+    details: "Updated database host for production environment"
+);
+
+updateLog.SetRequestContext("10.0.0.50", "curl/8.6.0");
+
+Console.WriteLine($"Updated at: {updateLog.Timestamp:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Changes: {updateLog.OldValues} → {updateLog.NewValues}");
+
+// Create an audit log entry for a configuration deletion
+var deleteLog = AuditLog.DeleteEntry(
+    configurationId: Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    entityType: "Configuration",
+    entityId: "123e4567-e89b-12d3-a456-426614174002",
+    entityName: "Legacy Settings",
+    userId: "admin@example.com",
+    userEmail: "admin@example.com",
+    oldValues: "{\"Name\":\"Legacy Settings\",\"Environment\":\"Staging\"}"
+);
+
+deleteLog.SetRequestContext("172.16.0.10", "PostmanRuntime/7.36.0");
+
+Console.WriteLine($"Deleted at: {deleteLog.Timestamp:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Deleted entity: {deleteLog.EntityName}");
+
+// Mark an audit log as failed (e.g., during error handling)
+var failedLog = AuditLog.CreateEntry(
+    configurationId: Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    entityType: "Configuration",
+    entityId: "123e4567-e89b-12d3-a456-426614174003",
+    entityName: "Failed Operation",
+    userId: "service-account@example.com",
+    userEmail: "service-account@example.com",
+    details: "Attempted to create configuration with invalid data"
+);
+
+failedLog.MarkAsFailed("Validation failed: Configuration name cannot be empty");
+
+Console.WriteLine($"Status: {failedLog.Status}");
+Console.WriteLine($"Failure reason: {failedLog.Details}");
+```
+
 ### Webhooks
 
 #### Create Subscription
