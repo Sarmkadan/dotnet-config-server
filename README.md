@@ -574,6 +574,62 @@ Currently no authentication is enforced. For production use, integrate with:
 
 Recommended: Use API Gateway (Azure API Management, AWS API Gateway) for authentication.
 
+## IApiResponseTransformer
+
+The `IApiResponseTransformer` interface provides methods for transforming and processing JSON API responses. It handles deserialization into typed objects, field mapping, field extraction, and flattening of nested JSON structures.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Integration;
+
+// Create transformer instance (typically via dependency injection)
+var transformer = new ApiResponseTransformer(logger);
+
+// Example 1: Basic transformation
+string jsonResponse = "{\"name\":\"OrderService\",\"status\":\"active\",\"version\":1}";
+var serviceConfig = transformer.Transform<ServiceConfiguration>(jsonResponse);
+Console.WriteLine(serviceConfig.Name); // "OrderService"
+
+// Example 2: Transform with field mapping
+string apiResponse = "{\"serviceName\":\"PaymentGateway\",\"serviceStatus\":\"running\"}";
+var mappedConfig = transformer.TransformWithMapping<ServiceStatus>(
+    apiResponse,
+    new Dictionary<string, string> { ["Name"] = "serviceName", ["Status"] = "serviceStatus" }
+);
+Console.WriteLine(mappedConfig.Name); // "PaymentGateway"
+Console.WriteLine(mappedConfig.Status); // "running"
+
+// Example 3: Extract specific fields
+string complexResponse = "{\"database\":{\"host\":\"db.example.com\",\"port\":5432},\"cache\":{\"enabled\":true}}";
+var extracted = transformer.ExtractFields(
+    complexResponse,
+    "database.host",
+    "cache.enabled"
+);
+Console.WriteLine(extracted["database.host"]); // "db.example.com"
+Console.WriteLine(extracted["cache.enabled"]); // true
+
+// Example 4: Flatten nested JSON
+string nestedJson = "{\"service\":{\"name\":\"ConfigServer\",\"endpoints\":{\"health\":\"/health\",\"config\":\"/api/config\"}}}";
+var flattened = transformer.Flatten(nestedJson);
+foreach (var kvp in flattened)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+}
+// Output:
+// service.name: ConfigServer
+// service.endpoints.health: /health
+// service.endpoints.config: /api/config
+```
+
+### Public Members
+
+- `T Transform<T>(string json)` - Deserializes JSON into a strongly-typed object
+- `T TransformWithMapping<T>(string json, Dictionary<string, string> fieldMapping)` - Transforms JSON with custom field name mapping
+- `Dictionary<string, object?> ExtractFields(string json, params string[] fields)` - Extracts specific fields from JSON
+- `Dictionary<string, object?> Flatten(string json, string separator = ".")` - Flattens nested JSON structure into a flat dictionary
+
 ### Base URL
 ```
 https://localhost:5001/api/v1
