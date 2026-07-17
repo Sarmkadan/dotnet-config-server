@@ -773,6 +773,62 @@ Console.WriteLine($"Reason: {rollbackResult.Reason}");
 - `PerformedAt` - When the rollback was executed
 - `KeysRestored` - The number of keys restored into the new version
 
+### WebhookConfigurationReloader
+
+The `WebhookConfigurationReloader` class provides a client-side implementation for receiving and processing webhook notifications from the Dotnet Config Server. When configuration changes occur on the server, clients subscribed to webhook notifications can automatically reload their in-memory configuration without requiring service restarts.
+
+This class handles webhook signature verification, configuration change processing, and provides methods for accessing the current configuration state. It's designed to be integrated into ASP.NET Core applications using dependency injection.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// In your ASP.NET Core application's Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Register the reloader with your webhook secret
+builder.Services.AddWebhookConfigurationReloader("your-webhook-secret-here");
+
+// Register the startup class
+builder.Services.AddSingleton<WebhookStartup>();
+
+var app = builder.Build();
+
+// Configure the webhook endpoint
+var reloader = app.Services.GetRequiredService<WebhookConfigurationReloader>();
+reloader.SetInitialConfiguration(new Dictionary<string, string>
+{
+    ["Database:Host"] = "localhost",
+    ["Database:Port"] = "5432",
+    ["Features:EnableNewCheckout"] = "true",
+    ["Logging:Level"] = "Information"
+});
+
+// Use the reloader (typically in your startup class)
+app.Services.GetRequiredService<WebhookStartup>().Configure(app, reloader);
+
+Console.WriteLine("Configuration reloader started. Ready to receive webhook notifications.");
+Console.WriteLine($"Current database host: {reloader.GetConfigurationValue("Database:Host")}");
+```
+
+### Public Members
+
+- `HandleWebhookAsync(HttpContext context)` - ASP.NET Core middleware endpoint that receives and processes webhook notifications
+- `GetConfigurationValue(string key)` - Retrieves the current value of a configuration key
+- `SetInitialConfiguration(Dictionary<string, string> configuration)` - Sets the initial configuration state when the application starts
+- `OnConfigurationReloadedAsync()` - Virtual method called after configuration is reloaded (override for application-specific actions)
+
+### Related Classes
+
+- `WebhookPayload` - Contains webhook event data including configuration changes
+- `ConfigurationChange` - Represents a single configuration key change with old and new values
+- `WebhookStartup` - ASP.NET Core startup class demonstrating endpoint registration
+- `WebhookExtensions` - Extension methods for dependency injection registration
+
 ### Example 7: Validation Rules
 
 ```csharp
