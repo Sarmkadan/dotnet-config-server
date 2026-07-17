@@ -648,6 +648,82 @@ if (databaseKeys.HasMultiple())
 }
 ```
 
+## DateTimeExtensions
+
+The `DateTimeExtensions` static class provides a comprehensive set of extension methods for `DateTime` manipulation and formatting. It includes utilities for converting dates to human-readable relative time strings, ISO 8601 formatting, and calculating start/end boundaries for days, weeks, months, and years. These extensions are particularly useful for logging, audit trails, scheduling, and date-based filtering in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using System;
+
+// Create sample dates for testing
+var now = DateTime.UtcNow;
+var yesterday = now.AddDays(-1);
+var lastWeek = now.AddDays(-7);
+var lastMonth = now.AddMonths(-1);
+var birthDate = new DateTime(1990, 5, 15);
+
+// Convert to human-readable relative time
+Console.WriteLine($"Now: {now.ToRelativeTime()}");      // "just now"
+Console.WriteLine($"Yesterday: {yesterday.ToRelativeTime()}"); // "1 day ago"
+Console.WriteLine($"Last week: {lastWeek.ToRelativeTime()}");   // "1 week ago"
+Console.WriteLine($"Last month: {lastMonth.ToRelativeTime()}"); // "1 month ago"
+
+// Convert to ISO 8601 format
+var isoDate = now.ToIso8601();
+Console.WriteLine($"ISO 8601: {isoDate}");
+
+// Get start/end of day
+var startOfDay = now.StartOfDay();
+var endOfDay = now.EndOfDay();
+Console.WriteLine($"Start of day: {startOfDay:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"End of day: {endOfDay:yyyy-MM-dd HH:mm:ss}");
+
+// Get start/end of week (default Monday)
+var startOfWeek = now.StartOfWeek();
+var endOfWeek = now.EndOfWeek();
+Console.WriteLine($"Start of week: {startOfWeek:yyyy-MM-dd}");
+Console.WriteLine($"End of week: {endOfWeek:yyyy-MM-dd}");
+
+// Get start/end of week starting on Sunday
+var startOfWeekSunday = now.StartOfWeek(DayOfWeek.Sunday);
+var endOfWeekSunday = now.EndOfWeek(DayOfWeek.Sunday);
+Console.WriteLine($"Start of week (Sunday): {startOfWeekSunday:yyyy-MM-dd}");
+Console.WriteLine($"End of week (Sunday): {endOfWeekSunday:yyyy-MM-dd}");
+
+// Get start/end of month
+var startOfMonth = now.StartOfMonth();
+var endOfMonth = now.EndOfMonth();
+Console.WriteLine($"Start of month: {startOfMonth:yyyy-MM}");
+Console.WriteLine($"End of month: {endOfMonth:yyyy-MM-dd}");
+
+// Get start/end of year
+var startOfYear = now.StartOfYear();
+var endOfYear = now.EndOfYear();
+Console.WriteLine($"Start of year: {startOfYear:yyyy}");
+Console.WriteLine($"End of year: {endOfYear:yyyy-MM-dd}");
+
+// Check if date is between two dates
+var testDate = new DateTime(2024, 6, 15);
+var rangeStart = new DateTime(2024, 1, 1);
+var rangeEnd = new DateTime(2024, 12, 31);
+Console.WriteLine($"Is {testDate:yyyy-MM-dd} between {rangeStart:yyyy-MM-dd} and {rangeEnd:yyyy-MM-dd}? {testDate.IsBetween(rangeStart, rangeEnd)}");
+
+// Get number of business days between two dates
+var businessDays = new DateTime(2024, 6, 1).GetBusinessDaysBetween(new DateTime(2024, 6, 15));
+Console.WriteLine($"Business days between June 1-15, 2024: {businessDays}");
+
+// Check if year is leap year
+Console.WriteLine($"Is 2024 a leap year? {new DateTime(2024, 1, 1).IsLeapYear()}"); // True
+Console.WriteLine($"Is 2023 a leap year? {new DateTime(2023, 1, 1).IsLeapYear()}"); // False
+
+// Calculate age from birth date
+var age = birthDate.GetAge();
+Console.WriteLine($"Age from birth date {birthDate:yyyy-MM-dd}: {age} years");
+```
+
 ## CacheKeyGenerator
 
 The `CacheKeyGenerator` static class provides a centralized way to generate consistent and predictable cache keys for various entities and scenarios within the Dotnet Config Server. It ensures cache keys follow a standardized naming convention using colon-separated segments, making cache management more maintainable and reducing the risk of key collisions. The generator provides methods for creating keys for configurations, applications, versions, webhook subscriptions, and search operations, along with helper methods to generate invalidation patterns for cache cleanup.
