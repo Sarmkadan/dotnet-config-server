@@ -1197,6 +1197,103 @@ if (isHealthy)
 
 - `Configuration` - Represents a configuration with properties: `Id`, `ApplicationId`, `Environment`, `Description`, `Keys`, `CreatedAt`, `LastModifiedAt`
 - `ConfigurationKey` - Represents a configuration key with properties: `Id`, `Key`, `Value`, `IsEncrypted`, `Description`
+
+## DiffViewerService
+
+The `DiffViewerService` class provides rich diff visualization and non-destructive rollback preview for configuration versions. It enables developers to compare configuration states across different versions, visualize changes (additions, modifications, deletions), and preview the impact of rolling back to a previous configuration state before making any destructive changes.
+
+The service supports configuration inheritance scenarios, accurately tracking whether changes are direct modifications or inherited/overridden values. It provides detailed change summaries with counts, timestamps, and origin tracking (direct vs inherited vs overridden).
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
+
+// Setup dependency injection (typically in Program.cs)
+var services = new ServiceCollection();
+services.AddDiffViewerService();
+services.AddLogging();
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve the service
+var diffViewerService = serviceProvider.GetRequiredService<IDiffViewerService>();
+
+// Compare two configuration versions to see what changed
+var fromVersionId = Guid.Parse("550e8400-e29b-41d4-a716-446655440001");
+var toVersionId = Guid.Parse("550e8400-e29b-41d4-a716-446655440002");
+
+var enrichedDiff = await diffViewerService.GetEnrichedDiffAsync(fromVersionId, toVersionId);
+
+Console.WriteLine($"Diff ID: {enrichedDiff.DiffId}");
+Console.WriteLine($"Configuration: {enrichedDiff.ConfigurationId}");
+Console.WriteLine($"From Version: {enrichedDiff.FromVersion.VersionNumber} ({enrichedDiff.FromVersion.Id})");
+Console.WriteLine($"To Version: {enrichedDiff.ToVersion.VersionNumber} ({enrichedDiff.ToVersion.Id})");
+Console.WriteLine($"Generated At: {enrichedDiff.GeneratedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Changes: {enrichedDiff.AddedCount} added, {enrichedDiff.ModifiedCount} modified, {enrichedDiff.DeletedCount} deleted");
+
+// Display detailed changes
+foreach (var change in enrichedDiff.Changes)
+{
+    Console.WriteLine($"\nKey: {change.Key}");
+    Console.WriteLine($"  Type: {change.ChangeType}");
+    Console.WriteLine($"  Origin: {change.Origin}");
+    Console.WriteLine($"  Old Value: {change.OldValue ?? "null"}");
+    Console.WriteLine($"  New Value: {change.NewValue ?? "null"}");
+}
+
+// Preview a rollback to a previous version before actually rolling back
+var rollbackPreview = await diffViewerService.GetRollbackPreviewAsync(
+    configurationId: Guid.Parse("550e8400-e29b-41d4-a716-446655440003"),
+    targetVersionId: Guid.Parse("550e8400-e29b-41d4-a716-446655440001")
+);
+
+if (rollbackPreview.IsRollbackSafe)
+{
+    Console.WriteLine("Rollback is safe - no required keys will be removed");
+}
+else
+{
+    Console.WriteLine("WARNING: Rollback will remove required keys:");
+    foreach (var warning in rollbackPreview.WarningMessages)
+    {
+        Console.WriteLine($"  - {warning}");
+    }
+}
+
+// Get version timeline to see all historical versions
+var timeline = await diffViewerService.GetVersionTimelineAsync(
+    configurationId: Guid.Parse("550e8400-e29b-41d4-a716-446655440003")
+);
+
+Console.WriteLine($"\nVersion History ({timeline.Count} versions):");
+foreach (var entry in timeline)
+{
+    Console.WriteLine($"  Version {entry.Version.VersionNumber} - {entry.Version.CreatedAt:yyyy-MM-dd}");
+    if (entry.DiffFromPrevious != null)
+    {
+        Console.WriteLine($"    Changes: {entry.DiffFromPrevious.AddedCount} added, {entry.DiffFromPrevious.ModifiedCount} modified");
+    }
+}
+```
+
+### Public Members
+
+- `DiffViewerService(...)` - Constructor that accepts versioning, repository, and logging dependencies
+- `Task<EnrichedDiff> GetEnrichedDiffAsync(Guid fromVersionId, Guid toVersionId, CancellationToken cancellationToken)` - Computes and returns a detailed diff between two configuration versions with change statistics
+- `Task<RollbackPreview> GetRollbackPreviewAsync(Guid configurationId, Guid targetVersionId, CancellationToken cancellationToken)` - Previews the impact of rolling back to a specific version, including warnings about required keys that would be removed
+- `Task<List<VersionTimelineEntry>> GetVersionTimelineAsync(Guid configurationId, CancellationToken cancellationToken)` - Retrieves the complete version history for a configuration with diff summaries between consecutive versions
+- `static IServiceCollection AddDiffViewerService(this IServiceCollection services)` - Extension method to register the service and its interface in the DI container
+
+### Related Classes
+
+- `EnrichedDiff` - Represents a detailed diff with properties: `DiffId`, `ConfigurationId`, `FromVersion`, `ToVersion`, `Changes`, `AddedCount`, `ModifiedCount`, `DeletedCount`, `GeneratedAt`
+- `RollbackPreview` - Represents a rollback preview with properties: `ConfigurationId`, `CurrentVersion`, `TargetVersion`, `Changes`, `AddedCount`, `ModifiedCount`, `DeletedCount`, `IsRollbackSafe`, `WarningMessages`
+- `VersionTimelineEntry` - Represents a version in timeline with properties: `Version`, `DiffFromPrevious`, `IsFirst`
+- `DiffEntry` - Represents a single configuration change with properties: `Id`, `DiffId`, `Key`, `ChangeType`, `OldValue`, `NewValue`, `CreatedAt`, `Origin`
 - `PagedResult<T>` - Pagination wrapper with properties: `Items` (list of T), `TotalCount`, `PageSize`, `PageNumber`
 
 ## ErrorHandlingMiddleware
