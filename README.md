@@ -1488,6 +1488,69 @@ if (config.IsValid())
 }
 ```
 
+## ValidationResult
+
+`ValidationResult` is a sealed record used to represent the outcome of validation operations throughout the Dotnet Config Server application. It provides a simple way to indicate whether validation succeeded or failed, and includes methods for serializing/deserializing validation results to/from JSON.
+
+The type includes static factory methods for creating validation results and parsing from JSON, making it ideal for API responses, configuration validation, and service validation scenarios.
+
+### Public Members
+
+- `public sealed record ValidationResult(bool IsValid, IReadOnlyList<string> Problems)`
+- `public static ValidationResult Valid` - Creates a valid result with no problems
+- `public static ValidationResult Invalid(IReadOnlyList<string> problems)` - Creates an invalid result with validation problems
+- `public static string ToJson(ValidationResult value, bool indented = false)` - Serializes to JSON
+- `public static ValidationResult? FromJson(string json)` - Deserializes from JSON
+- `public static bool TryFromJson(string json, out ValidationResult? value)` - Safely deserializes from JSON
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Infrastructure;
+
+// Create a successful validation result
+var successResult = ValidationResult.Valid;
+Console.WriteLine(successResult.ToJson()); // {"isValid":true,"problems":[]}
+
+// Create an invalid validation result with multiple problems
+var invalidResult = ValidationResult.Invalid(new[] {"Database connection string is required", "Timeout value must be positive"});
+Console.WriteLine(invalidResult.ToJson());
+// {"isValid":false,"problems":["Database connection string is required","Timeout value must be positive"]}
+
+// Parse validation result from JSON
+string json = "{\"isValid\":true,\"problems\":[]}";
+var parsedResult = ValidationResult.FromJson(json);
+Console.WriteLine(parsedResult?.IsValid); // True
+
+// Try to parse validation result safely
+if (ValidationResult.TryFromJson(json, out var safeResult))
+{
+    Console.WriteLine($"Successfully parsed: IsValid={safeResult.IsValid}");
+}
+
+// Use in validation scenarios
+public ValidationResult ValidateConfiguration(string configValue)
+{
+    if (string.IsNullOrWhiteSpace(configValue))
+    {
+        return ValidationResult.Invalid(new[] {"Configuration value cannot be empty"});
+    }
+    
+    return ValidationResult.Valid;
+}
+
+// Example usage in a service
+var validation = ValidateConfiguration("my-config-value");
+if (!validation.IsValid)
+{
+    Console.WriteLine($"Validation failed with {validation.Problems.Count} problems:");
+    foreach (var problem in validation.Problems)
+    {
+        Console.WriteLine($"- {problem}");
+    }
+}
+```
+
 ## Related Projects
 
 - [redis-cache-patterns](https://github.com/sarmkadan/redis-cache-patterns) - Production-ready Redis caching patterns for .NET — cache-aside, write-through, distributed lock
