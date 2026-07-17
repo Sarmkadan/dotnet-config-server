@@ -123,6 +123,96 @@ var summary = orderServiceApp.GetSummary();
 Console.WriteLine($"Application summary - {summary.Name} ({summary.Id}): {summary.ConfigurationCount} configurations");
 ```
 
+## ApplicationDbContext
+
+The `ApplicationDbContext` is the Entity Framework Core database context that serves as the primary interface between the application and the database. It manages all database operations including CRUD operations for configurations, applications, webhook subscriptions, audit logs, and encryption keys. The context provides access to all entity collections through its `DbSet<T>` properties, enabling comprehensive configuration management with built-in validation, encryption, and versioning capabilities.
+
+**Key Features:**
+- Manages 14 different entity types covering the entire configuration lifecycle
+- Supports Entity Framework Core migrations for database schema management
+- Provides optimized indexing for common query patterns
+- Enables change tracking and audit logging automatically
+- Integrates with dependency injection for testability and flexibility
+
+### Usage Example
+
+```csharp
+// Configure DbContext with SQL Server (appsettings.json)
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+// Constructor injection in a service
+public class ConfigurationService
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ConfigurationService(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<Application> GetApplicationBySlugAsync(string slug)
+    {
+        return await _context.Applications
+            .Include(a => a.Configurations)
+            .ThenInclude(c => c.Versions)
+            .FirstOrDefaultAsync(a => a.Slug == slug);
+    }
+    
+    public async Task AddConfigurationAsync(Configuration configuration)
+    {
+        _context.Configurations.Add(configuration);
+        await _context.SaveChangesAsync();
+    }
+    
+    public async Task UpdateConfigurationAsync(Configuration configuration)
+    {
+        _context.Configurations.Update(configuration);
+        await _context.SaveChangesAsync();
+    }
+    
+    public async Task<List<Configuration>> GetActiveConfigurationsAsync(int applicationId)
+    {
+        return await _context.Configurations
+            .Where(c => c.ApplicationId == applicationId && c.IsActive)
+            .ToListAsync();
+    }
+    
+    public async Task<List<WebhookDelivery>> GetFailedWebhookDeliveriesAsync(int subscriptionId)
+    {
+        return await _context.WebhookDeliveries
+            .Where(d => d.WebhookSubscriptionId == subscriptionId && d.Status == "failed")
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync();
+    }
+}
+
+// Usage in a controller
+[ApiController]
+[Route("api/v1/configurations")]
+public class ConfigurationController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ConfigurationController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetConfiguration(int id)
+    {
+        var config = await _context.Configurations
+            .Include(c => c.Keys)
+            .FirstOrDefaultAsync(c => c.Id == id);
+            
+        if (config == null) return NotFound();
+        
+        return Ok(config);
+    }
+}
+```
+
 ## Overview
 
 **Dotnet Config Server** is an enterprise-ready centralized configuration management solution designed for modern microservice architectures. It addresses the complexity of managing configurations across multiple applications, environments, and deployment stages by providing a single source of truth with advanced features like encryption, versioning, and real-time notifications.
