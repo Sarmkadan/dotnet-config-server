@@ -223,6 +223,76 @@ await encryptionService.RotateKeyAsync(encryptionKey.KeyId, "admin@example.com")
 // await encryptionService.ReEncryptConfigurationAsync(configurationId, configurationKeys, "admin@example.com");
 ```
 
+## ConfigurationService
+
+The `ConfigurationService` is the core service for managing configurations, configuration keys, and their relationships. It provides methods for creating, reading, updating, and deleting configurations and keys, as well as searching and inheritance resolution. The service handles encryption/decryption of sensitive values, audit logging, and event notifications for real-time configuration updates.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container with required services
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IConfigurationRepository, ConfigurationRepository>();
+services.AddSingleton<IConfigurationKeyRepository, ConfigurationKeyRepository>();
+services.AddSingleton<IEncryptionService, EncryptionService>();
+services.AddSingleton<IAuditLogRepository, AuditLogRepository>();
+services.AddSingleton<IEventBus, InMemoryEventBus>();
+services.AddSingleton<ConfigurationService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var configService = serviceProvider.GetRequiredService<ConfigurationService>();
+
+// Create a new configuration for an order processing service
+var newConfig = new Configuration
+{
+    Name = "OrderProcessing-Dev",
+    Description = "Development configuration for order processing service",
+    ApplicationId = Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+    Environment = "Development",
+    IsActive = true,
+    IsEncrypted = true
+};
+
+var createdConfig = await configService.CreateAsync(newConfig, "admin@example.com");
+Console.WriteLine($"Created configuration: {createdConfig.Id}");
+
+// Add configuration keys
+var dbConnectionKey = new ConfigurationKey
+{
+    Key = "Database:ConnectionString",
+    Value = "Server=localhost;Database=OrdersDev;User=sa;Password=dev123",
+    Description = "Database connection string for development",
+    ValueType = ConfigurationValueType.String,
+    IsRequired = true,
+    IsSensitive = true
+};
+
+var createdKey = await configService.AddKeyAsync(createdConfig.Id, dbConnectionKey, "admin@example.com");
+Console.WriteLine($"Added key: {createdKey.Key} = {createdKey.Value}");
+
+// Get configuration with resolved inheritance
+var allKeys = await configService.GetKeysAsync(createdConfig.Id);
+Console.WriteLine($"Configuration has {allKeys.Count} keys");
+
+// Update a configuration key
+var updatedKey = await configService.UpdateKeyAsync(createdKey.Id, "Server=prod-db;Database=OrdersProd;User=sa;Password=prod123", "admin@example.com");
+Console.WriteLine($"Updated key: {updatedKey.Key}");
+
+// Search for configurations
+var searchResults = await configService.SearchAsync("order", createdConfig.ApplicationId);
+Console.WriteLine($"Found {searchResults.Count} configurations matching 'order'");
+
+// Get configuration count for an application
+var configCount = await configService.GetConfigurationCountAsync(createdConfig.ApplicationId);
+Console.WriteLine($"Application has {configCount} configurations");
+```
+
 ### ValidationRuleService
 
 The `ValidationRuleService` manages validation rules and validates configuration values against them. It supports various rule types including regex patterns, length constraints, numeric ranges, allowed values, URL validation, JSON validation, and cross-key comparisons. The service provides CRUD operations for validation rules and performs validation checks on configurations.
