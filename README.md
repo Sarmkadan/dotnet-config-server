@@ -260,7 +260,104 @@ The service supports:
 - **Rollback Support**: Instant rollback to any previous version with preview and history
 - **Rollback Audit Trail**: Track who performed a rollback, when it happened, and why
 
-### Change Tracking & Diffs
+## DiffService
+
+The `DiffService` provides functionality for comparing configuration versions and tracking changes between them. It generates detailed diffs showing added, modified, and deleted configuration keys, enabling teams to understand exactly what changed between any two versions of a configuration.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IConfigurationDiffRepository, ConfigurationDiffRepository>();
+services.AddSingleton<IConfigurationVersionRepository, ConfigurationVersionRepository>();
+services.AddSingleton<IConfigurationKeyRepository, ConfigurationKeyRepository>();
+services.AddSingleton<DiffService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var diffService = serviceProvider.GetRequiredService<DiffService>();
+
+// Generate a diff between two configuration versions
+var fromVersionId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+var toVersionId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+var userId = "admin@example.com";
+
+var diff = await diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId);
+Console.WriteLine($"Diff generated: {diff.Id}");
+Console.WriteLine($"Changes: {diff.Changes.Count} total");
+
+// Get a specific diff by ID
+var retrievedDiff = await diffService.GetDiffAsync(diff.Id);
+Console.WriteLine($"Retrieved diff: {retrievedDiff?.Id}");
+
+// Get all diffs for a configuration
+var allDiffs = await diffService.GetDiffsAsync(diff.ConfigurationId);
+Console.WriteLine($"Total diffs for configuration: {allDiffs.Count}");
+
+// Get the latest diff for a configuration
+var latestDiff = await diffService.GetLatestDiffAsync(diff.ConfigurationId);
+Console.WriteLine($"Latest diff: {latestDiff?.Id}");
+
+// Get history of changes for a specific key
+var keyHistory = await diffService.GetKeyHistoryAsync(diff.ConfigurationId, "ConnectionStrings:Database");
+Console.WriteLine($"Key history entries: {keyHistory.Count}");
+
+// Compare two versions and get a summary
+var summary = await diffService.ComparVersionsAsync(fromVersionId, toVersionId);
+Console.WriteLine($"Summary - Total changes: {summary.TotalChanges}");
+Console.WriteLine($"  Added: {summary.AddedCount}");
+Console.WriteLine($"  Deleted: {summary.DeletedCount}");
+Console.WriteLine($"  Modified: {summary.ModifiedCount}");
+```
+
+### Key Features
+
+- **Version Comparison**: Compare any two configuration versions to see exactly what changed
+- **Change Tracking**: Identify added, modified, and deleted configuration keys
+- **History Tracking**: View the complete history of changes for any configuration key
+- **Diff Management**: Store, retrieve, and manage diffs between versions
+- **Summary Statistics**: Get quick statistics about changes between versions
+
+### Common Use Cases
+
+1. **Audit & Compliance**: Track who made changes and when
+2. **Rollback Planning**: Preview changes before rolling back to a previous version
+3. **Change Impact Analysis**: Understand the scope of configuration changes
+4. **Configuration Drift Detection**: Identify unauthorized changes
+5. **Team Collaboration**: Share diffs with team members for review
+
+### Diff Structure
+
+Each diff contains:
+- **Configuration ID**: The configuration being compared
+- **From/To Version IDs**: The versions being compared
+- **Changes**: List of all changes (added, modified, deleted keys)
+- **Metadata**: Who created the diff and when
+- **Change Entries**: Detailed information about each change including timestamps
+
+### Best Practices
+
+- Generate diffs after every configuration change for audit purposes
+- Store diffs for compliance and rollback scenarios
+- Use `GetKeyHistoryAsync` to track changes to critical configuration keys
+- Compare versions before performing rollbacks to understand the impact
+- Use `ComparVersionsAsync` for quick statistics without storing the full diff
+
+### Integration with Other Services
+
+- **VersioningService**: Works with version lifecycle management
+- **RollbackService**: Provides diffs for rollback preview
+- **DiffViewerService**: Enriches diffs for visualization
+- **AuditLogs**: Records who generated each diff
+
+## Change Tracking & Diffs
+
 - **Visual Diffs**: See exactly what changed between versions
 - **Diff Viewer API**: Dedicated endpoints for enriched diffs, version timelines, and rollback previews
 - **Change History**: Complete audit trail with timestamps
