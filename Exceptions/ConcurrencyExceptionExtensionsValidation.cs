@@ -21,7 +21,7 @@ public static class ConcurrencyExceptionExtensionsValidation
     /// </summary>
     /// <param name="value">The exception to validate.</param>
     /// <returns>A list of validation errors; empty if valid.</returns>
-    /// <exception cref="ArgumentNullException"><inheritdoc cref="ArgumentNullException" path="/exception[@cref='ArgumentNullException']"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this ConcurrencyException value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -59,15 +59,14 @@ public static class ConcurrencyExceptionExtensionsValidation
     /// </summary>
     /// <param name="value">The exception to check.</param>
     /// <returns>True if valid; otherwise, false.</returns>
-    /// <exception cref="ArgumentNullException"><inheritdoc cref="ArgumentNullException" path="/exception[@cref='ArgumentNullException']"/></exception>
-    public static bool IsValid(this ConcurrencyException value)
-        => Validate(value).Count == 0;
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
+    public static bool IsValid(this ConcurrencyException value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that a <see cref="ConcurrencyException"/> instance is valid, throwing an <see cref="ArgumentException"/> if not.
     /// </summary>
     /// <param name="value">The exception to validate.</param>
-    /// <exception cref="ArgumentNullException"><inheritdoc cref="ArgumentNullException" path="/exception[@cref='ArgumentNullException']"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the exception is invalid, containing validation errors.</exception>
     public static void EnsureValid(this ConcurrencyException value)
     {
@@ -77,8 +76,7 @@ public static class ConcurrencyExceptionExtensionsValidation
         if (errors.Count > 0)
         {
             throw new ArgumentException(
-                $"ConcurrencyException validation failed:{Environment.NewLine}- {
-                    string.Join($"{Environment.NewLine}- ", errors)}");
+                $"ConcurrencyException validation failed:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", errors)}");
         }
     }
 
@@ -121,7 +119,6 @@ public static class ConcurrencyExceptionExtensionsValidation
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentNullException.ThrowIfNull(errors);
 
-    // Message validation handled by base ConcurrencyException validation
-    // No additional CircularDependencyException-specific validation needed
+        // No additional CircularDependencyException-specific validation needed
     }
 }
