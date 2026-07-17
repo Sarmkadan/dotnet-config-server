@@ -19,6 +19,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="ConfigurationNotFoundException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsConfigurationNotFound(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -30,6 +31,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="ConfigurationKeyNotFoundException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsConfigurationKeyNotFound(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -41,6 +43,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="EncryptionException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsEncryptionException(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -52,6 +55,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="ConfigurationSnapshotNotFoundException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsConfigurationSnapshotNotFound(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -63,6 +67,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="ConfigurationVersionNotFoundException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsConfigurationVersionNotFound(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -74,6 +79,7 @@ public static class ConfigurationExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is (or inherits from) <see cref="WebhookException"/>; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     public static bool IsWebhookException(this ConfigurationException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -267,6 +273,7 @@ public static class ConfigurationExceptionExtensions
     /// <param name="errorCode">The error code to match.</param>
     /// <returns><see langword="true"/> if the exception has the specified error code; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="errorCode"/> is <see langword="null"/> or empty.</exception>
     public static bool HasErrorCode(this ConfigurationException exception, string errorCode)
     {
         ArgumentNullException.ThrowIfNull(exception);
