@@ -14,218 +14,278 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Unit tests for <see cref="BatchOperationService"/> class.
+/// Tests batch operations including key updates, deletions, status checking, and cancellation.
+/// </summary>
 public sealed class BatchOperationServiceTests
 {
-    private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
-    private readonly Mock<ILogger<BatchOperationService>> _loggerMock;
-    private readonly BatchOperationService _sut;
+	/// <summary>
+	/// Mock repository for testing configuration key operations.
+	/// </summary>
+	private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
 
-    public BatchOperationServiceTests()
-    {
-        _keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
-        _loggerMock = new Mock<ILogger<BatchOperationService>>();
-        _sut = new BatchOperationService(_keyRepositoryMock.Object, _loggerMock.Object);
-    }
+	/// <summary>
+	/// Mock logger for testing service logging behavior.
+	/// </summary>
+	private readonly Mock<ILogger<BatchOperationService>> _loggerMock;
 
-    private static ConfigurationKey CreateKey(Guid id, string value = "original") => new()
-    {
-        Id = id,
-        Key = $"key.{id}",
-        Value = value,
-        ConfigurationId = Guid.NewGuid(),
-        VersionId = Guid.NewGuid(),
-        CreatedBy = "admin"
-    };
+	/// <summary>
+	/// System under test - the batch operation service being tested.
+	/// </summary>
+	private readonly BatchOperationService _sut;
 
-    // ── UpdateKeysAsync ──────────────────────────────────────────────────────
+	/// <summary>
+	/// Initializes a new instance of the <see cref="BatchOperationServiceTests"/> class.
+	/// </summary>
+	public BatchOperationServiceTests()
+	{
+		_keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
+		_loggerMock = new Mock<ILogger<BatchOperationService>>();
+		_sut = new BatchOperationService(_keyRepositoryMock.Object, _loggerMock.Object);
+	}
 
-    [Fact]
-    public async Task UpdateKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
-    {
-        var result = await _sut.UpdateKeysAsync(null!, "user");
+	/// <summary>
+	/// Helper method to create test configuration keys.
+	/// </summary>
+	/// <param name="id">The unique identifier for the configuration key.</param>
+	/// <param name="value">The value to set for the configuration key (default: "original").</param>
+	/// <returns>A new <see cref="ConfigurationKey"/> instance with the specified properties.</returns>
+	private static ConfigurationKey CreateKey(Guid id, string value = "original") => new()
+	{
+		Id = id,
+		Key = $"key.{id}",
+		Value = value,
+		ConfigurationId = Guid.NewGuid(),
+		VersionId = Guid.NewGuid(),
+		CreatedBy = "admin"
+	};
 
-        result.Success.Should().BeTrue();
-        result.OperationId.Should().Be(Guid.Empty);
-    }
+	// ── UpdateKeysAsync ──────────────────────────────────────────────────────
 
-    [Fact]
-    public async Task UpdateKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
-    {
-        var result = await _sut.UpdateKeysAsync(new List<KeyUpdateRequest>(), "user");
+	/// <summary>
+	/// Tests that UpdateKeysAsync returns success with empty operation ID when null input is provided.
+	/// </summary>
+	[Fact]
+	public async Task UpdateKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
+	{
+		var result = await _sut.UpdateKeysAsync(null!, "user");
 
-        result.Success.Should().BeTrue();
-        result.OperationId.Should().Be(Guid.Empty);
-    }
+		result.Success.Should().BeTrue();
+		result.OperationId.Should().Be(Guid.Empty);
+	}
 
-    [Fact]
-    public async Task UpdateKeysAsync_AllKeysFound_UpdatesAllAndReturnsSuccess()
-    {
-        var id1 = Guid.NewGuid();
-        var id2 = Guid.NewGuid();
-        var key1 = CreateKey(id1, "old1");
-        var key2 = CreateKey(id2, "old2");
+	/// <summary>
+	/// Tests that UpdateKeysAsync returns success with empty operation ID when empty list is provided.
+	/// </summary>
+	[Fact]
+	public async Task UpdateKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
+	{
+		var result = await _sut.UpdateKeysAsync(new List<KeyUpdateRequest>(), "user");
 
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(id1)).ReturnsAsync(key1);
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(id2)).ReturnsAsync(key2);
-        _keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
-        _keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+		result.Success.Should().BeTrue();
+		result.OperationId.Should().Be(Guid.Empty);
+	}
 
-        var updates = new List<KeyUpdateRequest>
-        {
-            new() { KeyId = id1, NewValue = "new1" },
-            new() { KeyId = id2, NewValue = "new2" }
-        };
+	/// <summary>
+	/// Tests that UpdateKeysAsync successfully updates all configuration keys when they are found and returns success.
+	/// </summary>
+	[Fact]
+	public async Task UpdateKeysAsync_AllKeysFound_UpdatesAllAndReturnsSuccess()
+	{
+		var id1 = Guid.NewGuid();
+		var id2 = Guid.NewGuid();
+		var key1 = CreateKey(id1, "old1");
+		var key2 = CreateKey(id2, "old2");
 
-        var result = await _sut.UpdateKeysAsync(updates, "operator");
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id1)).ReturnsAsync(key1);
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id2)).ReturnsAsync(key2);
+		_keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+		_keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-        result.Success.Should().BeTrue();
-        result.SuccessCount.Should().Be(2);
-        result.ErrorCount.Should().Be(0);
-        result.OperationId.Should().NotBe(Guid.Empty);
+		var updates = new List<KeyUpdateRequest>
+		{
+			new() { KeyId = id1, NewValue = "new1" },
+			new() { KeyId = id2, NewValue = "new2" }
+		};
 
-        key1.Value.Should().Be("new1");
-        key1.UpdatedBy.Should().Be("operator");
-        key2.Value.Should().Be("new2");
-    }
+		var result = await _sut.UpdateKeysAsync(updates, "operator");
 
-    [Fact]
-    public async Task UpdateKeysAsync_SomeKeysNotFound_RecordsErrors()
-    {
-        var existingId = Guid.NewGuid();
-        var missingId = Guid.NewGuid();
-        var key = CreateKey(existingId);
+		result.Success.Should().BeTrue();
+		result.SuccessCount.Should().Be(2);
+		result.ErrorCount.Should().Be(0);
+		result.OperationId.Should().NotBe(Guid.Empty);
 
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(existingId)).ReturnsAsync(key);
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(missingId)).ReturnsAsync((ConfigurationKey?)null);
-        _keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
-        _keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+		key1.Value.Should().Be("new1");
+		key1.UpdatedBy.Should().Be("operator");
+		key2.Value.Should().Be("new2");
+	}
 
-        var updates = new List<KeyUpdateRequest>
-        {
-            new() { KeyId = existingId, NewValue = "updated" },
-            new() { KeyId = missingId, NewValue = "ignored" }
-        };
+	/// <summary>
+	/// Tests that UpdateKeysAsync records errors when some configuration keys are not found.
+	/// </summary>
+	[Fact]
+	public async Task UpdateKeysAsync_SomeKeysNotFound_RecordsErrors()
+	{
+		var existingId = Guid.NewGuid();
+		var missingId = Guid.NewGuid();
+		var key = CreateKey(existingId);
 
-        var result = await _sut.UpdateKeysAsync(updates, "user");
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(existingId)).ReturnsAsync(key);
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(missingId)).ReturnsAsync((ConfigurationKey?)null);
+		_keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+		_keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-        result.SuccessCount.Should().Be(1);
-        result.ErrorCount.Should().Be(1);
-        result.Success.Should().BeFalse();
-        result.Errors.Should().ContainMatch($"*{missingId}*");
-    }
+		var updates = new List<KeyUpdateRequest>
+		{
+			new() { KeyId = existingId, NewValue = "updated" },
+			new() { KeyId = missingId, NewValue = "ignored" }
+		};
 
-    // ── DeleteKeysAsync ──────────────────────────────────────────────────────
+		var result = await _sut.UpdateKeysAsync(updates, "user");
 
-    [Fact]
-    public async Task DeleteKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
-    {
-        var result = await _sut.DeleteKeysAsync(null!, "user");
+		result.SuccessCount.Should().Be(1);
+		result.ErrorCount.Should().Be(1);
+		result.Success.Should().BeFalse();
+		result.Errors.Should().ContainMatch($"*{missingId}*");
+	}
 
-        result.Success.Should().BeTrue();
-        result.OperationId.Should().Be(Guid.Empty);
-    }
+	// ── DeleteKeysAsync ──────────────────────────────────────────────────────
 
-    [Fact]
-    public async Task DeleteKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
-    {
-        var result = await _sut.DeleteKeysAsync(new List<Guid>(), "user");
+	/// <summary>
+	/// Tests that DeleteKeysAsync returns success with empty operation ID when null input is provided.
+	/// </summary>
+	[Fact]
+	public async Task DeleteKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
+	{
+		var result = await _sut.DeleteKeysAsync(null!, "user");
 
-        result.Success.Should().BeTrue();
-    }
+		result.Success.Should().BeTrue();
+		result.OperationId.Should().Be(Guid.Empty);
+	}
 
-    [Fact]
-    public async Task DeleteKeysAsync_AllKeysFound_DeletesAllAndReturnsSuccess()
-    {
-        var id1 = Guid.NewGuid();
-        var id2 = Guid.NewGuid();
-        var key1 = CreateKey(id1);
-        var key2 = CreateKey(id2);
+	/// <summary>
+	/// Tests that DeleteKeysAsync returns success with empty operation ID when empty list is provided.
+	/// </summary>
+	[Fact]
+	public async Task DeleteKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
+	{
+		var result = await _sut.DeleteKeysAsync(new List<Guid>(), "user");
 
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(id1)).ReturnsAsync(key1);
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(id2)).ReturnsAsync(key2);
-        _keyRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
-        _keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+		result.Success.Should().BeTrue();
+	}
 
-        var result = await _sut.DeleteKeysAsync(new List<Guid> { id1, id2 }, "admin");
+	/// <summary>
+	/// Tests that DeleteKeysAsync successfully deletes all configuration keys when they are found and returns success.
+	/// </summary>
+	[Fact]
+	public async Task DeleteKeysAsync_AllKeysFound_DeletesAllAndReturnsSuccess()
+	{
+		var id1 = Guid.NewGuid();
+		var id2 = Guid.NewGuid();
+		var key1 = CreateKey(id1);
+		var key2 = CreateKey(id2);
 
-        result.Success.Should().BeTrue();
-        result.SuccessCount.Should().Be(2);
-        result.ErrorCount.Should().Be(0);
-        _keyRepositoryMock.Verify(r => r.DeleteAsync(key1), Times.Once);
-        _keyRepositoryMock.Verify(r => r.DeleteAsync(key2), Times.Once);
-    }
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id1)).ReturnsAsync(key1);
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id2)).ReturnsAsync(key2);
+		_keyRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+		_keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-    [Fact]
-    public async Task DeleteKeysAsync_KeyNotFound_SkipsWithNoError()
-    {
-        var missingId = Guid.NewGuid();
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(missingId)).ReturnsAsync((ConfigurationKey?)null);
-        _keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+		var result = await _sut.DeleteKeysAsync(new List<Guid> { id1, id2 }, "admin");
 
-        var result = await _sut.DeleteKeysAsync(new List<Guid> { missingId }, "admin");
+		result.Success.Should().BeTrue();
+		result.SuccessCount.Should().Be(2);
+		result.ErrorCount.Should().Be(0);
+		_keyRepositoryMock.Verify(r => r.DeleteAsync(key1), Times.Once);
+		_keyRepositoryMock.Verify(r => r.DeleteAsync(key2), Times.Once);
+	}
 
-        result.SuccessCount.Should().Be(0);
-        result.ErrorCount.Should().Be(0);
-    }
+	/// <summary>
+	/// Tests that DeleteKeysAsync skips keys that are not found without throwing errors.
+	/// </summary>
+	[Fact]
+	public async Task DeleteKeysAsync_KeyNotFound_SkipsWithNoError()
+	{
+		var missingId = Guid.NewGuid();
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(missingId)).ReturnsAsync((ConfigurationKey?)null);
+		_keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-    // ── GetStatusAsync ───────────────────────────────────────────────────────
+		var result = await _sut.DeleteKeysAsync(new List<Guid> { missingId }, "admin");
 
-    [Fact]
-    public async Task GetStatusAsync_UnknownOperationId_ReturnsNotFoundStatus()
-    {
-        var unknownId = Guid.NewGuid();
+		result.SuccessCount.Should().Be(0);
+		result.ErrorCount.Should().Be(0);
+	}
 
-        var status = await _sut.GetStatusAsync(unknownId);
+	// ── GetStatusAsync ───────────────────────────────────────────────────────
 
-        status.Status.Should().Be("not_found");
-        status.OperationId.Should().Be(unknownId);
-    }
+	/// <summary>
+	/// Tests that GetStatusAsync returns not_found status when querying an unknown operation ID.
+	/// </summary>
+	[Fact]
+	public async Task GetStatusAsync_UnknownOperationId_ReturnsNotFoundStatus()
+	{
+		var unknownId = Guid.NewGuid();
 
-    [Fact]
-    public async Task GetStatusAsync_AfterUpdate_ReturnsCompletedStatus()
-    {
-        var id = Guid.NewGuid();
-        var key = CreateKey(id);
+		var status = await _sut.GetStatusAsync(unknownId);
 
-        _keyRepositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(key);
-        _keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
-        _keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+		status.Status.Should().Be("not_found");
+		status.OperationId.Should().Be(unknownId);
+	}
 
-        var updateResult = await _sut.UpdateKeysAsync(
-            new List<KeyUpdateRequest> { new() { KeyId = id, NewValue = "v" } }, "user");
+	/// <summary>
+	/// Tests that GetStatusAsync returns completed status after a successful update operation.
+	/// </summary>
+	[Fact]
+	public async Task GetStatusAsync_AfterUpdate_ReturnsCompletedStatus()
+	{
+		var id = Guid.NewGuid();
+		var key = CreateKey(id);
 
-        var status = await _sut.GetStatusAsync(updateResult.OperationId);
+		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(key);
+		_keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+		_keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
-        status.Status.Should().Be("completed");
-        status.Progress.Should().BeApproximately(1.0, 0.01);
-        status.TotalItems.Should().Be(1);
-        status.CompletedAt.Should().NotBeNull();
-    }
+		var updateResult = await _sut.UpdateKeysAsync(
+			new List<KeyUpdateRequest> { new() { KeyId = id, NewValue = "v" } }, "user");
 
-    // ── CancelAsync ──────────────────────────────────────────────────────────
+		var status = await _sut.GetStatusAsync(updateResult.OperationId);
 
-    [Fact]
-    public async Task CancelAsync_UnknownOperationId_DoesNotThrow()
-    {
-        var act = () => _sut.CancelAsync(Guid.NewGuid());
+		status.Status.Should().Be("completed");
+		status.Progress.Should().BeApproximately(1.0, 0.01);
+		status.TotalItems.Should().Be(1);
+		status.CompletedAt.Should().NotBeNull();
+	}
 
-        await act.Should().NotThrowAsync();
-    }
+	// ── CancelAsync ──────────────────────────────────────────────────────────
 
-    // ── BatchOperationStatus.Elapsed ─────────────────────────────────────────
+	/// <summary>
+	/// Tests that CancelAsync does not throw when attempting to cancel an unknown operation ID.
+	/// </summary>
+	[Fact]
+	public async Task CancelAsync_UnknownOperationId_DoesNotThrow()
+	{
+		var act = () => _sut.CancelAsync(Guid.NewGuid());
 
-    [Fact]
-    public void BatchOperationStatus_Elapsed_CompletedOperation_ReturnsDurationBetweenStartAndCompletion()
-    {
-        var start = DateTime.UtcNow.AddSeconds(-5);
-        var end = DateTime.UtcNow;
+		await act.Should().NotThrowAsync();
+	}
 
-        var status = new BatchOperationStatus
-        {
-            StartedAt = start,
-            CompletedAt = end
-        };
+	// ── BatchOperationStatus.Elapsed ─────────────────────────────────────────
 
-        status.Elapsed.Should().BeCloseTo(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(100));
-    }
+	/// <summary>
+	/// Tests that BatchOperationStatus.Elapsed returns the correct duration between start and completion.
+	/// </summary>
+	[Fact]
+	public void BatchOperationStatus_Elapsed_CompletedOperation_ReturnsDurationBetweenStartAndCompletion()
+	{
+		var start = DateTime.UtcNow.AddSeconds(-5);
+		var end = DateTime.UtcNow;
+
+		var status = new BatchOperationStatus
+		{
+			StartedAt = start,
+			CompletedAt = end
+		};
+
+		status.Elapsed.Should().BeCloseTo(TimeSpan.FromSeconds(5), TimeSpan.FromMilliseconds(100));
+	}
 }
