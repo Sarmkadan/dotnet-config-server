@@ -1845,6 +1845,102 @@ await encryptionService.ReEncryptConfigurationAsync(configId, keys, "ops");
 // All encrypted keys now use the new primary key
 ```
 
+## DictionaryExtensionsTests
+
+The `DictionaryExtensionsTests` class provides comprehensive unit tests for the `DictionaryExtensions` class extension methods. It validates dictionary operations including value retrieval with fallbacks, conditional addition and updates, filtering, merging, inversion, projection, flattening, and nested value manipulation through dot-separated paths.
+
+### Public Members
+
+- `GetValueOrDefault_ExistingKey_ReturnsValue` - Returns value when key exists
+- `GetValueOrDefault_MissingKey_ReturnsDefaultValue` - Returns explicit default when key missing
+- `GetValueOrDefault_MissingKey_NoExplicitDefault_ReturnsTypeDefault` - Returns type default when key missing
+- `AddIfNotExists_NewKey_AddsAndReturnsTrue` - Adds new entry and returns true
+- `AddIfNotExists_ExistingKey_DoesNotOverwriteAndReturnsFalse` - Preserves existing entry and returns false
+- `AddOrUpdate_NewKey_AddsEntry` - Adds new key-value pair
+- `AddOrUpdate_ExistingKey_OverwritesValue` - Updates existing key-value pair
+- `RemoveWhere_MatchingPredicate_RemovesMatchingEntries` - Removes entries matching predicate
+- `RemoveWhere_NothingMatches_RemovesZeroEntries` - Returns zero when no matches
+- `Merge_OverwriteTrue_OverwritesExistingKeys` - Overwrites existing keys when merging
+- `Merge_OverwriteFalse_DoesNotOverwriteExistingKeys` - Preserves existing keys when merging
+- `Invert_UniqueValues_ProducesInvertedDictionary` - Creates inverted dictionary
+- `Where_Predicate_ReturnsOnlyMatchingPairs` - Filters dictionary by predicate
+- `Select_Selector_TransformsValues` - Projects values using selector function
+- `Flatten_FlatDictionary_ReturnsSameKeys` - Returns flat dictionary unchanged
+- `Flatten_WithPrefix_PrependsPrefixToKeys` - Adds prefix to all keys
+- `GetNestedValue_ExistingDotPath_ReturnsValue` - Retrieves nested value by dot path
+- `GetNestedValue_NonExistentPath_ReturnsNull` - Returns null for missing path
+- `SetNestedValue_NewPath_CreatesNestedStructure` - Creates nested structure and sets value
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+
+// Create a configuration dictionary
+var config = new Dictionary<string, object?> 
+{
+    ["Database"] = new Dictionary<string, object?> 
+    {
+        ["Host"] = "localhost",
+        ["Port"] = 5432,
+        ["Name"] = "orders"
+    },
+    ["Cache"] = new Dictionary<string, object?> 
+    {
+        ["Enabled"] = true,
+        ["TTL"] = 300
+    },
+    ["Api"] = new Dictionary<string, object?> 
+    {
+        ["Timeout"] = 30,
+        ["Retries"] = 3
+    }
+};
+
+// Get value with fallback - returns null if path doesn't exist
+var dbHost = config.GetNestedValue("Database.Host"); // "localhost"
+var missingPath = config.GetNestedValue("Database.Missing"); // null
+
+// Get value with type-safe fallback
+var port = config.GetNestedValue("Database.Port", 5432); // 5432
+
+// Add new nested value - creates intermediate dictionaries as needed
+config.SetNestedValue("Logging.Level", "Debug");
+
+// Merge dictionaries - control whether to overwrite existing keys
+var overrides = new Dictionary<string, object?> 
+{
+    ["Database"] = new Dictionary<string, object?> 
+    {
+        ["Host"] = "prod-db.example.com", // Will overwrite
+        ["PoolSize"] = 20 // Will be added
+    },
+    ["Cache"] = new Dictionary<string, object?> 
+    {
+        ["Enabled"] = false // Will NOT overwrite (overwrite=false)
+    }
+};
+
+config.Merge(overrides, overwrite: true);
+
+// Filter dictionary by predicate
+var enabledFeatures = config.Where(kvp => 
+    kvp.Value is Dictionary<string, object?> dict && 
+    dict.ContainsKey("Enabled") && 
+    dict["Enabled"] is true);
+
+// Transform values using Select
+var doubledValues = config.Select(v => 
+    v is int i ? i * 2 : v);
+
+// Create inverted dictionary (values become keys)
+var inverted = config.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString());
+
+// Flatten dictionary with prefix
+var flatConfig = config.Flatten(prefix: "app");
+// Result: ["app.Database.Host"] = "prod-db.example.com", etc.
+```
+
 ## DiffBenchmarks
 
 The `DiffBenchmarks` class provides a comprehensive suite of benchmarks to measure the performance of diff and diff-viewer services across a variety of realistic scenarios. It evaluates operations such as comparing configuration versions, retrieving enriched diffs with detailed change information, generating rollback previews, and analyzing version timelines.
