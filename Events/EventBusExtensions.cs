@@ -6,7 +6,6 @@
 // =============================================================================
 
 using System.Collections.Concurrent;
-using System.Globalization;
 
 namespace DotnetConfigServer.Events;
 
@@ -16,6 +15,8 @@ namespace DotnetConfigServer.Events;
 /// </summary>
 public static class EventBusExtensions
 {
+    private static readonly ConcurrentDictionary<Type, string> _typeNameCache = new();
+
     /// <summary>
     /// Subscribes a handler to multiple event types at once.
     /// </summary>
@@ -42,7 +43,8 @@ public static class EventBusExtensions
     /// <param name="bus">The event bus instance.</param>
     /// <returns>The number of subscribers for the specified event type.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="bus"/> is null.</exception>
-    public static int GetSubscriberCount<T>(this EventBus bus) where T : DomainEvent
+    public static int GetSubscriberCount<T>(this EventBus bus)
+        where T : DomainEvent
     {
         ArgumentNullException.ThrowIfNull(bus);
 
@@ -56,7 +58,8 @@ public static class EventBusExtensions
     /// <param name="bus">The event bus instance.</param>
     /// <returns>True if there are subscribers; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="bus"/> is null.</exception>
-    public static bool HasSubscribers<T>(this EventBus bus) where T : DomainEvent
+    public static bool HasSubscribers<T>(this EventBus bus)
+        where T : DomainEvent
     {
         ArgumentNullException.ThrowIfNull(bus);
 
@@ -71,7 +74,8 @@ public static class EventBusExtensions
     /// <param name="event">The event to publish.</param>
     /// <returns>The number of handlers that successfully processed the event.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="bus"/> or <paramref name="event"/> is null.</exception>
-    public static async Task<int> PublishAsyncWithCount<T>(this EventBus bus, T @event) where T : DomainEvent
+    public static async Task<int> PublishAsyncWithCount<T>(this EventBus bus, T @event)
+        where T : DomainEvent
     {
         ArgumentNullException.ThrowIfNull(bus);
         ArgumentNullException.ThrowIfNull(@event);
@@ -93,7 +97,8 @@ public static class EventBusExtensions
     /// <typeparam name="T">The event type to unsubscribe from.</typeparam>
     /// <param name="bus">The event bus instance.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="bus"/> is null.</exception>
-    public static void UnsubscribeAll<T>(this EventBus bus) where T : DomainEvent
+    public static void UnsubscribeAll<T>(this EventBus bus)
+        where T : DomainEvent
     {
         ArgumentNullException.ThrowIfNull(bus);
 
@@ -115,17 +120,20 @@ public static class EventBusExtensions
     {
         ArgumentNullException.ThrowIfNull(bus);
 
-        lock (bus.GetType().GetField("_subscribers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-            .GetValue(bus))
-        {
-            var subscribers = (ConcurrentDictionary<Type, List<Delegate>>)bus.GetType()
-                .GetField("_subscribers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
-                .GetValue(bus)!;
+        var subscribersField = typeof(EventBus).GetField(
+            "_subscribers",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
-            return subscribers.ToDictionary(
-                kvp => kvp.Key.Name,
-                kvp => kvp.Value.Count,
-                StringComparer.Ordinal);
+        if (subscribersField is null)
+        {
+            return new Dictionary<string, int>(StringComparer.Ordinal);
         }
+
+        var subscribers = (ConcurrentDictionary<Type, List<Delegate>>)subscribersField.GetValue(bus)!;
+
+        return subscribers.ToDictionary(
+            kvp => _typeNameCache.GetOrAdd(kvp.Key, static t => t.Name),
+            kvp => kvp.Value.Count,
+            StringComparer.Ordinal);
     }
 }
