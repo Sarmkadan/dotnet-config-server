@@ -44,9 +44,8 @@ public static class ConcurrencyExceptionValidation
         {
             ValidateOptimisticConcurrencyException(optimisticException, errors);
         }
-
         // Validate CircularDependencyException specific properties
-        if (value is CircularDependencyException circularException)
+        else if (value is CircularDependencyException circularException)
         {
             ValidateCircularDependencyException(circularException, errors);
         }
@@ -61,9 +60,7 @@ public static class ConcurrencyExceptionValidation
     /// <returns>True if valid; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static bool IsValid(this ConcurrencyException? value)
-    {
-        return Validate(value).Count == 0;
-    }
+        => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that a <see cref="ConcurrencyException"/> instance is valid, throwing an <see cref="ArgumentException"/> if not.
