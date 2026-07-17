@@ -10,8 +10,17 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Provides unit tests for the <see cref="CacheKeyGenerator"/> class.
+/// Tests verify that cache key generation methods produce correct and distinct keys
+/// for different cache operations in the DotnetConfigServer application.
+/// </summary>
 public sealed class CacheKeyGeneratorTests
 {
+    /// <summary>
+    /// Tests that the GetConfigurationKey method generates a key containing the provided configuration ID
+    /// and prefixed with "config:".
+    /// </summary>
     [Fact]
     public void GetConfigurationKey_ReturnsKeyWithConfigurationId()
     {
@@ -23,6 +32,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("config:");
     }
 
+    /// <summary>
+    /// Tests that the GetApplicationConfigurationsKey method generates a key containing the provided application ID
+    /// and ending with "configs" suffix.
+    /// </summary>
     [Fact]
     public void GetApplicationConfigurationsKey_ContainsAppIdAndConfigsSuffix()
     {
@@ -34,6 +47,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().EndWith("configs");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationKeysKey method generates a key that is distinct from the configuration key
+    /// and contains "keys" in the key name.
+    /// </summary>
     [Fact]
     public void GetConfigurationKeysKey_ReturnsDistinctFromConfigurationKey()
     {
@@ -46,6 +63,10 @@ public sealed class CacheKeyGeneratorTests
         keysKey.Should().Contain("keys");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationKeyKey method generates a key containing the provided key ID
+    /// and prefixed with "key:".
+    /// </summary>
     [Fact]
     public void GetConfigurationKeyKey_ContainsKeyId()
     {
@@ -57,6 +78,10 @@ public sealed class CacheKeyGeneratorTests
         cacheKey.Should().StartWith("key:");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationVersionsKey method generates a key containing the provided configuration ID
+    /// and ending with "versions" suffix.
+    /// </summary>
     [Fact]
     public void GetConfigurationVersionsKey_ContainsVersionsSuffix()
     {
@@ -68,6 +93,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().EndWith("versions");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationVersionKey method generates a key containing the provided version ID
+    /// and prefixed with "version:".
+    /// </summary>
     [Fact]
     public void GetConfigurationVersionKey_ContainsVersionId()
     {
@@ -79,6 +108,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("version:");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationDiffKey method generates a key containing both version IDs
+    /// and prefixed with "diff:".
+    /// </summary>
     [Fact]
     public void GetConfigurationDiffKey_ContainsBothVersionIds()
     {
@@ -92,6 +125,9 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("diff:");
     }
 
+    /// <summary>
+    /// Tests that the GetConfigurationDiffKey method generates a different key when the version IDs are provided in a different order.
+    /// </summary>
     [Fact]
     public void GetConfigurationDiffKey_DifferentOrderProducesDifferentKey()
     {
@@ -104,6 +140,10 @@ public sealed class CacheKeyGeneratorTests
         key1.Should().NotBe(key2);
     }
 
+    /// <summary>
+    /// Tests that the GetApplicationKey method generates a key containing the provided application ID
+    /// and prefixed with "app:".
+    /// </summary>
     [Fact]
     public void GetApplicationKey_ContainsApplicationId()
     {
@@ -115,6 +155,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("app:");
     }
 
+    /// <summary>
+    /// Tests that the GetWebhookSubscriptionsKey method generates a key containing the provided application ID
+    /// and prefixed with "webhooks:".
+    /// </summary>
     [Fact]
     public void GetWebhookSubscriptionsKey_ContainsApplicationId()
     {
@@ -126,6 +170,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("webhooks:");
     }
 
+    /// <summary>
+    /// Tests that the GetWebhookSubscriptionKey method generates a key containing the provided subscription ID
+    /// and prefixed with "webhook:".
+    /// </summary>
     [Fact]
     public void GetWebhookSubscriptionKey_ContainsSubscriptionId()
     {
@@ -137,6 +185,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().StartWith("webhook:");
     }
 
+    /// <summary>
+    /// Tests that the GetSearchKey method with query only generates a key prefixed with "search:"
+    /// and containing the URL-encoded query string.
+    /// </summary>
     [Fact]
     public void GetSearchKey_WithQueryOnly_ContainsEncodedQuery()
     {
@@ -146,6 +198,10 @@ public sealed class CacheKeyGeneratorTests
         key.Should().Contain(Uri.EscapeDataString("database host"));
     }
 
+    /// <summary>
+    /// Tests that the GetSearchKey method with query and application ID generates a key containing both
+    /// the application ID and the query string.
+    /// </summary>
     [Fact]
     public void GetSearchKey_WithQueryAndApplicationId_ContainsBoth()
     {
@@ -157,6 +213,9 @@ public sealed class CacheKeyGeneratorTests
         key.Should().Contain("timeout");
     }
 
+    /// <summary>
+    /// Tests that the GetSearchKey method produces different keys when called with and without an application ID.
+    /// </summary>
     [Fact]
     public void GetSearchKey_WithAndWithoutAppId_ProducesDifferentKeys()
     {
@@ -169,6 +228,10 @@ public sealed class CacheKeyGeneratorTests
         keyWithApp.Should().NotBe(keyWithout);
     }
 
+    /// <summary>
+    /// Tests that the GetInvalidationPatternsForConfiguration method generates a collection of cache keys
+    /// that includes keys for the configuration, its keys list, its versions, and the application configurations.
+    /// </summary>
     [Fact]
     public void GetInvalidationPatternsForConfiguration_YieldsExpectedPatterns()
     {
@@ -184,6 +247,10 @@ public sealed class CacheKeyGeneratorTests
         patterns.Should().HaveCountGreaterThanOrEqualTo(4);
     }
 
+    /// <summary>
+    /// Tests that the GetInvalidationPatternsForApplication method generates a collection of cache keys
+    /// that includes keys for the application and its configurations.
+    /// </summary>
     [Fact]
     public void GetInvalidationPatternsForApplication_YieldsExpectedPatterns()
     {
@@ -196,6 +263,9 @@ public sealed class CacheKeyGeneratorTests
         patterns.Should().HaveCountGreaterThanOrEqualTo(3);
     }
 
+    /// <summary>
+    /// Tests that different GUIDs produce different cache keys for both configuration and application keys.
+    /// </summary>
     [Fact]
     public void DifferentIds_ProduceDifferentKeys()
     {
