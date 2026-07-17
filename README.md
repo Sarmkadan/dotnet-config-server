@@ -1741,6 +1741,107 @@ var rollbackVersion = await versioningService.RollbackAsync(configId, previousVe
 Console.WriteLine($"Rollback created version {rollbackVersion.VersionNumber}"); // Output: Rollback created version 1.0.2
 ```
 
+## CacheKeyGeneratorTests
+
+The `CacheKeyGeneratorTests` class provides comprehensive unit tests for the `CacheKeyGenerator` class. It validates that cache key generation methods produce correct and distinct keys for different cache operations throughout the DotnetConfigServer application. The tests ensure proper key formatting, uniqueness, and that related cache keys are properly structured for efficient cache invalidation patterns.
+
+### What It Tests
+
+- **Configuration Keys**: Tests that configuration-specific cache keys contain the configuration ID and follow the "config:" prefix pattern
+- **Application Keys**: Validates application-specific cache keys contain the application ID with "app:" prefix
+- **Key Distinction**: Ensures different cache operations (configuration vs keys list vs versions) produce distinct keys
+- **Version Keys**: Tests version-specific cache keys with "version:" prefix and proper ID inclusion
+- **Diff Keys**: Validates diff operation keys contain both version IDs with "diff:" prefix and handle ID order correctly
+- **Webhook Keys**: Tests webhook-related cache keys with proper prefixes ("webhooks:", "webhook:")
+- **Search Keys**: Validates search operation keys with URL-encoded queries and application ID handling
+- **Invalidation Patterns**: Tests that invalidation patterns include all related cache keys for proper cache cleanup
+- **Uniqueness**: Ensures different IDs produce different cache keys for both configuration and application operations
+
+### Public Members
+
+- `GetConfigurationKey_ReturnsKeyWithConfigurationId` - Tests configuration key contains configuration ID with "config:" prefix
+- `GetApplicationConfigurationsKey_ContainsAppIdAndConfigsSuffix` - Tests application configurations key contains app ID and "configs" suffix
+- `GetConfigurationKeysKey_ReturnsDistinctFromConfigurationKey` - Tests keys list key is distinct from configuration key
+- `GetConfigurationKeyKey_ContainsKeyId` - Tests configuration key key contains key ID with "key:" prefix
+- `GetConfigurationVersionsKey_ContainsVersionsSuffix` - Tests configuration versions key contains ID and "versions" suffix
+- `GetConfigurationVersionKey_ContainsVersionId` - Tests configuration version key contains version ID with "version:" prefix
+- `GetConfigurationDiffKey_ContainsBothVersionIds` - Tests diff key contains both version IDs with "diff:" prefix
+- `GetConfigurationDiffKey_DifferentOrderProducesDifferentKey` - Tests diff key handles version ID order correctly
+- `GetApplicationKey_ContainsApplicationId` - Tests application key contains application ID with "app:" prefix
+- `GetWebhookSubscriptionsKey_ContainsApplicationId` - Tests webhook subscriptions key contains app ID with "webhooks:" prefix
+- `GetWebhookSubscriptionKey_ContainsSubscriptionId` - Tests webhook subscription key contains subscription ID with "webhook:" prefix
+- `GetSearchKey_WithQueryOnly_ContainsEncodedQuery` - Tests search key with query-only generates properly encoded key
+- `GetSearchKey_WithQueryAndApplicationId_ContainsBoth` - Tests search key with query and app ID contains both
+- `GetSearchKey_WithAndWithoutAppId_ProducesDifferentKeys` - Tests search keys differ with/without app ID
+- `GetInvalidationPatternsForConfiguration_YieldsExpectedPatterns` - Tests invalidation patterns include all related keys
+- `GetInvalidationPatternsForApplication_YieldsExpectedPatterns` - Tests application invalidation patterns include related keys
+- `DifferentIds_ProduceDifferentKeys` - Tests different IDs produce different keys
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Caching;
+using System;
+
+// Test 1: Generate configuration cache key
+var configId = Guid.NewGuid();
+var configKey = CacheKeyGenerator.GetConfigurationKey(configId);
+Console.WriteLine($"Configuration key: {configKey}");
+// Output: Configuration key: config:550e8400-e29b-41d4-a716-446655440000
+
+// Test 2: Generate application configurations cache key
+var appId = Guid.NewGuid();
+var appConfigsKey = CacheKeyGenerator.GetApplicationConfigurationsKey(appId);
+Console.WriteLine($"Application configs key: {appConfigsKey}");
+// Output: Application configs key: app:550e8400-e29b-41d4-a716-446655440000:configs
+
+// Test 3: Generate configuration keys list cache key
+var keysListKey = CacheKeyGenerator.GetConfigurationKeysKey(configId);
+Console.WriteLine($"Configuration keys list key: {keysListKey}");
+// Output: Configuration keys list key: config:550e8400-e29b-41d4-a716-446655440000:keys
+
+// Test 4: Generate configuration version cache key
+var versionId = Guid.NewGuid();
+var versionKey = CacheKeyGenerator.GetConfigurationVersionKey(versionId);
+Console.WriteLine($"Configuration version key: {versionKey}");
+// Output: Configuration version key: version:550e8400-e29b-41d4-a716-446655440000
+
+// Test 5: Generate configuration diff cache key
+var fromVersionId = Guid.NewGuid();
+var toVersionId = Guid.NewGuid();
+var diffKey = CacheKeyGenerator.GetConfigurationDiffKey(fromVersionId, toVersionId);
+Console.WriteLine($"Configuration diff key: {diffKey}");
+// Output: Configuration diff key: diff:550e8400-e29b-41d4-a716-446655440000:550e8400-e29b-41d4-a716-446655440123
+
+// Test 6: Generate webhook-related cache keys
+var subscriptionId = Guid.NewGuid();
+var webhookSubscriptionsKey = CacheKeyGenerator.GetWebhookSubscriptionsKey(appId);
+var webhookSubscriptionKey = CacheKeyGenerator.GetWebhookSubscriptionKey(subscriptionId);
+Console.WriteLine($"Webhook subscriptions key: {webhookSubscriptionsKey}");
+Console.WriteLine($"Webhook subscription key: {webhookSubscriptionKey}");
+// Output: Webhook subscriptions key: webhooks:550e8400-e29b-41d4-a716-446655440000
+// Output: Webhook subscription key: webhook:550e8400-e29b-41d4-a716-446655440000
+
+// Test 7: Generate search cache key
+var searchKey = CacheKeyGenerator.GetSearchKey("database host");
+Console.WriteLine($"Search key: {searchKey}");
+// Output: Search key: search:database%20host
+
+// Test 8: Generate search cache key with application ID
+var searchKeyWithApp = CacheKeyGenerator.GetSearchKey("timeout", appId);
+Console.WriteLine($"Search key with app: {searchKeyWithApp}");
+// Output: Search key with app: search:timeout:app:550e8400-e29b-41d4-a716-446655440000
+
+// Test 9: Get invalidation patterns for configuration
+var invalidationPatterns = CacheKeyGenerator.GetInvalidationPatternsForConfiguration(configId, appId);
+Console.WriteLine("Invalidation patterns:");
+foreach (var pattern in invalidationPatterns)
+{
+    Console.WriteLine($"  - {pattern}");
+}
+// Output includes: config:550e8400..., config:550e8400...:keys, config:550e8400...:versions, app:550e8400...:configs
+```
+
 ## CollectionExtensionsTests
 
 The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
