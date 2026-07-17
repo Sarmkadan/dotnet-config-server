@@ -2035,6 +2035,59 @@ subscription.Dispose();
 eventBus.Clear();
 ```
 
+## EventBusExtensions
+
+The `EventBusExtensions` class provides extension methods for `EventBus` that offer additional functionality for event subscription management, publishing with diagnostics, and subscriber inspection. These methods simplify common event bus operations like subscribing to multiple event types at once, checking subscriber counts, and publishing events while tracking how many handlers were invoked.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Events;
+using System;
+using System.Threading.Tasks;
+
+// Create the event bus
+var eventBus = new EventBus();
+
+// Define event types
+public record ConfigurationChangedEvent(Guid ConfigurationId, string Environment);
+public record CacheInvalidatedEvent(string CacheKey);
+
+// Subscribe to multiple event types with a single handler
+eventBus.Subscribe<ConfigurationChangedEvent, CacheInvalidatedEvent>(async (e) =>
+{
+    Console.WriteLine($"Event received: {e.GetType().Name}");
+    await Task.CompletedTask;
+});
+
+// Check if there are any subscribers for a specific event type
+bool hasConfigSubscribers = eventBus.HasSubscribers<ConfigurationChangedEvent>();
+Console.WriteLine($"Has configuration subscribers: {hasConfigSubscribers}");
+
+// Get the exact count of subscribers for an event type
+int configSubscriberCount = eventBus.GetSubscriberCount<ConfigurationChangedEvent>();
+Console.WriteLine($"Configuration subscriber count: {configSubscriberCount}");
+
+// Publish an event and get the number of handlers that were invoked
+var configEvent = new ConfigurationChangedEvent(
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    "Production"
+);
+int handledCount = await eventBus.PublishAsyncWithCount(configEvent);
+Console.WriteLine($"Event handled by {handledCount} subscribers");
+
+// Get a snapshot of all subscriber counts across all event types
+var allSubscriberCounts = eventBus.GetAllSubscriberCounts();
+Console.WriteLine("All subscriber counts:");
+foreach (var kvp in allSubscriberCounts)
+{
+    Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+}
+
+// Unsubscribe all handlers of a specific type
+eventBus.UnsubscribeAll<ConfigurationChangedEvent>();
+```
+
 ## NotFoundException
 
 The `NotFoundException` is thrown when the requested resource is not found.
