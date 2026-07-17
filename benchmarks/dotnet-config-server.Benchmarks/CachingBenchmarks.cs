@@ -12,6 +12,11 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetConfigServer.Benchmarks;
 
+/// <summary>
+/// Benchmark suite for testing caching performance and behavior in the configuration server.
+/// Measures cache hit/miss scenarios, cache-aside patterns, eviction behavior, and size tracking
+/// for various configuration operations including configurations, keys, searches, and counts.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
@@ -25,6 +30,12 @@ public class CachingBenchmarks
     private List<ConfigurationKey> _testKeys;
     private const string CachePrefix = "ConfigServer:";
 
+    /// <summary>
+    /// Global setup for all benchmarks.
+    /// Initializes dependency injection container with required services, configures memory cache with size limits,
+    /// creates test database schema, populates with test application, configuration, and 100 configuration keys.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -110,6 +121,11 @@ public class CachingBenchmarks
         _memoryCache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
     }
 
+    /// <summary>
+    /// Global cleanup after all benchmarks complete.
+    /// Removes test database and disposes service provider.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -119,6 +135,11 @@ public class CachingBenchmarks
         _serviceProvider.Dispose();
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration retrieval performance when cache is empty (cache miss scenario).
+    /// Measures the time to retrieve a configuration from database when no cached value exists.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfiguration_CacheMiss()
     {
@@ -128,6 +149,11 @@ public class CachingBenchmarks
         await _configurationService.GetByIdAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration retrieval performance when cache contains the value (cache hit scenario).
+    /// Measures the time to retrieve a configuration from cache after it has been populated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfiguration_CacheHit()
     {
@@ -139,6 +165,11 @@ public class CachingBenchmarks
         await _configurationService.GetByIdAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration retrieval using the cache-aside pattern.
+    /// Implements manual cache checking before database lookup, then caches the result for future requests.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfiguration_WithCacheAside()
     {
@@ -155,6 +186,11 @@ public class CachingBenchmarks
         var _ = cachedConfig;
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration keys retrieval performance when cache is empty (cache miss scenario).
+    /// Measures the time to retrieve all configuration keys from database when no cached value exists.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetKeys_CacheMiss()
     {
@@ -164,6 +200,11 @@ public class CachingBenchmarks
         await _configurationService.GetKeysAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration keys retrieval performance when cache contains the value (cache hit scenario).
+    /// Measures the time to retrieve all configuration keys from cache after it has been populated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetKeys_CacheHit()
     {
@@ -175,6 +216,11 @@ public class CachingBenchmarks
         await _configurationService.GetKeysAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration keys retrieval using the cache-aside pattern.
+    /// Implements manual cache checking before database lookup for configuration keys, then caches the result.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetKeys_WithCacheAside()
     {
@@ -191,6 +237,11 @@ public class CachingBenchmarks
         var _ = cachedKeys;
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration search performance when cache is empty (cache miss scenario).
+    /// Measures the time to search for configurations by name when no cached search results exist.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task SearchConfigurations_CacheMiss()
     {
@@ -200,6 +251,11 @@ public class CachingBenchmarks
         await _configurationService.SearchAsync("Benchmark", _testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration search performance when cache contains the results (cache hit scenario).
+    /// Measures the time to retrieve search results from cache after they have been populated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task SearchConfigurations_CacheHit()
     {
@@ -211,6 +267,11 @@ public class CachingBenchmarks
         await _configurationService.SearchAsync("Benchmark", _testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration count retrieval performance when cache is empty (cache miss scenario).
+    /// Measures the time to retrieve the count of configurations for an application when no cached value exists.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationCount_CacheMiss()
     {
@@ -220,6 +281,11 @@ public class CachingBenchmarks
         await _configurationService.GetConfigurationCountAsync(_testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring configuration count retrieval performance when cache contains the value (cache hit scenario).
+    /// Measures the time to retrieve the count of configurations from cache after it has been populated.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationCount_CacheHit()
     {
@@ -231,6 +297,12 @@ public class CachingBenchmarks
         await _configurationService.GetConfigurationCountAsync(_testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark for testing memory cache eviction behavior.
+    /// Populates the cache with a configuration, then forces eviction by filling the cache beyond its size limit,
+    /// verifying that the original configuration entry is evicted.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task CacheEviction()
     {
@@ -248,6 +320,12 @@ public class CachingBenchmarks
         _memoryCache.TryGetValue($"{CachePrefix}{_testConfigurationId}", out _);
     }
 
+    /// <summary>
+    /// Benchmark for testing memory cache size tracking behavior.
+    /// Adds multiple configurations to the cache while tracking memory usage, verifying that the cache
+    /// properly tracks and manages entries based on configured size limits.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task CacheSizeTracking()
     {
@@ -275,6 +353,12 @@ public class CachingBenchmarks
         }
     }
 
+    /// <summary>
+    /// Benchmark for testing caching behavior with encrypted configuration data.
+    /// Creates a configuration with encrypted keys, caches the configuration, and verifies
+    /// that encrypted data can be properly retrieved from cache.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task CacheWithEncryptedData()
     {
