@@ -7614,6 +7614,58 @@ public async Task<IActionResult> OnConfigChanged([FromBody] WebhookPayload paylo
 }
 ```
 
+## IBatchOperationService
+
+The `IBatchOperationService` enables efficient bulk operations for updating and deleting multiple configuration keys in a single atomic operation. It tracks operation progress, provides cancellation support, and returns detailed results including success/failure counts and error messages. This service is ideal for configuration migrations, bulk updates, or cleanup operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container with required services
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IConfigurationKeyRepository, ConfigurationKeyRepository>();
+services.AddSingleton<IBatchOperationService, BatchOperationService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var batchOperationService = serviceProvider.GetRequiredService<IBatchOperationService>();
+
+// Update multiple configuration keys in a batch
+var updates = new List<KeyUpdateRequest>
+{
+    new KeyUpdateRequest { KeyId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"), NewValue = "new-value-123" },
+    new KeyUpdateRequest { KeyId = Guid.Parse("123e4567-e89b-12d3-a456-426614174001"), NewValue = "new-value-456" },
+    new KeyUpdateRequest { KeyId = Guid.Parse("123e4567-e89b-12d3-a456-426614174002"), NewValue = "new-value-789" }
+};
+
+var updateResult = await batchOperationService.UpdateKeysAsync(updates, "admin@example.com");
+Console.WriteLine($"Batch update started: {updateResult.OperationId}");
+Console.WriteLine($"Total items: {updateResult.TotalItems}, Success: {updateResult.SuccessCount}, Errors: {updateResult.ErrorCount}");
+
+// Delete multiple configuration keys in a batch
+var keyIdsToDelete = new List<Guid>
+{
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174003"),
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174004"),
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174005")
+};
+
+var deleteResult = await batchOperationService.DeleteKeysAsync(keyIdsToDelete, "admin@example.com");
+Console.WriteLine($"Batch delete started: {deleteResult.OperationId}");
+Console.WriteLine($"Total items: {deleteResult.TotalItems}, Success: {deleteResult.SuccessCount}, Errors: {deleteResult.ErrorCount}");
+
+// Check operation status
+var status = await batchOperationService.GetStatusAsync(updateResult.OperationId);
+Console.WriteLine($"Operation {status.OperationId} status: {status.Status}, Progress: {status.Progress:P0}");
+
+// Cancel a pending operation
+await batchOperationService.CancelAsync(updateResult.OperationId);
+```
+
 ## Contributing
 
 Contributions are welcome! Please follow these guidelines:
