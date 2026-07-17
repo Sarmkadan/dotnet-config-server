@@ -1300,6 +1300,116 @@ public class MyEventProcessor
 }
 ```
 
+## CollectionExtensionsTests
+
+The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
+
+### What It Tests
+
+- **Batch Processing**: Splits collections into smaller chunks of specified size, handling both divisible and non-divisible cases
+- **Element-wise Operations**: Executes actions on each collection element with and without index tracking
+- **Collection State Queries**: Determines if collections are null, empty, single-element, or multi-element
+- **Partitioning**: Omits the last element or groups consecutive elements by a key selector
+- **Distinct Operations**: Returns distinct elements based on a key selector
+- **Shuffling**: Randomly reorders collection elements
+- **Zipping**: Combines two collections into pairs of elements
+- **Dictionary Conversion**: Converts key-value pairs to dictionaries
+- **FirstOrDefault**: Gets the first element or returns a default value without throwing
+
+### Public Members
+
+- `Batch_CollectionDivisibleByBatchSize_ProducesFullBatches` - Tests batching when collection size is divisible by batch size
+- `Batch_CollectionNotDivisibleByBatchSize_LastBatchIsSmaller` - Tests batching when collection size is not divisible by batch size
+- `Batch_EmptyCollection_ReturnsNoBatches` - Tests batching with empty collections
+- `Batch_InvalidBatchSize_ThrowsArgumentException` - Tests error handling for invalid batch sizes
+- `ForEach_Action_ExecutesForEachElement` - Tests action execution on each element
+- `ForEach_ActionWithIndex_PassesCorrectIndices` - Tests action execution with element indices
+- `IsNullOrEmpty_NullCollection_ReturnsTrue` - Tests null collection detection
+- `IsNullOrEmpty_EmptyCollection_ReturnsTrue` - Tests empty collection detection
+- `IsNullOrEmpty_NonEmptyCollection_ReturnsFalse` - Tests non-empty collection detection
+- `IsSingle_CollectionWithOneElement_ReturnsTrue` - Tests single-element collection detection
+- `IsSingle_CollectionWithMultipleElements_ReturnsFalse` - Tests multi-element collection detection
+- `IsSingle_EmptyCollection_ReturnsFalse` - Tests empty collection detection for IsSingle
+- `HasMultiple_CollectionWithMultipleElements_ReturnsTrue` - Tests multi-element collection detection
+- `HasMultiple_CollectionWithOneElement_ReturnsFalse` - Tests single-element collection detection for HasMultiple
+- `HasMultiple_EmptyCollection_ReturnsFalse` - Tests empty collection detection for HasMultiple
+- `SkipLast_MultipleElements_OmitsLastElement` - Tests skipping the last element
+- `SkipLast_SingleElement_ReturnsEmpty` - Tests SkipLast with single-element collections
+- `SkipLast_EmptyCollection_ReturnsEmpty` - Tests SkipLast with empty collections
+- `DistinctBy_DuplicateKeys_ReturnsFirstOccurrence` - Tests distinct operation by key selector
+- `DistinctBy_AllUniqueKeys_ReturnsAllElements` - Tests distinct operation with all unique keys
+- `ZipWith_TwoCollections_CreatesCorrectPairs` - Tests zipping two collections
+- `FirstOrDefault_WithDefaultValue_ReturnsDefaultWhenEmpty` - Tests FirstOrDefault with empty collections
+- `FirstOrDefault_NonEmptyCollection_ReturnsFirstElement` - Tests FirstOrDefault with non-empty collections
+- `Shuffle_ProducesAllOriginalElements` - Tests shuffling preserves all elements
+- `GroupConsecutive_ConsecutiveSameValues_GroupsCorrectly` - Tests grouping consecutive elements
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+
+// Test 1: Batch a collection into smaller chunks
+var numbers = Enumerable.Range(1, 10).ToList();
+var batches = numbers.Batch(3).ToList();
+// batches = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]]
+
+// Test 2: Execute action for each element
+var results = new List<int>();
+numbers.ForEach(x => results.Add(x * 2));
+// results = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+
+// Test 3: Check collection state
+if (numbers.IsNullOrEmpty())
+{
+    Console.WriteLine("Collection is null or empty");
+}
+else if (numbers.IsSingle())
+{
+    Console.WriteLine("Collection has exactly one element");
+}
+else if (numbers.HasMultiple())
+{
+    Console.WriteLine("Collection has multiple elements");
+}
+
+// Test 4: Skip the last element
+var allButLast = numbers.SkipLast().ToList();
+// allButLast = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+// Test 5: Get distinct elements by a key
+var items = new[]
+{
+    new { Id = 1, Name = "first" },
+    new { Id = 1, Name = "duplicate" },
+    new { Id = 2, Name = "unique" }
+};
+var distinctItems = items.DistinctBy(x => x.Id).ToList();
+// distinctItems = [first, unique]
+
+// Test 6: Zip two collections together
+var letters = new[] { "a", "b", "c" };
+var pairs = numbers.ZipWith(letters).ToList();
+// pairs = [(1, "a"), (2, "b"), (3, "c")]
+
+// Test 7: Get first element or default
+var firstOrDefault = numbers.FirstOrDefault(0);
+// firstOrDefault = 1 (first element)
+
+var emptyList = new List<int>();
+var defaultValue = emptyList.FirstOrDefault(-1);
+// defaultValue = -1 (default value)
+
+// Test 8: Shuffle collection randomly
+var shuffled = numbers.Shuffle(new Random(42)).ToList();
+// shuffled contains all elements [1..10] in random order
+
+// Test 9: Group consecutive elements
+var consecutiveNumbers = new[] { 1, 1, 2, 2, 2, 1 };
+var groups = consecutiveNumbers.GroupConsecutive(x => x).ToList();
+// groups = [[1, 1], [2, 2, 2], [1]]
+```
+
 ## Testing
 
 Run the full test suite:
