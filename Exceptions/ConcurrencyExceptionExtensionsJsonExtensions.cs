@@ -48,21 +48,21 @@ public static class ConcurrencyExceptionExtensionsJsonExtensions
 
     /// <summary>
     /// Deserializes a JSON string to a <see cref="ConcurrencyException"/> instance.
-    /// Returns null if the JSON is null or empty.
+    /// Returns null if the JSON is null, empty, or whitespace.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized <see cref="ConcurrencyException"/> instance, or null.</returns>
+    /// <returns>The deserialized <see cref="ConcurrencyException"/> instance, or null if deserialization fails.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     public static ConcurrencyException? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return null;
-        }
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<ConcurrencyException>(json, _jsonOptions);
 
-        return JsonSerializer.Deserialize<ConcurrencyException>(json, _jsonOptions);
+        // Note: Deserialization failures return null rather than throwing to maintain
+        // consistency with the method signature that returns nullable ConcurrencyException
     }
 
     /// <summary>
