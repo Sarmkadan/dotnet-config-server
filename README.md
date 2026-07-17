@@ -198,29 +198,77 @@ Console.WriteLine($"Encrypted: {encryptedValue}");
 var decryptedValue = encryptionService.Decrypt(encryptedValue, encryptionKey);
 Console.WriteLine($"Decrypted: {decryptedValue}");
 
-// Encrypt asynchronously using a configuration ID
-var configurationId = Guid.NewGuid();
-var encryptedAsync = await encryptionService.EncryptAsync(plainText, configurationId);
+```
 
-// Decrypt asynchronously
-var decryptedAsync = await encryptionService.DecryptAsync(encryptedAsync, configurationId);
+## ChangeRequestService
 
-// Validate a key before use
-var isValid = encryptionService.ValidateKey(encryptionKey);
+The `ChangeRequestService` manages configuration change requests and the approval workflow. It provides methods for submitting new change requests, retrieving pending or configuration-specific requests, and handling approval/rejection/cancellation workflows. Change requests follow a strict state machine where only pending requests can be approved, rejected, or cancelled.
 
-// Get keys by ID
-var keyById = await encryptionService.GetKeyAsync(encryptionKey.KeyId);
+### Usage Example
 
-// Get primary key for a configuration
-var primaryKey = await encryptionService.GetPrimaryKeyAsync(configurationId);
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-// Rotate an encryption key
-await encryptionService.RotateKeyAsync(encryptionKey.KeyId, "admin@example.com");
+// Setup DI container with required services
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IChangeRequestRepository, ChangeRequestRepository>();
+services.AddSingleton<IConfigurationService, ConfigurationService>();
+services.AddSingleton<ChangeRequestService>();
 
-// Re-encrypt all configuration values with the new primary key
-// Note: Requires access to configuration keys repository
-// var configurationKeys = await _configurationKeyRepository.GetByConfigurationIdAsync(configurationId);
-// await encryptionService.ReEncryptConfigurationAsync(configurationId, configurationKeys, "admin@example.com");
+var serviceProvider = services.BuildServiceProvider();
+var changeRequestService = serviceProvider.GetRequiredService<ChangeRequestService>();
+
+// Submit a new change request to update a configuration key
+var updateRequest = new ChangeRequest
+{
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    ConfigurationKeyId = Guid.Parse("123e4567-e89b-12d3-a456-426614174001"),
+    RequestedBy = "developer@example.com",
+    Operation = ChangeRequestOperation.UpdateKey,
+    Payload = JsonSerializer.Serialize(new { Value = "new-value-123" }),
+    Description = "Update timeout configuration for better performance"
+};
+
+var submittedRequest = await changeRequestService.SubmitAsync(updateRequest);
+Console.WriteLine($"Submitted change request: {submittedRequest.Id}");
+
+// Get all pending change requests
+var pendingRequests = await changeRequestService.GetPendingAsync();
+Console.WriteLine($"Found {pendingRequests.Count} pending requests");
+
+// Get change requests for a specific configuration
+var configRequests = await changeRequestService.GetByConfigurationAsync(
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174000")
+);
+Console.WriteLine($"Found {configRequests.Count} requests for configuration");
+
+// Approve the change request (automatically applies the change)
+var approvedRequest = await changeRequestService.ApproveAsync(
+    submittedRequest.Id,
+    reviewerId: "admin@example.com",
+    comment: "Approved after review",
+    applyImmediately: true
+);
+Console.WriteLine($"Request {approvedRequest.Id} approved and applied");
+
+// Alternatively, reject a change request
+var rejectedRequest = await changeRequestService.RejectAsync(
+    submittedRequest.Id,
+    reviewerId: "admin@example.com",
+    comment: "Requires additional testing"
+);
+Console.WriteLine($"Request {rejectedRequest.Id} rejected");
+
+// Get a specific change request by ID
+var requestById = await changeRequestService.GetByIdAsync(submittedRequest.Id);
+if (requestById != null)
+{
+    Console.WriteLine($"Found request: {requestById.Id} - Status: {requestById.Status}");
+}
 ```
 
 ## IComparisonService
