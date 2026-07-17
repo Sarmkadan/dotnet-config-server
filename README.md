@@ -1891,6 +1891,101 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## VersioningAndRollback
+
+The `VersioningAndRollback` class provides comprehensive configuration versioning, comparison, and rollback capabilities. It enables teams to track all configuration changes, compare versions, and safely roll back to previous states when issues arise. This class supports both blue-green and canary deployment patterns for zero-downtime configuration updates.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Initialize the versioning manager with your server URL
+var versioning = new VersioningAndRollback("https://localhost:5001");
+var configurationId = "550e8400-e29b-41d4-a716-446655440001";
+
+// Create a new configuration version
+var newVersion = await versioning.CreateVersionAsync(
+    configurationId,
+    "Q3 2026 release with new features",
+    "Added payment gateway integration and updated timeout settings"
+);
+Console.WriteLine($"Created version {newVersion.Version}: {newVersion.Description}");
+
+// Get the currently active version
+var activeVersion = await versioning.GetActiveVersionAsync(configurationId);
+Console.WriteLine($"Active version: {activeVersion.Version} ({activeVersion.Status})");
+
+// Compare two versions to see what changed
+var diffs = await versioning.CompareVersionsAsync(
+    configurationId,
+    activeVersion.Id,
+    newVersion.Id
+);
+Console.WriteLine($"Changes: {diffs.Count} keys modified");
+
+// Publish the new version to make it active
+var publishedVersion = await versioning.PublishVersionAsync(
+    configurationId,
+    newVersion.Id,
+    "Production release"
+);
+Console.WriteLine($"Published version {publishedVersion.Version}");
+
+// Archive the old version (optional)
+await versioning.ArchiveVersionAsync(configurationId, activeVersion.Id);
+Console.WriteLine("Old version archived");
+
+// Display version history
+await versioning.DisplayVersionHistoryAsync(configurationId);
+
+// Blue-green deployment pattern
+// var result = await versioning.BlueGreenDeploymentAsync(
+//     configurationId,
+//     "Production release with zero downtime",
+//     validateAsync: async (versionId) => {
+//         // Run validation tests against the new version
+//         return true;
+//     }
+// );
+
+// Canary deployment pattern
+// await versioning.CanaryDeploymentAsync(
+//     configurationId,
+//     "Feature flag rollout",
+//     validateAsync: async (versionId, percentage) => {
+//         // Run tests against the canary version at specified traffic percentage
+//         return true;
+//     }
+// );
+```
+
+### Public Members
+
+- `Id` - Unique identifier for the configuration version
+- `Version` - Version number (sequential integer)
+- `Status` - Current status (Draft, Published, Archived)
+- `KeyCount` - Number of configuration keys in this version
+- `Description` - Human-readable description of the version
+- `CreatedAt` - When the version was created
+- `PublishedAt` - When the version was published (null if not published)
+
+### Public Methods
+
+- `CreateVersionAsync(configurationId, description, changeNotes)` - Create a new configuration version from current state
+- `ListVersionsAsync(configurationId)` - List all versions for a configuration
+- `GetActiveVersionAsync(configurationId)` - Get the currently active version
+- `PublishVersionAsync(configurationId, versionId, notes)` - Publish a version to make it the active version
+- `CompareVersionsAsync(configurationId, fromVersionId, toVersionId)` - Compare two versions and get the differences
+- `RollbackVersionAsync(configurationId, targetVersionId, reason)` - Roll back to a previous version
+- `ArchiveVersionAsync(configurationId, versionId)` - Archive a version (removes it from active management)
+- `DisplayVersionHistoryAsync(configurationId)` - Display version history in a formatted table
+- `DisplayDifferencesAsync(configurationId, fromVersionId, toVersionId)` - Display differences between two versions in a formatted table
+- `BlueGreenDeploymentAsync(configurationId, changeDescription, validateAsync)` - Automated blue-green deployment pattern
+- `CanaryDeploymentAsync(configurationId, changeDescription, validateAsync)` - Canary deployment with gradual rollout
+
 ## EnrichedDiff
 
 The `EnrichedDiff` class represents a configuration diff enriched with full version metadata for viewer display. It provides a comprehensive view of changes between two configuration versions with detailed statistics, individual change entries, and version context. This type is used by the diff viewer API to present rich, human-readable diff information with complete version history and change categorization.
