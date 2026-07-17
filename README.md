@@ -1378,6 +1378,42 @@ await benchmarks.CacheWithEncryptedData();
 await benchmarks.GlobalCleanup();
 ```
 
+## EncryptionBenchmarks
+
+The `EncryptionBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance of the `IEncryptionService` implementation. It covers various encryption and decryption scenarios including synchronous and asynchronous operations, key validation, key generation, key rotation, and large payload handling.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new EncryptionBenchmarks();
+
+// Initialize dependencies and test data (required before running benchmarks)
+await benchmarks.GlobalSetup();
+
+// Execute encryption/decryption benchmarks
+var encrypted = benchmarks.EncryptSync();
+var decrypted = benchmarks.DecryptSync();
+var encryptedAsync = await benchmarks.EncryptAsync();
+var decryptedAsync = await benchmarks.DecryptAsync();
+
+// Execute key management benchmarks
+var isValid = benchmarks.ValidateKey();
+var newKey = benchmarks.GenerateNewKey();
+await benchmarks.RotateKey();
+
+// Execute large text benchmarks
+var encryptedLarge = benchmarks.EncryptLargeText();
+var decryptedLarge = benchmarks.DecryptLargeText();
+var encryptedLargeAsync = await benchmarks.EncryptLargeTextAsync();
+var decryptedLargeAsync = await benchmarks.DecryptLargeTextAsync();
+
+// Cleanup test data and resources
+await benchmarks.GlobalCleanup();
+```
+
 ## ServiceExtensionsConfiguration
 
 The `ServiceExtensionsConfiguration` class is a data transfer object used for serializing and deserializing service extension configurations. It provides a structured way to define which services should be registered in the dependency injection container, including data services, business services, webhook clients, Swagger configurations, and database initialization methods.
