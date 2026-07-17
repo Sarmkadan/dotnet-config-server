@@ -393,13 +393,65 @@ Console.WriteLine($"  Deleted: {summary.DeletedCount}");
 Console.WriteLine($"  Modified: {summary.ModifiedCount}");
 ```
 
+### INotificationService
+
+The `INotificationService` interface provides a contract for sending notifications to external systems or logging them internally. It supports two notification patterns: structured notifications using a `Notification` object and simple type-payload notifications. The default implementation logs notifications but can be extended to integrate with email, SMS, push notifications, or webhook systems.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<INotificationService, NotificationService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var notificationService = serviceProvider.GetRequiredService<INotificationService>();
+
+// Create a structured notification
+var notification = new Notification
+{
+    Type = "ConfigurationChanged",
+    Message = "Database connection string was updated in Production environment",
+    Severity = "warning",
+    Metadata = new Dictionary<string, object>
+    {
+        { "applicationId", Guid.Parse("11111111-1111-1111-1111-111111111111") },
+        { "environment", "Production" },
+        { "changedBy", "admin@example.com" },
+        { "timestamp", DateTime.UtcNow }
+    }
+};
+
+// Send the notification
+await notificationService.NotifyAsync(notification);
+
+// Or use the simple type-payload pattern
+var payload = new { application = "OrderService", environment = "Staging", message = "Configuration reloaded successfully" };
+await notificationService.NotifyAsync("ConfigReloaded", payload);
+```
+
+### Notification Properties
+
+- **Id**: Unique identifier for the notification (auto-generated as Guid)
+- **Type**: The type/category of notification (e.g., "ConfigurationChanged", "ConfigReloaded")
+- **Message**: Human-readable message describing the notification
+- **Severity**: Severity level ("info", "warning", or "error")
+- **CreatedAt**: Timestamp when the notification was created
+- **Metadata**: Dictionary for additional context/data
+
 ### Key Features
 
-- **Version Comparison**: Compare any two configuration versions to see exactly what changed
-- **Change Tracking**: Identify added, modified, and deleted configuration keys
-- **History Tracking**: View the complete history of changes for any configuration key
-- **Diff Management**: Store, retrieve, and manage diffs between versions
-- **Summary Statistics**: Get quick statistics about changes between versions
+- **Structured Notifications**: Use the `Notification` class for rich, typed notifications
+- **Simple Pattern**: Quick notifications with type and payload for lightweight use cases
+- **Logging Integration**: Default implementation logs notifications via ILogger
+- **Extensible**: Easy to implement custom notification providers (email, SMS, webhooks)
+- **Async Support**: Fully asynchronous notification handling
 
 ### Common Use Cases
 
