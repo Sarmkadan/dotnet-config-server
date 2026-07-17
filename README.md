@@ -1737,6 +1737,90 @@ await benchmarks.GetDiffTimeline();
 await benchmarks.GlobalCleanup();
 ```
 
+## ConfigurationInheritanceIntegrationTests
+
+The `ConfigurationInheritanceIntegrationTests` class provides integration tests that verify the configuration inheritance system works correctly across multiple levels of parent-child relationships. These tests ensure that child configurations properly override parent keys, unique parent keys are inherited, and inheritance chains are resolved correctly even when intermediate configurations are missing.
+
+### What It Tests
+
+- **Key Override**: Child keys override parent keys with the same name while inheriting unique parent keys
+- **Multi-Level Inheritance**: Three-level inheritance chains (grandparent → parent → child) are resolved correctly
+- **Inheritance Control**: The `resolveInheritance` parameter controls whether inheritance resolution occurs
+- **Broken Chains**: Gracefully handles missing parent configurations without throwing exceptions
+- **Full Lifecycle**: Tests the complete configuration workflow including creation, key management, updates, and event publishing
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Tests;
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+// Setup dependencies
+var configRepoMock = new Mock<IConfigurationRepository>();
+var keyRepoMock = new Mock<IConfigurationKeyRepository>();
+var encryptionMock = new Mock<IEncryptionService>();
+var auditRepoMock = new Mock<IAuditLogRepository>();
+var eventBusMock = new Mock<IEventBus>();
+var loggerMock = new Mock<ILogger<ConfigurationService>>();
+
+// Create the service under test
+var configService = new ConfigurationService(
+    configRepoMock.Object,
+    keyRepoMock.Object,
+    encryptionMock.Object,
+    auditRepoMock.Object,
+    eventBusMock.Object,
+    loggerMock.Object
+);
+
+// Test 1: Child overrides parent key
+var parentId = Guid.NewGuid();
+var childId = Guid.NewGuid();
+
+var parentConfig = new Configuration { Id = parentId, Name = "ParentConfig", ApplicationId = Guid.NewGuid() };
+var childConfig = new Configuration { Id = childId, Name = "ChildConfig", ApplicationId = Guid.NewGuid(), ParentConfigurationId = parentId };
+
+configRepoMock.Setup(r => r.GetByIdAsync(childId)).ReturnsAsync(childConfig);
+configRepoMock.Setup(r => r.GetByIdAsync(parentId)).ReturnsAsync(parentConfig);
+
+// Parent has "database.host" = "prod-db.example.com"
+// Child has "database.host" = "dev-db.example.com" (overrides parent)
+// Child also has "feature.flag" = "true" (unique to child)
+
+var result = await configService.GetKeysAsync(childId);
+// Returns both keys with "database.host" = "dev-db.example.com" (child override)
+
+// Test 2: Three-level inheritance chain
+var grandparentId = Guid.NewGuid();
+var grandparentConfig = new Configuration { Id = grandparentId, Name = "GrandparentConfig", ApplicationId = Guid.NewGuid() };
+parentConfig = new Configuration { Id = parentId, Name = "ParentConfig", ApplicationId = Guid.NewGuid(), ParentConfigurationId = grandparentId };
+childConfig = new Configuration { Id = childId, Name = "ChildConfig", ApplicationId = Guid.NewGuid(), ParentConfigurationId = parentId };
+
+// Grandparent: "log.level" = "debug"
+// Parent overrides: "log.level" = "info"
+// Child adds: "feature.enabled" = "true"
+
+var threeLevelResult = await configService.GetKeysAsync(childId);
+// Returns all three keys with correct inheritance resolution
+
+// Test 3: Disable inheritance resolution
+var directOnlyResult = await configService.GetKeysAsync(childId, resolveInheritance: false);
+// Returns only keys directly on the child configuration
+
+// Test 4: Broken inheritance chain (missing parent)
+var missingParentId = Guid.NewGuid();
+var orphanConfig = new Configuration { Id = childId, Name = "OrphanConfig", ApplicationId = Guid.NewGuid(), ParentConfigurationId = missingParentId };
+
+configRepoMock.Setup(r => r.GetByIdAsync(missingParentId)).ReturnsAsync((Configuration?)null);
+
+var orphanResult = await configService.GetKeysAsync(childId);
+// Returns only the child's own keys without throwing exceptions
+```
+
 ## WebhookBenchmarks
 
 The `WebhookBenchmarks` class provides a set of performance benchmarks for webhook operations, including subscription management (CRUD), event dispatching, and retry queue processing. It helps evaluate the efficiency of the webhook system under different workloads, ensuring reliable delivery and performance for configuration change notifications.
