@@ -1448,6 +1448,38 @@ var decryptedLargeAsync = await benchmarks.DecryptLargeTextAsync();
 await benchmarks.GlobalCleanup();
 ```
 
+## DiffBenchmarks
+
+The `DiffBenchmarks` class provides a comprehensive suite of benchmarks to measure the performance of diff and diff-viewer services across a variety of realistic scenarios. It evaluates operations such as comparing configuration versions, retrieving enriched diffs with detailed change information, generating rollback previews, and analyzing version timelines.
+
+The benchmarks use an in-memory SQL Server database that is created and torn down for each run, ensuring isolated and reproducible test conditions.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new DiffBenchmarks();
+
+// Initialize dependencies and test data (required before running benchmarks)
+await benchmarks.GlobalSetup();
+
+// Execute diff comparison benchmarks
+await benchmarks.CompareConfigurations();
+await benchmarks.CompareLargeConfigurations();
+
+// Execute diff viewer service benchmarks
+await benchmarks.GetDiff();
+await benchmarks.GetDiffWithDetails();
+await benchmarks.GetEnrichedDiff();
+await benchmarks.GetRollbackPreview();
+await benchmarks.GetDiffTimeline();
+
+// Cleanup test data and resources
+await benchmarks.GlobalCleanup();
+```
+
 ## WebhookBenchmarks
 
 The `WebhookBenchmarks` class provides a set of performance benchmarks for webhook operations, including subscription management (CRUD), event dispatching, and retry queue processing. It helps evaluate the efficiency of the webhook system under different workloads, ensuring reliable delivery and performance for configuration change notifications.
