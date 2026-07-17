@@ -779,6 +779,111 @@ foreach (var pattern in appPatterns)
 }
 ```
 
+## DictionaryExtensions
+
+The `DictionaryExtensions` static class provides extension methods for safe dictionary operations including safe value retrieval, conditional addition, merging, filtering, and nested value manipulation. These utilities help prevent common dictionary-related exceptions and simplify working with configuration data structures in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using System;
+using System.Collections.Generic;
+
+// Create sample configuration data as nested dictionaries
+var appConfig = new Dictionary<string, object?>
+{
+    ["Name"] = "OrderProcessingService",
+    ["Environment"] = "Development",
+    ["Settings"] = new Dictionary<string, object?>
+    {
+        ["Database"] = new Dictionary<string, object?>
+        {
+            ["ConnectionString"] = "Server=localhost;Database=Orders",
+            ["Timeout"] = 30,
+            ["PoolSize"] = 100
+        },
+        ["Cache"] = new Dictionary<string, object?>
+        {
+            ["Enabled"] = true,
+            ["Size"] = 500
+        },
+        ["Logging"] = new Dictionary<string, object?>
+        {
+            ["Level"] = "Information",
+            ["FilePath"] = "/var/log/order-service.log"
+        }
+    }
+};
+
+// Safe value retrieval with default
+var timeout = appConfig.GetValueOrDefault("Settings:Database:Timeout", 15);
+Console.WriteLine($"Timeout: {timeout}"); // 30
+
+var missingValue = appConfig.GetValueOrDefault("Settings:NonExistent", "default");
+Console.WriteLine($"Missing value: {missingValue}"); // "default"
+
+// Conditional addition
+var added = appConfig.AddIfNotExists("Settings:NewFeature", true);
+Console.WriteLine($"Added new feature: {added}"); // True
+
+// Try to add again - should return false
+var alreadyExists = appConfig.AddIfNotExists("Settings:NewFeature", false);
+Console.WriteLine($"Already exists: {alreadyExists}"); // False
+
+// Add or update
+appConfig.AddOrUpdate("Settings:Database:Timeout", 60);
+Console.WriteLine($"Updated timeout: {appConfig["Settings:Database:Timeout"]}"); // 60
+
+// Merge dictionaries
+var additionalSettings = new Dictionary<string, object?>
+{
+    ["Settings:Database:MaxConnections"] = 50,
+    ["Settings:RateLimiting:RequestsPerSecond"] = 100
+};
+
+appConfig.Merge(additionalSettings);
+Console.WriteLine($"Has MaxConnections: {appConfig.ContainsKey("Settings:Database:MaxConnections")}"); // True
+
+// Filter dictionary
+var databaseSettings = appConfig.Where(kvp => 
+    kvp.Key.StartsWith("Settings:Database:") && 
+    kvp.Value is int intValue && intValue > 0
+);
+Console.WriteLine($"Database settings count: {databaseSettings.Count}"); // 3
+
+// Transform values
+var stringValues = appConfig.Select(kvp => kvp.Value?.ToString() ?? "null");
+Console.WriteLine($"String values count: {stringValues.Count}"); // Count of all values
+
+// Flatten nested dictionary
+var flattened = appConfig.Flatten();
+Console.WriteLine($"Flattened keys: {flattened.Count}");
+foreach (var kvp in flattened)
+{
+    Console.WriteLine($"  {kvp.Key} = {kvp.Value}");
+}
+
+// Get nested value
+var connectionString = appConfig.GetNestedValue("Settings:Database:ConnectionString");
+Console.WriteLine($"Connection string: {connectionString}"); // "Server=localhost;Database=Orders"
+
+// Set nested value
+appConfig.SetNestedValue("Settings:Database:ReadOnly", true);
+var readOnly = appConfig.GetNestedValue("Settings:Database:ReadOnly");
+Console.WriteLine($"ReadOnly: {readOnly}"); // True
+
+// Remove items matching predicate
+var countBefore = appConfig.Count;
+appConfig.RemoveWhere(kvp => kvp.Key.Contains("Cache"));
+var countAfter = appConfig.Count;
+Console.WriteLine($"Removed {countBefore - countAfter} items containing 'Cache'");
+
+// Invert dictionary (swap keys and values)
+var inverted = appConfig.Invert();
+Console.WriteLine($"Inverted dictionary has {inverted.Count} entries");
+```
+
 ## ConfigurationRepository
 
 The `ConfigurationRepository` class provides specialized data access operations for `Configuration` entities, enabling efficient querying and management of configurations within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configurations by application ID, configuration name, and advanced search capabilities that support filtering by application and text queries across configuration names and descriptions. The repository also includes methods for counting configurations by application and retrieving deleted configurations before a specific cutoff date.
