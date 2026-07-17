@@ -12,19 +12,32 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Tests for the MemoryCacheService class.
+/// </summary>
 public sealed class MemoryCacheServiceTests : IDisposable
 {
     private readonly Mock<ILogger<MemoryCacheService>> _loggerMock;
     private readonly MemoryCacheService _sut;
 
+    /// <summary>
+    /// Initializes a new instance of the MemoryCacheServiceTests class.
+    /// </summary>
     public MemoryCacheServiceTests()
     {
         _loggerMock = new Mock<ILogger<MemoryCacheService>>();
         _sut = new MemoryCacheService(_loggerMock.Object);
     }
 
+    /// <summary>
+    /// Disposes of the test resources.
+    /// </summary>
     public void Dispose() => _sut.Dispose();
 
+    /// <summary>
+    /// Tests that setting a value and then getting it returns the stored value.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task SetAsync_ThenGetAsync_ReturnsStoredValue()
     {
@@ -35,6 +48,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().Be("value1");
     }
 
+    /// <summary>
+    /// Tests that getting a non-existent key returns the default value.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetAsync_NonExistentKey_ReturnsDefault()
     {
@@ -43,6 +60,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that getting a key after its expiration returns the default value.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetAsync_AfterExpiration_ReturnsDefault()
     {
@@ -54,6 +75,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that getting a key before its expiration returns the stored value.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetAsync_BeforeExpiration_ReturnsValue()
     {
@@ -64,6 +89,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().Be(42);
     }
 
+    /// <summary>
+    /// Tests that removing an existing key removes the entry.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task RemoveAsync_ExistingKey_RemovesEntry()
     {
@@ -75,6 +104,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that removing a non-existent key does not throw an exception.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task RemoveAsync_NonExistentKey_DoesNotThrow()
     {
@@ -83,6 +116,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         await act.Should().NotThrowAsync();
     }
 
+    /// <summary>
+    /// Tests that removing multiple keys removes all specified entries.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task RemoveAsync_MultipleKeys_RemovesAllSpecified()
     {
@@ -97,6 +134,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         (await _sut.GetAsync<string>("k3")).Should().Be("v3");
     }
 
+    /// <summary>
+    /// Tests that checking if a key exists returns true for an existing key.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ExistsAsync_ExistingKey_ReturnsTrue()
     {
@@ -107,6 +148,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that checking if a key exists returns false for a non-existent key.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ExistsAsync_NonExistentKey_ReturnsFalse()
     {
@@ -115,6 +160,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that checking if a key exists returns false for an expired key.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ExistsAsync_ExpiredKey_ReturnsFalse()
     {
@@ -126,6 +175,12 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that getting or creating a key invokes the factory if the key does not exist.
+    /// </summary>
+    /// <param name="key">The key to get or create.</param>
+    /// <param name="factory">The factory to invoke if the key does not exist.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetOrCreateAsync_KeyDoesNotExist_InvokesFactory()
     {
@@ -141,6 +196,12 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().Be("factory-value");
     }
 
+    /// <summary>
+    /// Tests that getting or creating a key does not invoke the factory if the key already exists.
+    /// </summary>
+    /// <param name="key">The key to get or create.</param>
+    /// <param name="factory">The factory to invoke if the key does not exist.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetOrCreateAsync_KeyAlreadyExists_DoesNotInvokeFactory()
     {
@@ -157,6 +218,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().Be("existing");
     }
 
+    /// <summary>
+    /// Tests that clearing the cache removes all entries.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task ClearAsync_RemovesAllEntries()
     {
@@ -171,6 +236,11 @@ public sealed class MemoryCacheServiceTests : IDisposable
         (await _sut.ExistsAsync("c")).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that getting keys returns the matching keys.
+    /// </summary>
+    /// <param name="prefix">The prefix to filter the keys by.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetKeysAsync_ReturnsMatchingKeys()
     {
@@ -185,6 +255,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         keys.Should().Contain("config:app2");
     }
 
+    /// <summary>
+    /// Tests that getting statistics reflects the correct counts after operations.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetStatsAsync_AfterOperations_ReflectsCorrectCounts()
     {
@@ -202,6 +276,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         stats.Deletes.Should().BeGreaterThanOrEqualTo(1);
     }
 
+    /// <summary>
+    /// Tests that setting a value overwrites an existing key.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task SetAsync_OverwritesExistingKey()
     {
@@ -212,6 +290,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().Be("updated");
     }
 
+    /// <summary>
+    /// Tests that setting a value stores complex types.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task SetAsync_StoresComplexTypes()
     {
@@ -225,6 +307,10 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result["beta"].Should().Be(2);
     }
 
+    /// <summary>
+    /// Tests that setting a value with no expiration does not expire the entry.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task SetAsync_WithNoExpiration_EntryDoesNotExpire()
     {
