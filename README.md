@@ -1580,6 +1580,77 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## EncryptionKey
+
+The `EncryptionKey` class represents an encryption key used for securing sensitive configuration values in the Dotnet Config Server. It manages key lifecycle including creation, activation, deactivation, rotation, and expiration tracking. Each encryption key stores the encrypted key material, salt, algorithm specification, and usage statistics to support secure configuration encryption operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a new encryption key for production use
+var productionKey = new EncryptionKey
+{
+    Name = "Production Encryption Key 2026",
+    KeyId = "prod-key-2026-001",
+    Algorithm = EncryptionAlgorithm.AES256,
+    EncryptedKey = Convert.FromBase64String("base64-encoded-encrypted-key-data"),
+    Salt = Convert.FromBase64String("base64-encoded-salt-data"),
+    Description = "Primary encryption key for production configuration encryption",
+    ExpiresAt = DateTime.UtcNow.AddYears(1),
+    CreatedBy = "security-team@example.com",
+    IsPrimary = true
+};
+
+// Validate the encryption key
+try
+{
+    productionKey.Validate();
+    Console.WriteLine("Encryption key is valid!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+}
+
+// Check key status
+Console.WriteLine($"Key is active: {productionKey.IsActive}");
+Console.WriteLine($"Key is primary: {productionKey.IsPrimary}");
+Console.WriteLine($"Key expires at: {productionKey.ExpiresAt:yyyy-MM-dd}");
+Console.WriteLine($"Days until expiration: {(productionKey.ExpiresAt - DateTime.UtcNow).TotalDays:F1}");
+
+// Track usage
+productionKey.IncrementUsage();
+Console.WriteLine($"Usage count: {productionKey.UsageCount}");
+
+// Check if key needs rotation (within 30 days of expiration)
+if (productionKey.IsNearExpiration())
+{
+    Console.WriteLine("WARNING: Key is near expiration and should be rotated soon");
+}
+
+// Deactivate a key when it's compromised or no longer needed
+var oldKey = new EncryptionKey
+{
+    Name = "Old Key 2025",
+    KeyId = "old-key-2025",
+    Algorithm = EncryptionAlgorithm.AES256,
+    EncryptedKey = Convert.FromBase64String("old-encrypted-key"),
+    Salt = Convert.FromBase64String("old-salt"),
+    ExpiresAt = DateTime.UtcNow.AddDays(-1), // Already expired
+    CreatedBy = "security-team@example.com"
+};
+
+oldKey.Deactivate();
+Console.WriteLine($"Old key active status: {oldKey.IsActive}");
+
+// Get a safe summary view (without sensitive encrypted data)
+var summary = productionKey.GetSummary();
+Console.WriteLine($"Key summary - {summary.Name} ({summary.KeyId}): {summary.UsageCount} uses");
+```
+
 ## ConfigurationKey
 
 The `ConfigurationKey` class represents a single key-value pair within a configuration. It provides comprehensive validation, type conversion, and metadata tracking capabilities. Configuration keys support encryption, validation rules, and soft deletion while maintaining a complete audit trail through timestamps and user tracking.
