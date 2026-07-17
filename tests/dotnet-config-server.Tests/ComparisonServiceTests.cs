@@ -12,10 +12,16 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Tests for the ComparisonService class.
+/// </summary>
 public sealed class ComparisonServiceTests
 {
     private readonly ComparisonService _sut;
 
+    /// <summary>
+    /// Initializes a new instance of the ComparisonServiceTests class.
+    /// </summary>
     public ComparisonServiceTests()
     {
         var loggerMock = new Mock<ILogger<ComparisonService>>();
@@ -24,13 +30,25 @@ public sealed class ComparisonServiceTests
 
     private sealed class SampleRecord
     {
+        /// <summary>
+        /// Gets or sets the name of the record.
+        /// </summary>
         public string Name { get; set; } = string.Empty;
+        /// <summary>
+        /// Gets or sets the port of the record.
+        /// </summary>
         public int Port { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether the record is enabled.
+        /// </summary>
         public bool Enabled { get; set; }
     }
 
     // ── Compare ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that comparing two identical objects returns no changes.
+    /// </summary>
     [Fact]
     public void Compare_IdenticalObjects_ReturnsNoChanges()
     {
@@ -43,6 +61,9 @@ public sealed class ComparisonServiceTests
         result.ItemType.Should().Be(nameof(SampleRecord));
     }
 
+    /// <summary>
+    /// Tests that comparing two objects with a single field changed returns a single change.
+    /// </summary>
     [Fact]
     public void Compare_SingleFieldChanged_ReturnsSingleChange()
     {
@@ -58,6 +79,9 @@ public sealed class ComparisonServiceTests
         change.ModifiedValue.Should().Be("prod-db");
     }
 
+    /// <summary>
+    /// Tests that comparing two objects with multiple fields changed returns all changes.
+    /// </summary>
     [Fact]
     public void Compare_MultipleFieldsChanged_ReturnsAllChanges()
     {
@@ -72,6 +96,9 @@ public sealed class ComparisonServiceTests
                 new[] { nameof(SampleRecord.Name), nameof(SampleRecord.Port), nameof(SampleRecord.Enabled) });
     }
 
+    /// <summary>
+    /// Tests that comparing two objects with a property change includes the property type.
+    /// </summary>
     [Fact]
     public void Compare_PropertyChange_IncludesPropertyType()
     {
@@ -86,6 +113,9 @@ public sealed class ComparisonServiceTests
 
     // ── HasDifferences ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that checking for differences between two identical objects returns false.
+    /// </summary>
     [Fact]
     public void HasDifferences_IdenticalObjects_ReturnsFalse()
     {
@@ -95,6 +125,9 @@ public sealed class ComparisonServiceTests
         _sut.HasDifferences(a, b).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that checking for differences between two different objects returns true.
+    /// </summary>
     [Fact]
     public void HasDifferences_DifferentObjects_ReturnsTrue()
     {
@@ -106,6 +139,9 @@ public sealed class ComparisonServiceTests
 
     // ── GetSummary ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that getting a summary of two identical objects returns zero total changes and an empty list of changed fields.
+    /// </summary>
     [Fact]
     public void GetSummary_NoChanges_ReturnsTotalChangesZeroAndEmptyFields()
     {
@@ -119,6 +155,9 @@ public sealed class ComparisonServiceTests
         summary.ChangePercentage.Should().Be(0);
     }
 
+    /// <summary>
+    /// Tests that getting a summary of two objects with one of three fields changed returns a 33% change percentage.
+    /// </summary>
     [Fact]
     public void GetSummary_OneOfThreeFieldsChanged_Returns33PercentChangePercentage()
     {
@@ -132,6 +171,9 @@ public sealed class ComparisonServiceTests
         summary.ChangePercentage.Should().BeApproximately(33.33, 0.5);
     }
 
+    /// <summary>
+    /// Tests that getting a summary of two objects with all fields changed returns a 100% change percentage.
+    /// </summary>
     [Fact]
     public void GetSummary_AllFieldsChanged_Returns100PercentChangePercentage()
     {
@@ -146,6 +188,9 @@ public sealed class ComparisonServiceTests
 
     // ── Edge cases ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that comparing two objects with a null to string property value returns the null literal.
+    /// </summary>
     [Fact]
     public void Compare_NullToString_PropertyValue_ReturnsNullLiteral()
     {
@@ -161,6 +206,9 @@ public sealed class ComparisonServiceTests
 
     private sealed class NullableRecord
     {
+        /// <summary>
+        /// Gets or sets the label of the record.
+        /// </summary>
         public string? Label { get; set; }
     }
 }
