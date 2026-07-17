@@ -1500,6 +1500,59 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ChangeRequest
+
+The `ChangeRequest` class represents a pending configuration change that requires approval before being applied. It implements a controlled change management workflow with status tracking, reviewer assignment, and audit trails. Change requests support four operations: creating, updating, or deleting configuration keys, or performing configuration-level operations. Once approved, the change can be automatically applied or scheduled for later deployment.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System.Text.Json;
+
+// Create a new change request for updating a configuration key
+var changeRequest = new ChangeRequest
+{
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    ConfigurationKeyId = Guid.Parse("789e4567-e89b-12d3-a456-426614174001"),
+    Operation = ChangeRequestOperation.UpdateKey,
+    Payload = JsonSerializer.Serialize(new
+    {
+        Key = "Database:ConnectionString",
+        Value = "Server=prod-db.example.com;Database=Orders;User=admin;Password=secure123;"
+    }),
+    Summary = "Update production database connection string for performance optimization",
+    RequestedBy = "backend-team@example.com"
+};
+
+// Requester submits the change request
+changeRequest.Status = ChangeRequestStatus.Pending;
+changeRequest.RequestedAt = DateTime.UtcNow;
+
+Console.WriteLine($"Change request created: {changeRequest.Id}");
+Console.WriteLine($"Status: {changeRequest.Status}");
+Console.WriteLine($"Requested by: {changeRequest.RequestedBy}");
+
+// Reviewer approves the change request
+changeRequest.Approve("security-team@example.com", "Verified no sensitive data exposure");
+
+Console.WriteLine($"Change approved by: {changeRequest.ReviewedBy}");
+Console.WriteLine($"Approval time: {changeRequest.ReviewedAt}");
+Console.WriteLine($"Status: {changeRequest.Status}");
+
+// After applying the change, mark it as applied
+changeRequest.MarkApplied("deployment-bot");
+
+Console.WriteLine($"Change applied by: {changeRequest.AppliedBy}");
+Console.WriteLine($"Applied at: {changeRequest.AppliedAt}");
+
+// Alternative: Reject a change request
+// changeRequest.Reject("security-team@example.com", "Contains hardcoded credentials");
+
+// Alternative: Cancel a pending change request
+// changeRequest.Cancel();
+```
+
 ## ConfigurationSnapshot
 
 The `ConfigurationSnapshot` class represents a point-in-time capture of a configuration's state, including the serialized configuration data and associated keys. Snapshots are automatically created whenever a configuration is modified, providing a complete audit trail for rollback operations and compliance reporting.
