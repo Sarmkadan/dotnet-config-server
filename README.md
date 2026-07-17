@@ -1819,6 +1819,125 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## EnrichedDiff
+
+The `EnrichedDiff` class represents a configuration diff enriched with full version metadata for viewer display. It provides a comprehensive view of changes between two configuration versions with detailed statistics, individual change entries, and version context. This type is used by the diff viewer API to present rich, human-readable diff information with complete version history and change categorization.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create an enriched diff between two configuration versions
+var enrichedDiff = new EnrichedDiff
+{
+    DiffId = Guid.NewGuid(),
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    FromVersion = new ConfigurationVersionSummary
+    {
+        Id = Guid.Parse("456e4567-e89b-12d3-a456-426614174001"),
+        Version = 1,
+        Status = "Published",
+        KeyCount = 25,
+        Description = "Initial production configuration",
+        CreatedAt = DateTime.UtcNow.AddDays(-7)
+    },
+    ToVersion = new ConfigurationVersionSummary
+    {
+        Id = Guid.Parse("789e4567-e89b-12d3-a456-426614174002"),
+        Version = 2,
+        Status = "Published",
+        KeyCount = 28,
+        Description = "Q2 2026 release with new features",
+        CreatedAt = DateTime.UtcNow
+    },
+    Changes = new List<DiffEntry>
+    {
+        new DiffEntry
+        {
+            Key = "Database:ConnectionString",
+            ChangeType = ChangeType.Modified,
+            OldValue = "Server=old-db.example.com;Database=Orders",
+            NewValue = "Server=prod-db.example.com;Database=Orders;User=admin;"
+        },
+        new DiffEntry
+        {
+            Key = "Feature:EnableNewCheckout",
+            ChangeType = ChangeType.Added,
+            OldValue = null,
+            NewValue = "true"
+        },
+        new DiffEntry
+        {
+            Key = "Legacy:OldFeature",
+            ChangeType = ChangeType.Deleted,
+            OldValue = "true",
+            NewValue = null
+        },
+        new DiffEntry
+        {
+            Key = "Api:TimeoutSeconds",
+            ChangeType = ChangeType.Modified,
+            OldValue = "30",
+            NewValue = "60"
+        }
+    },
+    AddedCount = 1,
+    ModifiedCount = 2,
+    DeletedCount = 1,
+    GeneratedAt = DateTime.UtcNow
+};
+
+// Access diff statistics
+Console.WriteLine($"Diff between v{enrichedDiff.FromVersion.Version} → v{enrichedDiff.ToVersion.Version}");
+Console.WriteLine($"Generated at: {enrichedDiff.GeneratedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Total changes: {enrichedDiff.TotalChanges}");
+Console.WriteLine($"Added: {enrichedDiff.AddedCount}");
+Console.WriteLine($"Modified: {enrichedDiff.ModifiedCount}");
+Console.WriteLine($"Deleted: {enrichedDiff.DeletedCount}");
+
+// Access categorized changes
+Console.WriteLine($"\nAdded keys:");
+foreach (var change in enrichedDiff.AddedKeys)
+{
+    Console.WriteLine($"  + {change.Key} = {change.NewValue}");
+}
+
+Console.WriteLine($"\nModified keys:");
+foreach (var change in enrichedDiff.ModifiedKeys)
+{
+    Console.WriteLine($"  * {change.Key}: '{change.OldValue}' → '{change.NewValue}'");
+}
+
+Console.WriteLine($"\nDeleted keys:");
+foreach (var change in enrichedDiff.DeletedKeys)
+{
+    Console.WriteLine($"  - {change.Key}");
+}
+
+// Access version context
+Console.WriteLine($"\nVersion context:");
+Console.WriteLine($"  From: v{enrichedDiff.FromVersion.Version} - {enrichedDiff.FromVersion.Description}");
+Console.WriteLine($"  To:   v{enrichedDiff.ToVersion.Version} - {enrichedDiff.ToVersion.Description}");
+```
+
+### Public Members
+
+- `DiffId` - Unique identifier for the diff record
+- `ConfigurationId` - The configuration being compared
+- `FromVersion` - Metadata of the source (from) version
+- `ToVersion` - Metadata of the target (to) version
+- `Changes` - List of all individual key changes between the two versions
+- `AddedCount` - Number of keys added in the target version
+- `ModifiedCount` - Number of keys whose values changed
+- `DeletedCount` - Number of keys removed in the target version
+- `TotalChanges` - Sum of all added, modified, and deleted changes
+- `GeneratedAt` - UTC timestamp when the diff was computed or retrieved
+- `AddedKeys` - Filtered collection of change entries that represent newly added keys
+- `ModifiedKeys` - Filtered collection of change entries that represent keys with updated values
+- `DeletedKeys` - Filtered collection of change entries that represent removed keys
+
 ## ConfigurationDiff
 
 The `ConfigurationDiff` class represents the difference between two configuration versions, tracking all changes including additions, modifications, and deletions. It provides a comprehensive audit trail of configuration changes with detailed metrics and methods for analyzing and summarizing the differences.
