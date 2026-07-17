@@ -1990,14 +1990,38 @@ catch (ConfigurationException ex) when (ex.TryGetConfigurationId(out var configI
 }
 ```
 
-## EventBus
 
-The `EventBus` class provides an in-memory publish-subscribe messaging system for asynchronous communication between components in the Dotnet Config Server application. It allows different services to communicate without direct dependencies, enabling loose coupling and better separation of concerns. The event bus supports typed events with async handlers, making it ideal for scenarios like configuration change notifications, cache invalidation, and background processing.
+## VersioningBenchmarks
+
+The `VersioningBenchmarks` class provides a set of performance benchmarks for version management operations within the configuration system. It allows developers to measure the efficiency of critical lifecycle actions such as creating, retrieving, publishing, and rolling back configurations across various versions.
 
 ### Usage Example
 
 ```csharp
-using DotnetConfigServer.Events;
+// Assuming an instance of VersioningBenchmarks exists, 
+// usually invoked via a benchmark runner framework like BenchmarkDotNet.
+var benchmarks = new VersioningBenchmarks();
+
+// Perform setup before running benchmarks
+await benchmarks.GlobalSetup();
+
+// Measure performance of key versioning operations
+await benchmarks.CreateVersion();
+await benchmarks.GetVersion();
+await benchmarks.GetVersions();
+await benchmarks.GetActiveVersion();
+await benchmarks.PublishVersion();
+await benchmarks.ArchiveVersion();
+await benchmarks.DeprecateVersion();
+await benchmarks.Rollback();
+await benchmarks.GetVersionHistory();
+await benchmarks.CleanupOldVersions();
+await benchmarks.CreateVersionWithManyKeys();
+
+// Perform cleanup after running benchmarks
+await benchmarks.GlobalCleanup();
+```
+
 using System;
 using System.Threading.Tasks;
 
