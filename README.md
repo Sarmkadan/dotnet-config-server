@@ -1674,9 +1674,90 @@ catch (ConcurrencyException ex) when (ex.ShouldRetryAutomatically())
 }
 ```
 
-## ConfigurationException
+## DotnetConfigServerException
 
-The `ConfigurationException` class serves as the base exception type for all configuration-related errors in the Dotnet Config Server. It provides a consistent error handling pattern for configuration operations and includes constructors for creating exception instances with custom messages, inner exceptions, and error codes. This exception type is commonly thrown when configuration operations fail due to missing configurations, invalid keys, encryption failures, or webhook errors.
+The `DotnetConfigServerException` class is the base exception type for all Dotnet Config Server-specific exceptions. It extends the standard `Exception` class with additional properties for error tracking and debugging, including an `ErrorCode` property for categorizing exceptions and a `Details` property for including additional context about the error. This exception type is commonly thrown when Dotnet Config Server-specific operations fail, such as configuration validation errors, versioning conflicts, or encryption issues.
+
+### Public Members
+
+- `string? ErrorCode` - Gets or sets the error code for categorizing exceptions
+- `object? Details` - Gets or sets additional error details as an object
+- `DotnetConfigServerException(string message)` - Creates a new exception with a custom message
+- `DotnetConfigServerException(string message, Exception innerException)` - Creates a new exception with a custom message and inner exception
+- `DotnetConfigServerException(string message, string errorCode, object? details = null)` - Creates a new exception with message, error code, and optional details
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Exceptions;
+using Microsoft.Extensions.Logging;
+
+// Example 1: Basic exception with message
+try
+{
+    await configurationService.ValidateConfigurationAsync(configuration);
+}
+catch (DotnetConfigServerException ex)
+{
+    logger.LogError(ex, "Dotnet Config Server operation failed");
+    Console.WriteLine($"Error: {ex.Message}");
+    if (!string.IsNullOrEmpty(ex.ErrorCode))
+    {
+        Console.WriteLine($"Error Code: {ex.ErrorCode}");
+    }
+}
+
+// Example 2: Exception with error code and details
+try
+{
+    await encryptionService.EncryptConfigurationValueAsync(sensitiveValue);
+}
+catch (DotnetConfigServerException ex) when (ex.ErrorCode == "ENCRYPTION_FAILED")
+{
+    logger.LogError(ex, "Encryption failed for configuration value");
+    Console.WriteLine($"Failed to encrypt value. Details: {ex.Details}");
+    
+    // Re-throw with additional context
+    throw new DotnetConfigServerException(
+        "Failed to encrypt configuration value - check encryption service",
+        "ENCRYPTION_FAILED",
+        new { ValueLength = sensitiveValue.Length, Timestamp = DateTime.UtcNow }
+    );
+}
+
+// Example 3: Exception with inner exception
+try
+{
+    await versioningService.CreateVersionAsync(configurationId, versionRequest);
+}
+catch (DotnetConfigServerException ex)
+{
+    logger.LogError(ex, "Version creation failed");
+    throw new InvalidOperationException("Version creation failed - see inner exception for details", ex);
+}
+
+// Example 4: Using the three-parameter constructor
+try
+{
+    // Simulate a DotnetConfigServer-specific validation failure
+    if (string.IsNullOrEmpty(configurationName))
+    {
+        throw new DotnetConfigServerException(
+            "Configuration name cannot be null or empty",
+            "VALIDATION_ERROR",
+            new { Field = "Name", MaxLength = 100 }
+        );
+    }
+}
+catch (DotnetConfigServerException ex)
+{
+    logger.LogError(ex, "Configuration validation failed");
+    Console.WriteLine($"Validation error {ex.ErrorCode}: {ex.Message}");
+    Console.WriteLine($"Additional details: {ex.Details}");
+}
+```
+
+## ConfigurationException
 
 ### Public Members
 
