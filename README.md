@@ -1467,6 +1467,206 @@ Assert.False(deactivated.IsActive);
 var deliveryCount = await webhookService.RetryFailedDeliveriesAsync(maxRetries: 5);
 ```
 
+## WebhookServiceTests
+
+The `WebhookServiceTests` class provides comprehensive unit tests for the `WebhookService` functionality. It covers subscription management operations (create, read, update, delete), subscription lifecycle management (activate, deactivate), delivery retry logic, and HMAC signature generation for webhook authenticity verification.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Tests;
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+// Setup mock dependencies
+var subscriptionRepositoryMock = new Mock<IWebhookSubscriptionRepository>();
+var deliveryRepositoryMock = new Mock<IWebhookDeliveryRepository>();
+var loggerMock = new Mock<ILogger<WebhookService>>();
+var httpHandlerMock = new Mock<HttpMessageHandler>();
+var httpClient = new HttpClient(httpHandlerMock.Object);
+
+// Create the service under test
+var webhookService = new WebhookService(
+    subscriptionRepositoryMock.Object,
+    deliveryRepositoryMock.Object,
+    loggerMock.Object,
+    httpClient
+);
+
+// Test 1: Create a new webhook subscription
+var newSubscription = new WebhookSubscription
+{
+    Name = "OrderService Webhook",
+    Url = "https://order-service.example.com/config/webhook",
+    ConfigurationId = Guid.NewGuid(),
+    VerifySignature = true,
+    IsActive = true
+};
+
+var createdSubscription = await webhookService.CreateSubscriptionAsync(newSubscription, "admin");
+Assert.NotNull(createdSubscription);
+Assert.Equal("admin", createdSubscription.CreatedBy);
+
+// Test 2: Generate HMAC signature for webhook verification
+if (createdSubscription.Secret != null)
+{
+    var payload = "{\"configurationId\":\"...\",\"event\":\"ConfigurationUpdated\"}";
+    var signature = createdSubscription.GenerateSignature(payload);
+    Assert.NotNull(signature);
+    Assert.Matches("^[0-9A-F]+$", signature);
+}
+
+// Test 3: Update subscription
+var updatedSubscription = new WebhookSubscription
+{
+    Name = "Updated OrderService Webhook",
+    Url = "https://updated-order-service.example.com/config/webhook",
+    Description = "Updated description"
+};
+
+var result = await webhookService.UpdateSubscriptionAsync(
+    createdSubscription.Id,
+    updatedSubscription,
+    "editor"
+);
+Assert.Equal("Updated OrderService Webhook", result.Name);
+
+// Test 4: Get subscription by ID
+var retrieved = await webhookService.GetSubscriptionAsync(createdSubscription.Id);
+Assert.NotNull(retrieved);
+
+// Test 5: Delete subscription (soft delete - sets IsActive to false)
+await webhookService.DeleteSubscriptionAsync(createdSubscription.Id, "admin");
+
+// Test 6: Activate and deactivate lifecycle
+var activated = await webhookService.ActivateAsync(createdSubscription.Id, "admin");
+Assert.True(activated.IsActive);
+
+var deactivated = await webhookService.DeactivateAsync(createdSubscription.Id, "admin");
+Assert.False(deactivated.IsActive);
+
+// Test 7: Handle retry logic for failed deliveries
+var deliveryCount = await webhookService.RetryFailedDeliveriesAsync(maxRetries: 5);
+```
+
+## BatchOperationServiceTests
+
+The `BatchOperationServiceTests` class provides comprehensive unit tests for the `BatchOperationService` functionality. It validates batch operations for updating and deleting configuration keys, checking operation status, and cancellation behavior. The tests cover various scenarios including null/empty inputs, successful operations, error handling, and status tracking.
+
+### Public Members
+
+- `UpdateKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId` - Tests null input handling
+- `UpdateKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId` - Tests empty list handling
+- `UpdateKeysAsync_AllKeysFound_UpdatesAllAndReturnsSuccess` - Tests successful batch updates
+- `UpdateKeysAsync_SomeKeysNotFound_RecordsErrors` - Tests error handling for missing keys
+- `DeleteKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId` - Tests null input handling
+- `DeleteKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId` - Tests empty list handling
+- `DeleteKeysAsync_AllKeysFound_DeletesAllAndReturnsSuccess` - Tests successful batch deletions
+- `DeleteKeysAsync_KeyNotFound_SkipsWithNoError` - Tests error handling for missing keys
+- `GetStatusAsync_UnknownOperationId_ReturnsNotFoundStatus` - Tests status retrieval for unknown operations
+- `GetStatusAsync_AfterUpdate_ReturnsCompletedStatus` - Tests status tracking after operations
+- `CancelAsync_UnknownOperationId_DoesNotThrow` - Tests cancellation safety
+- `BatchOperationStatus_Elapsed_CompletedOperation_ReturnsDurationBetweenStartAndCompletion` - Tests duration calculation
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
+var loggerMock = new Mock<ILogger<BatchOperationService>>();
+
+// Create the service under test
+var batchService = new BatchOperationService(keyRepositoryMock.Object, loggerMock.Object);
+
+// Test 1: Batch update configuration keys
+var key1Id = Guid.NewGuid();
+var key2Id = Guid.NewGuid();
+
+var key1 = new ConfigurationKey
+{
+    Id = key1Id,
+    Key = "Database:Host",
+    Value = "localhost",
+    ConfigurationId = Guid.NewGuid(),
+    VersionId = Guid.NewGuid(),
+    CreatedBy = "admin"
+};
+
+var key2 = new ConfigurationKey
+{
+    Id = key2Id,
+    Key = "Cache:TTL",
+    Value = "300",
+    ConfigurationId = Guid.NewGuid(),
+    VersionId = Guid.NewGuid(),
+    CreatedBy = "admin"
+};
+
+keyRepositoryMock.Setup(r => r.GetByIdAsync(key1Id)).ReturnsAsync(key1);
+keyRepositoryMock.Setup(r => r.GetByIdAsync(key2Id)).ReturnsAsync(key2);
+keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+keyRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+// Create batch update requests
+var updates = new List<KeyUpdateRequest>
+{
+    new() { KeyId = key1Id, NewValue = "prod-db.example.com" },
+    new() { KeyId = key2Id, NewValue = "600" }
+};
+
+// Execute batch update
+var updateResult = await batchService.UpdateKeysAsync(updates, "admin");
+
+Console.WriteLine($"Update successful: {updateResult.Success}");
+Console.WriteLine($"Operation ID: {updateResult.OperationId}");
+Console.WriteLine($"Success count: {updateResult.SuccessCount}");
+Console.WriteLine($"Error count: {updateResult.ErrorCount}");
+
+// Verify the updates were applied
+Console.WriteLine($"Key1 new value: {key1.Value}"); // "prod-db.example.com"
+Console.WriteLine($"Key2 new value: {key2.Value}"); // "600"
+
+// Test 2: Batch delete configuration keys
+keyRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
+
+var deleteResult = await batchService.DeleteKeysAsync(new List<Guid> { key1Id, key2Id }, "admin");
+
+Console.WriteLine($"Delete successful: {deleteResult.Success}");
+Console.WriteLine($"Operation ID: {deleteResult.OperationId}");
+
+// Test 3: Check operation status
+var status = await batchService.GetStatusAsync(updateResult.OperationId);
+Console.WriteLine($"Status: {status.Status}"); // "completed"
+Console.WriteLine($"Progress: {status.Progress}"); // 1.0
+Console.WriteLine($"Duration: {status.Elapsed}"); // TimeSpan showing operation duration
+
+// Test 4: Handle null/empty inputs gracefully
+var nullResult = await batchService.UpdateKeysAsync(null!, "admin");
+Console.WriteLine($"Null input handled: {nullResult.Success}"); // true, empty operation ID
+
+var emptyResult = await batchService.UpdateKeysAsync(new List<KeyUpdateRequest>(), "admin");
+Console.WriteLine($"Empty list handled: {emptyResult.Success}"); // true, empty operation ID
+
+// Test 5: Handle missing keys without throwing errors
+var missingKeyId = Guid.NewGuid();
+keyRepositoryMock.Setup(r => r.GetByIdAsync(missingKeyId)).ReturnsAsync((ConfigurationKey?)null);
+
+var partialResult = await batchService.UpdateKeysAsync(
+    new List<KeyUpdateRequest> { new() { KeyId = missingKeyId, NewValue = "new-value" } },
+    "admin"
+);
+
+Console.WriteLine($"Partial success: Success={partialResult.Success}, Errors={partialResult.ErrorCount}");
+```
+
 ## Performance
 
 See [Performance Benchmarks](./benchmarks/dotnet-config-server.Benchmarks/README.md) for detailed information on running benchmarks and interpreting results.
