@@ -1273,6 +1273,33 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ConfigurationEventHandlers
+
+The `ConfigurationEventHandlers` class is responsible for executing side effects in response to domain events within the configuration system. It manages essential tasks like invalidating cache entries, triggering webhook notifications, and generating internal system notifications whenever configuration changes occur.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Events;
+
+// Typically resolved via dependency injection in your event processing service
+public class MyEventProcessor
+{
+    private readonly ConfigurationEventHandlers _eventHandlers;
+
+    public MyEventProcessor(ConfigurationEventHandlers eventHandlers)
+    {
+        _eventHandlers = eventHandlers;
+    }
+
+    public async Task ProcessEvent(ConfigurationCreatedEvent @event)
+    {
+        // Execute side effects for a newly created configuration
+        await _eventHandlers.HandleConfigurationCreatedAsync(@event);
+    }
+}
+```
+
 ## Testing
 
 Run the full test suite:
