@@ -10,10 +10,17 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Provides unit tests for the <see cref="DictionaryExtensions"/> class extension methods.
+/// Tests various dictionary operations including value retrieval, addition, updates, filtering, merging, and nested value manipulation.
+/// </summary>
 public sealed class DictionaryExtensionsTests
 {
     // ── GetValueOrDefault ────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.GetValueOrDefault{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> returns the value when the key exists in the dictionary.
+    /// </summary>
     [Fact]
     public void GetValueOrDefault_ExistingKey_ReturnsValue()
     {
@@ -22,6 +29,9 @@ public sealed class DictionaryExtensionsTests
         dict.GetValueOrDefault("timeout", -1).Should().Be(30);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.GetValueOrDefault{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> returns the default value when the key does not exist in the dictionary.
+    /// </summary>
     [Fact]
     public void GetValueOrDefault_MissingKey_ReturnsDefaultValue()
     {
@@ -30,6 +40,9 @@ public sealed class DictionaryExtensionsTests
         dict.GetValueOrDefault("missing", 42).Should().Be(42);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.GetValueOrDefault{TKey,TValue}(IDictionary{TKey,TValue}, TKey)"/> returns the type's default value when the key does not exist and no explicit default is provided.
+    /// </summary>
     [Fact]
     public void GetValueOrDefault_MissingKey_NoExplicitDefault_ReturnsTypeDefault()
     {
@@ -40,6 +53,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── AddIfNotExists ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.AddIfNotExists{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> adds a new key-value pair and returns true when the key does not exist.
+    /// </summary>
     [Fact]
     public void AddIfNotExists_NewKey_AddsAndReturnsTrue()
     {
@@ -51,6 +67,9 @@ public sealed class DictionaryExtensionsTests
         dict["host"].Should().Be("localhost");
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.AddIfNotExists{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> does not overwrite an existing key-value pair and returns false when the key already exists.
+    /// </summary>
     [Fact]
     public void AddIfNotExists_ExistingKey_DoesNotOverwriteAndReturnsFalse()
     {
@@ -64,6 +83,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── AddOrUpdate ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.AddOrUpdate{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> adds a new entry when the key does not exist.
+    /// </summary>
     [Fact]
     public void AddOrUpdate_NewKey_AddsEntry()
     {
@@ -74,6 +96,9 @@ public sealed class DictionaryExtensionsTests
         dict["port"].Should().Be(8080);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.AddOrUpdate{TKey,TValue}(IDictionary{TKey,TValue}, TKey, TValue)"/> overwrites the existing value when the key already exists.
+    /// </summary>
     [Fact]
     public void AddOrUpdate_ExistingKey_OverwritesValue()
     {
@@ -86,6 +111,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── RemoveWhere ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.RemoveWhere{TKey,TValue}(IDictionary{TKey,TValue}, Func{KeyValuePair{TKey,TValue}, bool}")/> removes all entries matching the predicate and returns the count of removed entries.
+    /// </summary>
     [Fact]
     public void RemoveWhere_MatchingPredicate_RemovesMatchingEntries()
     {
@@ -104,6 +132,9 @@ public sealed class DictionaryExtensionsTests
         dict.Should().NotContainKey("b").And.NotContainKey("d");
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.RemoveWhere{TKey,TValue}(IDictionary{TKey,TValue}, Func{KeyValuePair{TKey,TValue}, bool}")/> returns zero and makes no changes when no entries match the predicate.
+    /// </summary>
     [Fact]
     public void RemoveWhere_NothingMatches_RemovesZeroEntries()
     {
@@ -117,6 +148,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── Merge ────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Merge{TKey,TValue}(IDictionary{TKey,TValue}, IDictionary{TKey,TValue}, bool)"/> overwrites existing keys in the target dictionary when the overwrite parameter is true.
+    /// </summary>
     [Fact]
     public void Merge_OverwriteTrue_OverwritesExistingKeys()
     {
@@ -130,6 +164,9 @@ public sealed class DictionaryExtensionsTests
         target["path"].Should().Be("/");
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Merge{TKey,TValue}(IDictionary{TKey,TValue}, IDictionary{TKey,TValue}, bool)"/> does not overwrite existing keys in the target dictionary when the overwrite parameter is false.
+    /// </summary>
     [Fact]
     public void Merge_OverwriteFalse_DoesNotOverwriteExistingKeys()
     {
@@ -144,6 +181,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── Invert ───────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Invert{TKey,TValue}(IDictionary{TKey,TValue})"/> produces an inverted dictionary where keys become values and values become keys.
+    /// </summary>
     [Fact]
     public void Invert_UniqueValues_ProducesInvertedDictionary()
     {
@@ -158,6 +198,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── Where ────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Where{TKey,TValue}(IDictionary{TKey,TValue}, Func{KeyValuePair{TKey,TValue}, bool}")/> returns a new dictionary containing only the key-value pairs that match the predicate.
+    /// </summary>
     [Fact]
     public void Where_Predicate_ReturnsOnlyMatchingPairs()
     {
@@ -178,6 +221,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── Select ───────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Select{TKey,TValue,TResult}(IDictionary{TKey,TValue}, Func{TValue, TResult}")/> transforms the values of the dictionary using the selector function.
+    /// </summary>
     [Fact]
     public void Select_Selector_TransformsValues()
     {
@@ -191,6 +237,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── Flatten ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Flatten{TKey,TValue}(IDictionary{TKey,TValue})"/> returns a new dictionary with the same keys when the dictionary is already flat.
+    /// </summary>
     [Fact]
     public void Flatten_FlatDictionary_ReturnsSameKeys()
     {
@@ -202,6 +251,9 @@ public sealed class DictionaryExtensionsTests
         flat.Should().ContainKey("port").WhoseValue.Should().Be(5432);
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.Flatten{TKey,TValue}(IDictionary{TKey,TValue}, string)"/> prepends the specified prefix to all keys in the resulting dictionary.
+    /// </summary>
     [Fact]
     public void Flatten_WithPrefix_PrependsPrefixToKeys()
     {
@@ -214,6 +266,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── GetNestedValue ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.GetNestedValue(IDictionary{string, object}, string)"/> returns the value at the specified dot-separated path in a nested dictionary structure.
+    /// </summary>
     [Fact]
     public void GetNestedValue_ExistingDotPath_ReturnsValue()
     {
@@ -227,6 +282,9 @@ public sealed class DictionaryExtensionsTests
         value.Should().Be("localhost");
     }
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.GetNestedValue(IDictionary{string, object}, string)"/> returns null when the specified path does not exist in the nested dictionary structure.
+    /// </summary>
     [Fact]
     public void GetNestedValue_NonExistentPath_ReturnsNull()
     {
@@ -237,6 +295,9 @@ public sealed class DictionaryExtensionsTests
 
     // ── SetNestedValue ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that <see cref="DictionaryExtensions.SetNestedValue(IDictionary{string, object}, string, object)"/> creates the nested structure and sets the value at the specified dot-separated path.
+    /// </summary>
     [Fact]
     public void SetNestedValue_NewPath_CreatesNestedStructure()
     {
