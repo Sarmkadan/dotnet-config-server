@@ -18,8 +18,8 @@ public static class DomainEventExtensions
     /// Gets the configuration identifier from the domain event.
     /// Returns Guid.Empty if the event does not contain a ConfigurationId property.
     /// </summary>
-    /// <param name="domainEvent">The domain event.</param>
-    /// <returns>The configuration identifier, or Guid.Empty if not available.</returns>
+    /// <param name="domainEvent">The domain event to check.</param>
+    /// <returns>The configuration identifier, or <see cref="Guid.Empty"/> if not available.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="domainEvent"/> is null.</exception>
     public static Guid GetConfigurationId(this DomainEvent domainEvent)
     {
@@ -41,8 +41,8 @@ public static class DomainEventExtensions
     /// Gets the application identifier from the domain event.
     /// Returns Guid.Empty if the event does not contain an ApplicationId property.
     /// </summary>
-    /// <param name="domainEvent">The domain event.</param>
-    /// <returns>The application identifier, or Guid.Empty if not available.</returns>
+    /// <param name="domainEvent">The domain event to check.</param>
+    /// <returns>The application identifier, or <see cref="Guid.Empty"/> if not available.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="domainEvent"/> is null.</exception>
     public static Guid GetApplicationId(this DomainEvent domainEvent)
     {
@@ -62,7 +62,7 @@ public static class DomainEventExtensions
     /// Gets the configuration name from the domain event.
     /// Returns null if the event does not contain a ConfigurationName property.
     /// </summary>
-    /// <param name="domainEvent">The domain event.</param>
+    /// <param name="domainEvent">The domain event to check.</param>
     /// <returns>The configuration name, or null if not available.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="domainEvent"/> is null.</exception>
     public static string? GetConfigurationName(this DomainEvent domainEvent)
@@ -81,7 +81,7 @@ public static class DomainEventExtensions
     /// <summary>
     /// Determines whether the event represents a configuration change that affects the running application.
     /// </summary>
-    /// <param name="domainEvent">The domain event.</param>
+    /// <param name="domainEvent">The domain event to check.</param>
     /// <returns>True if the event affects configuration; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="domainEvent"/> is null.</exception>
     public static bool IsConfigurationChange(this DomainEvent domainEvent)
