@@ -822,6 +822,99 @@ if (result.FailureCount > 0)
 }
 ```
 
+## ConfigurationClientFactory
+
+The `ConfigurationClientFactory` class provides a convenient way to create and manage HTTP clients for interacting with the Dotnet Config Server API. It handles authentication, automatic retry logic for transient failures, timeout configuration, and provides both raw HTTP clients and strongly-typed client wrappers.
+
+The factory is particularly useful for:
+
+- Creating HTTP clients with built-in retry logic
+- Managing authentication via API keys
+- Providing strongly-typed client interfaces
+- Handling SSL certificate validation for development environments
+- Configuring timeouts and retry policies
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Create the factory with server URL and optional API key
+var factory = new ConfigurationClientFactory(
+    baseUrl: "https://localhost:5001",
+    apiKey: "your-api-key-here",
+    timeoutSeconds: 30,
+    maxRetries: 3
+);
+
+// Option 1: Create a raw HTTP client with retry logic
+var httpClient = factory.CreateClient();
+
+// Use the client directly
+var response = await httpClient.GetAsync("/api/v1/configurations");
+response.EnsureSuccessStatusCode();
+
+// Option 2: Create a strongly-typed client wrapper
+var typedClient = factory.CreateTypedClient();
+
+// Use the strongly-typed client
+var isHealthy = await typedClient.HealthCheckAsync();
+Console.WriteLine($"Server is healthy: {isHealthy}");
+
+// Create a new configuration
+var config = await typedClient.CreateConfigurationAsync(new CreateConfigurationRequest
+{
+    ApplicationId = Guid.Parse("550e8400-e29b-41d4-a716-446655440001"),
+    Environment = "Production",
+    Description = "Production configuration"
+});
+
+// Add configuration keys
+var key = await typedClient.AddKeyAsync(config.Id, new ConfigurationKeyRequest
+{
+    Key = "Database:Host",
+    Value = "prod-db.example.com",
+    IsEncrypted = false,
+    Description = "Database hostname"
+});
+
+// Retrieve configuration
+var configuration = await typedClient.GetConfigurationAsync(config.Id);
+Console.WriteLine($"Configuration has {configuration.Keys.Count} keys");
+```
+
+### Public Members
+
+#### ConfigurationClientFactory
+
+- `ConfigurationClientFactory(string baseUrl, string apiKey = null, int timeoutSeconds = 30, int maxRetries = 3)` - Constructor that initializes the factory with server URL, optional API key, timeout, and retry configuration
+- `HttpClient CreateClient()` - Creates an HTTP client with automatic retry logic, timeout, and authentication headers
+- `IConfigurationServerClient CreateTypedClient()` - Creates a strongly-typed client wrapper for type-safe API access
+
+#### RetryHandler (nested class)
+
+- `RetryHandler(HttpMessageHandler innerHandler, int maxRetries)` - Constructor that configures retry behavior
+
+#### IConfigurationServerClient (interface)
+
+- `Task<Configuration> GetConfigurationAsync(Guid configurationId)` - Retrieves a configuration by ID
+- `Task<Configuration> CreateConfigurationAsync(CreateConfigurationRequest request)` - Creates a new configuration
+- `Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKeyRequest request)` - Adds a configuration key
+- `Task<bool> HealthCheckAsync()` - Checks server health status
+
+#### ConfigurationServerClient (implementation)
+
+- `ConfigurationServerClient(HttpClient httpClient)` - Constructor that accepts an HTTP client
+
+#### DTO Classes
+
+- `Configuration` - Configuration object with properties: `Id`, `ApplicationId`, `Environment`, `Description`, `Keys`
+- `ConfigurationKey` - Configuration key with properties: `Id`, `Key`, `Value`, `IsEncrypted`, `Description`
+- `CreateConfigurationRequest` - Request object for creating configurations with properties: `ApplicationId`, `Environment`, `Description`
+- `ConfigurationKeyRequest` - Request object for adding keys with properties: `Key`, `Value`, `IsEncrypted`, `Description`
+
 ## BatchConfigurationImporter
 
 The `BatchConfigurationImporter` class provides utilities for bulk importing, exporting, cloning, and merging configuration keys across different environments. It simplifies common batch operations like migrating configurations from JSON files, setting up new environments, and synchronizing configurations between development, staging, and production environments.
