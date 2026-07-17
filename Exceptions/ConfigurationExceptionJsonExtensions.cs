@@ -56,18 +56,19 @@ public static class ConfigurationExceptionJsonExtensions
     /// Attempts to deserialize a JSON string into a <see cref="ConfigurationException"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <param name="value">The resulting <see cref="ConfigurationException"/> instance if deserialization succeeds; otherwise, null.</param>
+    /// <param name="result">The resulting <see cref="ConfigurationException"/> instance if deserialization succeeds; otherwise, null.</param>
+/// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
-    public static bool TryFromJson(string json, out ConfigurationException? value)
+    public static bool TryFromJson(string json, out ConfigurationException? result)
     {
         try
         {
-            value = FromJson(json);
+            result = FromJson(json);
             return true;
         }
         catch (JsonException)
         {
-            value = null;
+            result = null;
             return false;
         }
     }
