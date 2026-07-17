@@ -11,17 +11,43 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetConfigServer.Benchmarks;
 
+/// <summary>
+/// Benchmark suite for testing the performance of versioning operations in the configuration server.
+/// Measures execution time and memory allocation for various versioning scenarios including creation,
+/// retrieval, publishing, archiving, and cleanup operations.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
 public class VersioningBenchmarks
 {
-    internal IVersioningService _versioningService;
-    internal IConfigurationService _configurationService;
-    internal Guid _testConfigurationId;
-    internal List<Guid> _createdVersions;
-    internal ServiceProvider _serviceProvider;
+    /// <summary>
+/// Service for managing configuration versions.
+/// </summary>
+internal IVersioningService _versioningService;
+    /// <summary>
+/// Service for managing configuration operations.
+/// </summary>
+internal IConfigurationService _configurationService;
+    /// <summary>
+/// Unique identifier for the test configuration used in benchmarks.
+/// </summary>
+internal Guid _testConfigurationId;
+    /// <summary>
+/// Collection of version identifiers created during benchmark setup.
+/// </summary>
+internal List<Guid> _createdVersions;
+    /// <summary>
+/// Service provider for dependency injection used in benchmark setup.
+/// </summary>
+internal ServiceProvider _serviceProvider;
 
+
+/// <summary>
+/// Global setup for all benchmarks. Initializes dependency injection container,
+/// creates test database, and sets up test configuration with sample data.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -95,6 +121,12 @@ public class VersioningBenchmarks
         }
     }
 
+
+/// <summary>
+/// Global cleanup after all benchmarks. Removes test database and disposes
+/// of the service provider to clean up resources.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -104,30 +136,50 @@ public class VersioningBenchmarks
         _serviceProvider.Dispose();
     }
 
+/// <summary>
+/// Benchmark for measuring the time to create a new configuration version.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task CreateVersion()
     {
         await _versioningService.CreateVersionAsync(_testConfigurationId, "Benchmark version", "benchmark-user");
     }
 
+/// <summary>
+/// Benchmark for measuring the time to retrieve a specific configuration version by its identifier.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetVersion()
     {
         await _versioningService.GetVersionAsync(_createdVersions[0]);
     }
 
+/// <summary>
+/// Benchmark for measuring the time to retrieve all versions for a specific configuration.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetVersions()
     {
         await _versioningService.GetVersionsAsync(_testConfigurationId);
     }
 
+/// <summary>
+/// Benchmark for measuring the time to retrieve the currently active configuration version.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetActiveVersion()
     {
         await _versioningService.GetActiveVersionAsync(_testConfigurationId);
     }
 
+/// <summary>
+/// Benchmark for measuring the time to create a version and publish it as active.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task PublishVersion()
     {
@@ -135,6 +187,10 @@ public class VersioningBenchmarks
         await _versioningService.PublishVersionAsync(version.Id, "benchmark-user");
     }
 
+/// <summary>
+/// Benchmark for measuring the time to archive an existing configuration version.
+/// </summary>
+/// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task ArchiveVersion()
     {
