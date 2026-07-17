@@ -15,23 +15,23 @@ public static class NotFoundExceptionExtensions
     /// Returns a message indicating that the requested entity was not found.
     /// </summary>
     /// <param name="exception">The exception instance.</param>
-    /// <returns>A message indicating that the requested entity was not found.</returns>
+    /// <returns>A message indicating that the entity was not found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
     public static string GetNotFoundMessage(this NotFoundException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        return $"Entity '{exception.Details}' not found";
+        return exception.Message;
     }
 
     /// <summary>
     /// Returns a message indicating that the requested entity was not found, including the entity's ID.
     /// </summary>
     /// <param name="exception">The exception instance.</param>
-    /// <returns>A message indicating that the requested entity was not found, including the entity's ID.</returns>
+    /// <returns>A message indicating that the entity with the specified ID was not found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
     public static string GetNotFoundMessageWithId(this NotFoundException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        return $"Entity '{exception.Details}' with ID '{exception.Details}' not found";
+        return exception.Message;
     }
 }
