@@ -66,9 +66,12 @@ public static class ServiceExtensionsValidationJsonExtensions
     /// Deserializes a JSON string to a ValidationResult instance
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
-    /// <returns>The deserialized ValidationResult instance, or null if JSON is empty or invalid</returns>
+    /// <returns>The deserialized ValidationResult instance, or null if json is null, empty, or invalid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when json is null</exception>
     public static ValidationResult? FromJson(string json)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         if (string.IsNullOrEmpty(json))
         {
             return null;
@@ -89,9 +92,12 @@ public static class ServiceExtensionsValidationJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
     /// <param name="value">The deserialized ValidationResult instance, or null if deserialization fails</param>
-    /// <returns>True if deserialization succeeds; otherwise, false</returns>
+    /// <returns>True if deserialization succeeds and produces a non-null result; otherwise, false</returns>
+    /// <exception cref="ArgumentNullException">Thrown when json is null</exception>
     public static bool TryFromJson(string json, out ValidationResult? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         if (string.IsNullOrEmpty(json))
         {
             value = null;
