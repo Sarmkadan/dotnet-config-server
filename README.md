@@ -1040,6 +1040,77 @@ Console.WriteLine($"Configuration has {configuration.Keys.Count} keys");
 - `CreateConfigurationRequest` - Request object for creating configurations with properties: `ApplicationId`, `Environment`, `Description`
 - `ConfigurationKeyRequest` - Request object for adding keys with properties: `Key`, `Value`, `IsEncrypted`, `Description`
 
+## BasicConfigurationClient
+
+The `BasicConfigurationClient` class provides a simple HTTP client for retrieving configurations from the Dotnet Config Server. It's designed for lightweight applications that need basic configuration access without complex abstractions or dependency injection setup. This client demonstrates fundamental patterns for interacting with the configuration server's REST API.
+
+The client supports retrieving complete configurations, individual key values, and application-wide configurations. It also includes a health check method to verify server availability before making requests.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Create a new client instance with the server base URL
+var client = new BasicConfigurationClient("https://localhost:5001");
+
+// Check if the configuration server is healthy before making requests
+bool isHealthy = await client.IsHealthyAsync();
+Console.WriteLine($"Server is healthy: {isHealthy}");
+
+if (isHealthy)
+{
+    // Retrieve a complete configuration with all keys
+    var configId = "550e8400-e29b-41d4-a716-446655440001"; // Replace with actual configuration ID
+    var configuration = await client.GetConfigurationAsync(configId);
+    
+    Console.WriteLine($"Configuration Environment: {configuration.Environment}");
+    Console.WriteLine($"Created At: {configuration.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+    Console.WriteLine($"Last Modified: {configuration.LastModifiedAt:yyyy-MM-dd HH:mm:ss}");
+    Console.WriteLine($"Total Keys: {configuration.Keys.Count}");
+    
+    // Access configuration metadata
+    Console.WriteLine($"Application ID: {configuration.ApplicationId}");
+    Console.WriteLine($"Description: {configuration.Description}");
+    
+    // Retrieve a specific configuration key value
+    var dbHost = await client.GetConfigurationKeyAsync(configId, "Database:Host");
+    Console.WriteLine($"Database Host: {dbHost}");
+    
+    // Get all configuration keys
+    foreach (var key in configuration.Keys)
+    {
+        Console.WriteLine($"  {key.Key}: {(key.IsEncrypted ? "[ENCRYPTED]" : key.Value)}");
+    }
+    
+    // Retrieve all configurations for an application
+    var appId = "550e8400-e29b-41d4-a716-446655440002"; // Replace with actual application ID
+    var appConfigs = await client.GetApplicationConfigurationsAsync(appId);
+    
+    Console.WriteLine($"\nApplication Configurations ({appConfigs.Count()} total):");
+    foreach (var config in appConfigs)
+    {
+        Console.WriteLine($"  [{config.Environment}] {config.Description}");
+    }
+}
+```
+
+### Public Members
+
+- `BasicConfigurationClient(string baseUrl)` - Constructor that initializes the client with the server base URL
+- `Task<Configuration> GetConfigurationAsync(string configurationId)` - Retrieves a complete configuration with all keys
+- `Task<string> GetConfigurationKeyAsync(string configurationId, string keyName)` - Retrieves a specific configuration key value
+- `Task<IEnumerable<Configuration>> GetApplicationConfigurationsAsync(string applicationId)` - Retrieves all configurations for an application
+- `Task<bool> IsHealthyAsync()` - Checks if the configuration server is healthy
+
+### Related Classes
+
+- `Configuration` - Represents a configuration with properties: `Id`, `ApplicationId`, `Environment`, `Description`, `Keys`, `CreatedAt`, `LastModifiedAt`
+- `ConfigurationKey` - Represents a configuration key with properties: `Id`, `Key`, `Value`, `IsEncrypted`, `Description`
+- `PagedResult<T>` - Pagination wrapper with properties: `Items` (list of T), `TotalCount`, `PageSize`, `PageNumber`
+
 ## BatchConfigurationImporter
 
 The `BatchConfigurationImporter` class provides utilities for bulk importing, exporting, cloning, and merging configuration keys across different environments. It simplifies common batch operations like migrating configurations from JSON files, setting up new environments, and synchronizing configurations between development, staging, and production environments.
