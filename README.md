@@ -1135,6 +1135,112 @@ DotnetConfigServer__Encryption__Algorithm=AES256
 DotnetConfigServer__Webhook__MaxRetries=10
 ```
 
+## DotnetConfigServerOptions
+
+`DotnetConfigServerOptions` is the root configuration class that defines all settings for the Dotnet Config Server application. It uses the `IOptions<DotnetConfigServerOptions>` pattern for type-safe, validated configuration and supports environment variable overrides using double underscores as separators.
+
+The options class includes nested configuration objects for different subsystems:
+- **ApplicationSettings**: Core application behavior and API settings
+- **Encryption**: Configuration for encrypting sensitive configuration values using AES-256
+- **Webhook**: Webhook delivery configuration including retry policies and signature verification
+- **RateLimit**: API rate limiting to prevent abuse
+- **Cache**: Caching configuration for performance optimization
+- **Database**: Database connection and behavior settings
+- **Performance**: Performance monitoring and metrics collection
+- **Security**: Security-related application settings
+
+### Usage Example
+
+```csharp
+// Configure services in Program.cs
+builder.Services.Configure<DotnetConfigServerOptions>(options =>
+{
+    options.ApplicationSettings = new ApplicationSettingsOptions
+    {
+        ApiVersion = "v2",
+        MaxVersionHistory = 200,
+        EnableCors = true,
+        EnableSwagger = false,
+        EnableDetailedErrors = false,
+        EnableRequestLogging = true,
+        EnablePerformanceMonitoring = true
+    };
+
+    options.Encryption = new EncryptionOptions
+    {
+        KeySize = 256,
+        SaltSize = 32,
+        Iterations = 20000,
+        Algorithm = "AES256"
+    };
+
+    options.Webhook = new WebhookOptions
+    {
+        MaxRetries = 10,
+        TimeoutSeconds = 60,
+        BatchSize = 200,
+        EnableSignatureVerification = true,
+        EnableAutoRetry = true
+    };
+
+    options.RateLimit = new RateLimitOptions
+    {
+        RequestsPerMinute = 500,
+        RetryAfterSeconds = 30,
+        EnableRateLimiting = true,
+        RateLimitExemptPaths = new[] { "/health", "/metrics", "/swagger" }
+    };
+
+    options.Cache = new CacheOptions
+    {
+        DefaultDurationSeconds = 600,
+        EnableDistributedCache = true,
+        DistributedCacheDurationSeconds = 7200
+    };
+
+    options.Database = new DatabaseOptions
+    {
+        EnableConnectionPooling = true,
+        ConnectionTimeoutSeconds = 60,
+        CommandTimeoutSeconds = 60,
+        EnableAutomaticMigration = true
+    };
+
+    options.Performance = new PerformanceOptions
+    {
+        EnableMetrics = true,
+        MetricsSampleRate = 0.2,
+        EnableRequestTracing = false,
+        MaxRequestBodySizeKb = 2048
+    };
+
+    options.Security = new SecurityOptions
+    {
+        EnableHttpsRedirection = true,
+        EnableRequestValidation = true,
+        EnableCorsPolicy = true,
+        TrustedOrigins = new[] { "https://config-ui.example.com", "https://dashboard.example.com" }
+    };
+});
+
+// Access via dependency injection
+var configOptions = serviceProvider.GetRequiredService<IOptions<DotnetConfigServerOptions>>().Value;
+Console.WriteLine($"API Version: {configOptions.ApplicationSettings.ApiVersion}");
+Console.WriteLine($"Encryption Algorithm: {configOptions.Encryption.Algorithm}");
+Console.WriteLine($"Cache Duration: {configOptions.Cache.DefaultDurationSeconds}s");
+```
+
+### Public Members
+
+- `ApplicationSettings` - Application-specific settings including API version, CORS, Swagger, and logging options
+- `Encryption` - Encryption configuration for sensitive configuration values
+- `Webhook` - Webhook delivery configuration
+- `RateLimit` - Rate limiting configuration
+- `Cache` - Caching configuration
+- `Database` - Database settings
+- `Performance` - Performance monitoring settings
+- `Security` - Security settings
+
 ### appsettings.Development.json
 
 ```json
