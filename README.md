@@ -1990,6 +1990,51 @@ catch (ConfigurationException ex) when (ex.TryGetConfigurationId(out var configI
 }
 ```
 
+## EventBus
+
+The `EventBus` class provides an in-memory publish-subscribe messaging system for asynchronous communication between components in the Dotnet Config Server application. It allows different services to communicate without direct dependencies, enabling loose coupling and better separation of concerns. The event bus supports typed events with async handlers, making it ideal for scenarios like configuration change notifications, cache invalidation, and background processing.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Events;
+using System;
+using System.Threading.Tasks;
+
+// Create the event bus
+var eventBus = new EventBus();
+
+// Define an event type
+public record ConfigurationChangedEvent(Guid ConfigurationId, string Environment, DateTime ChangedAt);
+
+// Subscribe to events
+var subscription = eventBus.Subscribe<ConfigurationChangedEvent>(async (e) =>
+{
+    Console.WriteLine($"Configuration changed: {e.ConfigurationId} in {e.Environment} at {e.ChangedAt}");
+    // Handle the event (e.g., reload configuration, invalidate cache, etc.)
+    await Task.CompletedTask;
+});
+
+// Publish an event
+var configChangedEvent = new ConfigurationChangedEvent(
+    Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    "Production",
+    DateTime.UtcNow
+);
+
+await eventBus.PublishAsync(configChangedEvent);
+
+// Get all subscribers for a specific event type
+var subscribers = eventBus.GetSubscribers<ConfigurationChangedEvent>();
+Console.WriteLine($"Number of subscribers: {subscribers.Count()}");
+
+// Unsubscribe when done
+subscription.Dispose();
+
+// Clear all subscribers (useful for testing or application shutdown)
+eventBus.Clear();
+```
+
 ## NotFoundException
 
 The `NotFoundException` is thrown when the requested resource is not found.
