@@ -16,15 +16,39 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Contains unit tests for <see cref="VersioningService"/> which provides versioning functionality
+/// for configuration management including creating versions, publishing versions, and rolling back to
+/// previous versions.
+/// </summary>
 public sealed class VersioningServiceTests
 {
     private readonly Mock<IConfigurationVersionRepository> _versionRepositoryMock;
+    /// <summary>
+    /// Mock repository for configuration version operations.
+    /// </summary>
     private readonly Mock<IConfigurationRepository> _configRepositoryMock;
+    /// <summary>
+    /// Mock repository for configuration key operations.
+    /// </summary>
     private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
+    /// <summary>
+    /// Mock repository for audit logging operations.
+    /// </summary>
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
+    /// <summary>
+    /// Mock logger for versioning service operations.
+    /// </summary>
     private readonly Mock<ILogger<VersioningService>> _loggerMock;
+    /// <summary>
+    /// System under test - the versioning service instance being tested.
+    /// </summary>
     private readonly VersioningService _sut;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VersioningServiceTests"/> class.
+    /// Sets up mock repositories and logger, and creates the versioning service instance for testing.
+    /// </summary>
     public VersioningServiceTests()
     {
         _versionRepositoryMock = new Mock<IConfigurationVersionRepository>();
@@ -41,6 +65,9 @@ public sealed class VersioningServiceTests
             _loggerMock.Object);
     }
 
+    /// <summary>
+    /// Tests that creating a version for a non-existent configuration throws a ConfigurationNotFoundException.
+    /// </summary>
     [Fact]
     public async Task CreateVersionAsync_WithNonExistentConfiguration_ThrowsConfigurationNotFoundException()
     {
@@ -55,6 +82,9 @@ public sealed class VersioningServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that creating the first version of a configuration starts at version 1.0.1.
+    /// </summary>
     [Fact]
     public async Task CreateVersionAsync_FirstVersion_StartsAt1_0_0()
     {
@@ -75,6 +105,9 @@ public sealed class VersioningServiceTests
         result.ReleaseNotes.Should().Be("Initial release");
     }
 
+    /// <summary>
+    /// Tests that creating a version with a previous version copies the keys from the previous version.
+    /// </summary>
     [Fact]
     public async Task CreateVersionAsync_WithPreviousVersion_CopiesKeys()
     {
@@ -111,6 +144,9 @@ public sealed class VersioningServiceTests
         result.Keys.Should().Contain(k => k.Key == "db.port" && k.Value == "5432");
     }
 
+    /// <summary>
+    /// Tests that creating a version sets the PreviousVersionId to the ID of the previous active version.
+    /// </summary>
     [Fact]
     public async Task CreateVersionAsync_SetsPreviousVersionId()
     {
@@ -137,6 +173,9 @@ public sealed class VersioningServiceTests
         result.PreviousVersionId.Should().Be(previousVersionId.ToString());
     }
 
+    /// <summary>
+    /// Tests that getting the active version returns a published version with Active status.
+    /// </summary>
     [Fact]
     public async Task GetActiveVersionAsync_ReturnsPublishedVersion()
     {
@@ -159,6 +198,9 @@ public sealed class VersioningServiceTests
         result!.Status.Should().Be(ConfigurationVersionStatus.Active);
     }
 
+    /// <summary>
+    /// Tests that getting the active version returns null when no active version exists.
+    /// </summary>
     [Fact]
     public async Task GetActiveVersionAsync_NoActiveVersion_ReturnsNull()
     {
@@ -173,6 +215,9 @@ public sealed class VersioningServiceTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that publishing a version changes its status from Draft to Active and sets the published timestamp.
+    /// </summary>
     [Fact]
     public async Task PublishVersionAsync_WithValidVersion_ChangesStatusToPublished()
     {
@@ -201,6 +246,9 @@ public sealed class VersioningServiceTests
         _versionRepositoryMock.Verify(r => r.UpdateAsync(version), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that publishing a non-existent version throws a ConfigurationNotFoundException.
+    /// </summary>
     [Fact]
     public async Task PublishVersionAsync_WithNonExistentVersion_ThrowsConfigurationNotFoundException()
     {
@@ -213,6 +261,9 @@ public sealed class VersioningServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that rolling back to a specific version restores keys from that version.
+    /// </summary>
     [Fact]
     public async Task RollbackAsync_ToSpecificVersion_RestoresKeysFromPreviousVersion()
     {
@@ -248,6 +299,9 @@ public sealed class VersioningServiceTests
         result.Keys.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Tests that getting a version by its ID returns the version with the specified ID.
+    /// </summary>
     [Fact]
     public async Task GetVersionAsync_WithValidId_ReturnsVersion()
     {
