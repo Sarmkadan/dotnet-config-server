@@ -1300,6 +1300,106 @@ public class MyEventProcessor
 }
 ```
 
+## StringExtensionsTests
+
+The `StringExtensionsTests` class provides comprehensive unit tests for the `StringExtensions` static class, which offers a suite of useful string manipulation extension methods. It validates null/whitespace detection, truncation with custom suffixes, case conversion (kebab-case, snake_case, PascalCase), pattern matching, whitespace removal, repetition, email validation, URL encoding/decoding, common prefix extraction, and safe filename generation.
+
+### What It Tests
+
+- **Null/Whitespace Detection**: Validates `IsNullOrWhiteSpace` for null, empty, and whitespace-only strings
+- **String Truncation**: Tests truncating strings with default ellipsis or custom suffixes
+- **Case Conversion**: Converts between PascalCase, kebab-case, and snake_case formats
+- **Pattern Matching**: Validates regex pattern matching for strings
+- **Whitespace Handling**: Removes all whitespace characters from strings
+- **String Repetition**: Repeats strings a specified number of times
+- **Email Validation**: Validates email address formats
+- **URL Encoding/Decoding**: Encodes and decodes URL-safe strings
+- **Common Prefix**: Extracts common prefix between two strings
+- **Safe Filename Generation**: Sanitizes strings to create valid filenames
+
+### Public Members
+
+- `IsNullOrWhiteSpace_NullValue_ReturnsTrue` - Tests null string detection
+- `IsNullOrWhiteSpace_EmptyString_ReturnsTrue` - Tests empty string detection
+- `IsNullOrWhiteSpace_WhitespaceOnly_ReturnsTrue` - Tests whitespace-only detection
+- `IsNullOrWhiteSpace_NonEmptyString_ReturnsFalse` - Tests non-empty string detection
+- `Truncate_StringExceedsMaxLength_TruncatesWithSuffix` - Tests truncation with default suffix
+- `Truncate_StringWithinMaxLength_ReturnsOriginal` - Tests truncation with strings within limit
+- `Truncate_StringEqualToMaxLength_ReturnsOriginal` - Tests truncation with exact length match
+- `Truncate_EmptyString_ReturnsEmpty` - Tests truncation with empty strings
+- `Truncate_WithCustomSuffix_UsesCustomSuffix` - Tests truncation with custom suffix
+- `ToKebabCase_PascalCase_ConvertsToKebab` - Tests PascalCase to kebab-case conversion
+- `ToKebabCase_MultiWordPascalCase_ConvertsCorrectly` - Tests multi-word PascalCase conversion
+- `ToKebabCase_EmptyString_ReturnsEmpty` - Tests empty string handling for kebab-case
+- `ToSnakeCase_PascalCase_ConvertsToSnake` - Tests PascalCase to snake_case conversion
+- `ToSnakeCase_EmptyString_ReturnsEmpty` - Tests empty string handling for snake_case
+- `ToPascalCase_KebabCase_ConvertsToPascal` - Tests kebab-case to PascalCase conversion
+- `ToPascalCase_SnakeCase_ConvertsToPascal` - Tests snake_case to PascalCase conversion
+- `ToPascalCase_EmptyString_ReturnsEmpty` - Tests empty string handling for PascalCase
+- `MatchesPattern_MatchingPattern_ReturnsTrue` - Tests regex pattern matching
+- `MatchesPattern_NonMatchingPattern_ReturnsFalse` - Tests non-matching pattern detection
+- `RemoveWhitespace_StringWithSpaces_RemovesAll` - Tests whitespace removal
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+
+// Test 1: Null/whitespace detection
+string? nullValue = null;
+bool isNullOrWhiteSpace = nullValue.IsNullOrWhiteSpace(); // true
+
+string emptyValue = "";
+isNullOrWhiteSpace = emptyValue.IsNullOrWhiteSpace(); // true
+
+string whitespaceValue = "   ";
+isNullOrWhiteSpace = whitespaceValue.IsNullOrWhiteSpace(); // true
+
+string nonEmptyValue = "hello";
+isNullOrWhiteSpace = nonEmptyValue.IsNullOrWhiteSpace(); // false
+
+// Test 2: String truncation
+string longText = "Hello World";
+string truncated = longText.Truncate(7); // "Hell..."
+string truncatedCustom = longText.Truncate(8, " [+]"); // "Hell [+]"
+
+// Test 3: Case conversion
+string kebabCase = "hello-world";
+string pascalCase = kebabCase.ToPascalCase(); // "HelloWorld"
+
+string snakeCase = "hello_world";
+pascalCase = snakeCase.ToPascalCase(); // "HelloWorld"
+
+string pascalCaseInput = "MyConfigurationService";
+string kebabResult = pascalCaseInput.ToKebabCase(); // "my-configuration-service"
+string snakeResult = pascalCaseInput.ToSnakeCase(); // "my_configuration_service"
+
+// Test 4: Pattern matching
+bool isNumeric = "12345".MatchesPattern(@"^\d+$"); // true
+bool isNotNumeric = "abc".MatchesPattern(@"^\d+$"); // false
+
+// Test 5: Whitespace removal
+string spacedText = "Hello World Test";
+string noSpaces = spacedText.RemoveWhitespace(); // "HelloWorldTest"
+
+// Test 6: String repetition
+string repeated = "ab".Repeat(3); // "ababab"
+
+// Test 7: Email validation
+bool isValidEmail = "user@example.com".IsValidEmail(); // true
+bool isInvalidEmail = "not-an-email".IsValidEmail(); // false
+
+// Test 8: URL encoding/decoding
+string encoded = "hello world".UrlEncode(); // "hello%20world"
+string decoded = encoded.UrlDecode(); // "hello world"
+
+// Test 9: Common prefix extraction
+string prefix = "config.database.host".CommonPrefix("config.database.port"); // "config.database."
+
+// Test 10: Safe filename generation
+string safeFilename = "config/key?value=test".ToSafeFileName(); // "configkeyvalue=test"
+```
+
 ## CollectionExtensionsTests
 
 The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
