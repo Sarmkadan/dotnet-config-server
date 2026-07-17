@@ -165,7 +165,95 @@ Dotnet Config Server provides:
 - **Key Expiration**: Automatic invalidation of old encryption keys
 - **Access Control Ready**: Prepared for integration with authentication systems
 
+## EncryptionService
+
+The `EncryptionService` provides AES-256 encryption and decryption capabilities for securing sensitive configuration values. It handles key management, encryption/decryption operations, and key rotation workflows.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IEncryptionKeyRepository, EncryptionKeyRepository>();
+services.AddSingleton<EncryptionService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var encryptionService = serviceProvider.GetRequiredService<EncryptionService>();
+
+// Generate a new encryption key
+var encryptionKey = encryptionService.GenerateNewKey("MyServiceKey");
+
+// Encrypt sensitive data
+var plainText = "my-secret-password";
+var encryptedValue = encryptionService.Encrypt(plainText, encryptionKey);
+Console.WriteLine($"Encrypted: {encryptedValue}");
+
+// Decrypt the value
+var decryptedValue = encryptionService.Decrypt(encryptedValue, encryptionKey);
+Console.WriteLine($"Decrypted: {decryptedValue}");
+
+// Encrypt asynchronously using a configuration ID
+var configurationId = Guid.NewGuid();
+var encryptedAsync = await encryptionService.EncryptAsync(plainText, configurationId);
+
+// Decrypt asynchronously
+var decryptedAsync = await encryptionService.DecryptAsync(encryptedAsync, configurationId);
+
+// Validate a key before use
+var isValid = encryptionService.ValidateKey(encryptionKey);
+
+// Get keys by ID
+var keyById = await encryptionService.GetKeyAsync(encryptionKey.KeyId);
+
+// Get primary key for a configuration
+var primaryKey = await encryptionService.GetPrimaryKeyAsync(configurationId);
+
+// Rotate an encryption key
+await encryptionService.RotateKeyAsync(encryptionKey.KeyId, "admin@example.com");
+
+// Re-encrypt all configuration values with the new primary key
+// Note: Requires access to configuration keys repository
+// var configurationKeys = await _configurationKeyRepository.GetByConfigurationIdAsync(configurationId);
+// await encryptionService.ReEncryptConfigurationAsync(configurationId, configurationKeys, "admin@example.com");
+```
+
+### Key Management
+
+The service supports:
+- **Key Generation**: Create new AES-256 encryption keys with automatic expiration
+- **Key Rotation**: Safely rotate keys while maintaining backward compatibility
+- **Key Validation**: Verify key integrity before use
+- **Multi-Key Support**: Decrypt values encrypted with any active key
+- **Configuration-Scoped Keys**: Manage keys per configuration for better isolation
+
+### Encryption Workflow
+
+1. **Synchronous Encryption**: Use `Encrypt()` with a specific key for immediate operations
+2. **Asynchronous Encryption**: Use `EncryptAsync()` with configuration ID to automatically use the primary key
+3. **Decryption**: The service automatically tries the primary key first, then falls back to all active keys
+4. **Key Rotation**: Mark old keys as rotated, then re-encrypt stored values with the new primary key
+
+### Best Practices
+
+- Store encryption keys securely in the database
+- Rotate keys periodically (e.g., every 90 days)
+- Use configuration-scoped keys for multi-tenant scenarios
+- Monitor key usage and expiration dates
+- Always validate keys before use with `ValidateKey()`
+
 ### Versioning & History
+
+- **Full Version Control**: Create, update, and manage configuration versions
+- **Automatic Snapshots**: Each change creates a snapshot for rollback
+- **Version Lifecycle**: Draft → Published → Archived → Deleted
+- **Rollback Support**: Instant rollback to any previous version with preview and history
+- **Rollback Audit Trail**: Track who performed a rollback, when it happened, and why
 - **Full Version Control**: Create, update, and manage configuration versions
 - **Automatic Snapshots**: Each change creates a snapshot for rollback
 - **Version Lifecycle**: Draft → Published → Archived → Deleted
