@@ -2268,6 +2268,65 @@ catch (DotnetConfigServerException ex)
 - `ConfigurationVersionNotFoundException` - Thrown when a configuration version is not found
 - `WebhookException` - Thrown when a webhook operation fails
 
+## ComparisonServiceTests
+
+The `ComparisonServiceTests` class provides comprehensive unit tests for the `ComparisonService` functionality. It validates the comparison engine that detects differences between two objects, tracking which properties changed, their original and modified values, and calculating change statistics. The tests cover various scenarios including identical objects, single field changes, multiple field changes, null value handling, and percentage-based change calculations.
+
+### Public Members
+
+- `Name` (string) - The name of the test class instance
+- `Port` (int) - The port number for the test configuration
+- `Enabled` (bool) - Whether the test configuration is enabled
+- `Compare_IdenticalObjects_ReturnsNoChanges()` - Validates that identical objects produce no changes
+- `Compare_SingleFieldChanged_ReturnsSingleChange()` - Tests single property change detection
+- `Compare_MultipleFieldsChanged_ReturnsAllChanges()` - Verifies multiple property changes are tracked
+- `Compare_PropertyChange_IncludesPropertyType()` - Ensures property type information is included in changes
+- `HasDifferences_IdenticalObjects_ReturnsFalse()` - Confirms identical objects are reported as having no differences
+- `HasDifferences_DifferentObjects_ReturnsTrue()` - Validates that different objects are detected
+- `GetSummary_NoChanges_ReturnsTotalChangesZeroAndEmptyFields()` - Tests summary generation for unchanged objects
+- `GetSummary_OneOfThreeFieldsChanged_Returns33PercentChangePercentage()` - Validates 33% change calculation
+- `GetSummary_AllFieldsChanged_Returns100PercentChangePercentage()` - Verifies 100% change detection
+- `Compare_NullToString_PropertyValue_ReturnsNullLiteral()` - Tests null value handling
+- `Label` (string?) - Optional label property for nullable string testing
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Tests;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup test dependencies
+var loggerMock = new Mock<ILogger<ComparisonService>>();
+var comparisonService = new ComparisonService(loggerMock.Object);
+
+// Create test objects
+var originalConfig = new { Name = "old-service", Port = 8080, Enabled = false };
+var modifiedConfig = new { Name = "new-service", Port = 443, Enabled = true };
+
+// Compare objects and get detailed changes
+var comparisonResult = comparisonService.Compare(originalConfig, modifiedConfig);
+
+Console.WriteLine($"Item type: {comparisonResult.ItemType}");
+Console.WriteLine($"Total changes: {comparisonResult.Changes.Count}");
+
+foreach (var change in comparisonResult.Changes)
+{
+    Console.WriteLine($"Property '{change.PropertyName}' changed from '{change.OriginalValue}' to '{change.ModifiedValue}'");
+    Console.WriteLine($"  Type: {change.PropertyType}");
+}
+
+// Check if objects have differences
+bool hasDifferences = comparisonService.HasDifferences(originalConfig, modifiedConfig);
+Console.WriteLine($"Has differences: {hasDifferences}");
+
+// Get summary statistics
+var summary = comparisonService.GetSummary(originalConfig, modifiedConfig);
+Console.WriteLine($"Change percentage: {summary.ChangePercentage:P1}");
+Console.WriteLine($"Changed fields: {string.Join(", ", summary.ChangedFields)}");
+```
+
 ### Usage Example
 
 ```csharp
