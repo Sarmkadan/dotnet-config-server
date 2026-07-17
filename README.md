@@ -1420,6 +1420,74 @@ var extendedConfig2 = extendedConfig.WithAddedBusinessServices(new[]
 Console.WriteLine($"Extended business services count: {extendedConfig2.BusinessServices?.Length}"); // 4
 ```
 
+## ServiceExtensionsValidation
+
+The `ServiceExtensionsValidation` class provides validation helpers for service extension configurations and parameters used throughout the Dotnet Config Server application. It includes extension methods for `IConfiguration`, `IServiceCollection`, and `IServiceProvider` that validate parameters before they're used in service registration and configuration scenarios.
+
+These validation methods help ensure that required dependencies are provided and configurations are valid before attempting to use them, preventing null reference exceptions and configuration errors at runtime.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+// Example 1: Validate configuration before using it
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
+
+// Check if configuration is valid
+if (configuration.IsValid())
+{
+    Console.WriteLine("Configuration is valid and ready to use");
+}
+
+// Or get detailed validation errors
+var validationErrors = configuration.Validate();
+if (validationErrors.Count > 0)
+{
+    foreach (var error in validationErrors)
+    {
+        Console.WriteLine($"Validation error: {error}");
+    }
+}
+
+// Example 2: Validate service collection before registering services
+var services = new ServiceCollection();
+services.AddLogging();
+services.AddSingleton<IMyService, MyService>();
+
+// Ensure service collection is valid
+services.EnsureValid();
+Console.WriteLine("Service collection is valid");
+
+// Example 3: Validate service provider after building it
+var serviceProvider = services.BuildServiceProvider();
+
+// Check if service provider is valid
+if (serviceProvider.IsValid())
+{
+    Console.WriteLine("Service provider is valid and ready to use");
+}
+
+// Or throw exception if invalid
+serviceProvider.EnsureValid();
+
+// Example 4: Using with ServiceExtensionsConfiguration
+var config = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=test;"
+    })
+    .Build();
+
+if (config.IsValid())
+{
+    Console.WriteLine("Configuration is valid for service extensions");
+}
+```
+
 ## Related Projects
 
 - [redis-cache-patterns](https://github.com/sarmkadan/redis-cache-patterns) - Production-ready Redis caching patterns for .NET — cache-aside, write-through, distributed lock
