@@ -1412,6 +1412,81 @@ foreach (var stat in stats)
 await benchmarks.GlobalCleanup();
 ```
 
+## VersioningBenchmarksExtensions
+
+The `VersioningBenchmarksExtensions` class provides a collection of extension methods for `VersioningBenchmarks` that enable advanced benchmarking scenarios for configuration versioning operations. These methods facilitate batch operations, status filtering, and querying version metadata, allowing for comprehensive performance testing of version lifecycle management.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+using DotnetConfigServer.Models;
+
+// Instantiate the benchmark suite
+var benchmarks = new VersioningBenchmarks();
+await benchmarks.GlobalSetup();
+
+// Create a configuration for testing
+var configId = Guid.NewGuid();
+
+// Create a batch of versions for bulk operations
+var versionIds = await benchmarks.CreateVersionBatchAsync(
+    configId, 
+    versionCount: 5,
+    prefix: "Benchmark",
+    userName: "test-user"
+);
+
+// Get the count of versions for this configuration
+var versionCount = await benchmarks.GetVersionCountAsync(configId);
+Console.WriteLine($"Created {versionCount} versions");
+
+// Publish all versions in the batch
+var publishTasks = await benchmarks.PublishVersionBatchAsync(versionIds, "test-user");
+await Task.WhenAll(publishTasks);
+
+// Get versions filtered by status
+var publishedVersions = await benchmarks.GetVersionsByStatusAsync(
+    configId, 
+    ConfigurationVersionStatus.Published
+);
+Console.WriteLine($"Published versions: {publishedVersions.Count}");
+
+// Get the most recent version
+var mostRecent = await benchmarks.GetMostRecentVersionAsync(configId);
+if (mostRecent != null)
+{
+    Console.WriteLine($"Most recent version: {mostRecent.ReleaseNotes}");
+}
+
+// Get version by description
+var specificVersion = await benchmarks.GetVersionByDescriptionAsync(
+    configId, 
+    "Benchmark version 2"
+);
+
+// Get version counts grouped by status
+var statusCounts = await benchmarks.GetVersionCountsByStatusAsync(configId);
+foreach (var kvp in statusCounts)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value} versions");
+}
+
+// Archive all versions in the batch
+var archiveTasks = await benchmarks.ArchiveVersionBatchAsync(versionIds, "test-user");
+await Task.WhenAll(archiveTasks);
+
+// Deprecate specific versions
+var deprecateTasks = await benchmarks.DeprecateVersionBatchAsync(
+    new List<Guid> { versionIds[0], versionIds[1] },
+    "test-user"
+);
+await Task.WhenAll(deprecateTasks);
+
+// Cleanup resources
+await benchmarks.GlobalCleanup();
+```
+
 ## EncryptionBenchmarks
 
 The `EncryptionBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance of the `IEncryptionService` implementation. It covers various encryption and decryption scenarios including synchronous and asynchronous operations, key validation, key generation, key rotation, and large payload handling.
