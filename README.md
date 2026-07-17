@@ -1488,6 +1488,53 @@ if (config.IsValid())
 }
 ```
 
+## ServiceExtensions
+
+The `ServiceExtensions` class provides extension methods for registering services and dependencies in the dependency injection container. It includes methods for registering data services, business services, webhook clients, Swagger configuration, and database initialization, following a clean, modular approach to service registration.
+
+These extension methods are used in the application's startup sequence to configure the service container with all required dependencies in a maintainable and testable way.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+
+// In your Program.cs or Startup.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Register data services (requires IConfiguration)
+builder.Services.AddDataServices(builder.Configuration);
+
+// Register business logic services
+builder.Services.AddBusinessServices();
+
+// Configure HTTP client for webhook delivery
+builder.Services.AddWebhookClient();
+
+// Configure Swagger/OpenAPI documentation
+builder.Services.AddSwaggerConfiguration();
+
+// Build the service provider
+var app = builder.Build();
+
+// Initialize the database (apply migrations)
+await app.Services.InitializeDatabaseAsync();
+
+// Example: Resolve and use a service
+var configService = app.Services.GetRequiredService<IConfigurationService>();
+var encryptionService = app.Services.GetRequiredService<IEncryptionService>();
+```
+
+### Public Methods
+
+- `AddDataServices(IServiceCollection, IConfiguration)` - Registers database context and repository services
+- `AddBusinessServices(IServiceCollection)` - Registers business logic services (services, managers)
+- `AddWebhookClient(IServiceCollection)` - Configures HTTP client for webhook delivery
+- `AddSwaggerConfiguration(IServiceCollection)` - Configures Swagger/OpenAPI documentation
+- `InitializeDatabaseAsync(IServiceProvider)` - Applies pending database migrations asynchronously
+
 ## ValidationResult
 
 `ValidationResult` is a sealed record used to represent the outcome of validation operations throughout the Dotnet Config Server application. It provides a simple way to indicate whether validation succeeded or failed, and includes methods for serializing/deserializing validation results to/from JSON.
