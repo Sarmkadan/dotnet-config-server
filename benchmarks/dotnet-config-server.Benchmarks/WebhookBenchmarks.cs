@@ -11,6 +11,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetConfigServer.Benchmarks;
 
+/// <summary>
+/// Benchmark tests for webhook operations to measure performance and throughput.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
@@ -22,6 +25,10 @@ public class WebhookBenchmarks
     private Guid _testWebhookId;
     private ServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Sets up the benchmark environment by configuring dependency injection and creating test data.
+    /// Initializes a test configuration and webhook subscription that will be used across all benchmarks.
+    /// </summary>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -88,6 +95,9 @@ public class WebhookBenchmarks
         _configurationService = scope.ServiceProvider.GetRequiredService<IConfigurationService>();
     }
 
+    /// <summary>
+    /// Cleans up the benchmark environment by removing test data and disposing of the service provider.
+    /// </summary>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -97,6 +107,10 @@ public class WebhookBenchmarks
         _serviceProvider.Dispose();
     }
 
+    /// <summary>
+    /// Benchmark for creating a new webhook subscription.
+    /// Measures the performance of creating a webhook with basic configuration.
+    /// </summary>
     [Benchmark]
     public async Task CreateWebhook()
     {
@@ -118,18 +132,30 @@ public class WebhookBenchmarks
         await _webhookService.CreateSubscriptionAsync(webhook, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for retrieving a single webhook subscription by its ID.
+    /// Measures the performance of fetching an existing webhook from the database.
+    /// </summary>
     [Benchmark]
     public async Task GetWebhook()
     {
         await _webhookService.GetSubscriptionAsync(_testWebhookId);
     }
 
+    /// <summary>
+    /// Benchmark for retrieving all webhook subscriptions for a specific configuration.
+    /// Measures the performance of fetching multiple webhook subscriptions filtered by configuration ID.
+    /// </summary>
     [Benchmark]
     public async Task GetWebhooksByConfiguration()
     {
         await _webhookService.GetSubscriptionsAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for updating an existing webhook subscription.
+    /// Measures the performance of updating webhook properties including trigger events and retry configuration.
+    /// </summary>
     [Benchmark]
     public async Task UpdateWebhook()
     {
@@ -151,30 +177,50 @@ public class WebhookBenchmarks
         await _webhookService.UpdateSubscriptionAsync(_testWebhookId, webhook, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for deleting a webhook subscription.
+    /// Measures the performance of removing a webhook from the database.
+    /// </summary>
     [Benchmark]
     public async Task DeleteWebhook()
     {
         await _webhookService.DeleteSubscriptionAsync(_testWebhookId, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for dispatching a webhook event to a registered subscription.
+    /// Measures the performance of delivering a webhook payload to the configured URL.
+    /// </summary>
     [Benchmark]
     public async Task DispatchWebhook()
     {
         await _webhookService.DeliverAsync(_testWebhookId, "{\"event\":\"ConfigurationUpdated\"}", Guid.NewGuid());
     }
 
+    /// <summary>
+    /// Benchmark for retrieving failed webhook delivery attempts.
+    /// Measures the performance of fetching delivery records that resulted in errors.
+    /// </summary>
     [Benchmark]
     public async Task GetFailedDeliveries()
     {
         await _webhookService.GetDeliveriesAsync(_testWebhookId);
     }
 
+    /// <summary>
+    /// Benchmark for processing the webhook retry queue.
+    /// Measures the performance of retrying failed webhook deliveries automatically.
+    /// </summary>
     [Benchmark]
     public async Task ProcessWebhookRetryQueue()
     {
         await _webhookService.RetryFailedDeliveriesAsync();
     }
 
+    /// <summary>
+    /// Benchmark for creating a webhook subscription with multiple trigger events.
+    /// Measures the performance of creating a webhook with an extensive list of event types to monitor.
+    /// </summary>
     [Benchmark]
     public async Task CreateWebhookWithManyEvents()
     {
