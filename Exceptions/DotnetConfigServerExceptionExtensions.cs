@@ -1,8 +1,9 @@
 #nullable enable
+
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System;
 
@@ -20,11 +21,11 @@ public static class DotnetConfigServerExceptionExtensions
     /// <param name="code">The error code to compare.</param>
     /// <returns>True if the exception's <see cref="DotnetConfigServerException.ErrorCode"/> equals <paramref name="code"/>; otherwise false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="code"/> is null or empty.</exception>
-    public static bool HasErrorCode(this DotnetConfigServerException exception, string code)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="code"/> is null.</exception>
+    public static bool HasErrorCode(this DotnetConfigServerException exception, string? code)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        ArgumentException.ThrowIfNullOrEmpty(code);
+        ArgumentNullException.ThrowIfNull(code);
         return exception.ErrorCode == code;
     }
 
@@ -38,6 +39,7 @@ public static class DotnetConfigServerExceptionExtensions
     public static T? GetDetailsAs<T>(this DotnetConfigServerException exception) where T : class
     {
         ArgumentNullException.ThrowIfNull(exception);
+        ArgumentNullException.ThrowIfNull(exception.Details);
         return exception.Details as T;
     }
 
