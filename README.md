@@ -2101,6 +2101,85 @@ Console.WriteLine($"Applied at: {changeRequest.AppliedAt}");
 // changeRequest.Cancel();
 ```
 
+### Public Members
+
+- `Id` - Unique identifier for the change request
+- `ConfigurationId` - The configuration being modified
+- `ConfigurationKeyId` - The specific configuration key being modified (for key-level operations)
+- `Operation` - Type of operation (CreateKey, UpdateKey, DeleteKey, ConfigurationOperation)
+- `Payload` - Serialized change payload containing the actual modification
+- `Summary` - Brief description of the change
+- `Status` - Current status (Pending, Approved, Rejected, Applied, Failed, Cancelled)
+- `RequestedBy` - Who requested the change
+- `RequestedAt` - When the request was submitted
+- `ReviewedBy` - Who reviewed the change
+- `ReviewedAt` - When the change was reviewed
+- `ApprovedBy` - Who approved the change
+- `RejectedBy` - Who rejected the change
+- `AppliedBy` - Who applied the change
+- `AppliedAt` - When the change was applied
+- `RejectedAt` - When the change was rejected
+- `CancelledAt` - When the change was cancelled
+- `Reason` - Reason for rejection or cancellation
+- `Approve(reviewer, comment)` - Approve the change request
+- `Reject(reviewer, comment)` - Reject the change request
+- `Cancel()` - Cancel a pending change request
+- `MarkApplied(appliedBy)` - Mark the change as applied
+- `Validate()` - Validate the change request
+
+## AuditLogViewer
+
+The `AuditLogViewer` class provides comprehensive functionality for retrieving, analyzing, and displaying audit logs from the configuration server. It's designed for compliance reporting, debugging, and monitoring configuration changes across applications and environments. The viewer supports filtering by action type, date range, and user, and provides both programmatic access to audit data and formatted display methods for human-readable output.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Create an audit log viewer instance
+var viewer = new AuditLogViewer("https://localhost:5001");
+var configId = "550e8400-e29b-41d4-a716-446655440001";
+
+// Display recent audit logs in a formatted table
+await viewer.DisplayAuditLogsAsync(configId);
+
+// Get changes made by a specific user
+var userChanges = await viewer.GetUserChangesAsync(configId, "admin@example.com");
+Console.WriteLine($"User made {userChanges.Count} changes");
+
+// Get all configuration changes within a date range
+var fromDate = DateTime.UtcNow.AddDays(-30);
+var toDate = DateTime.UtcNow;
+var recentChanges = await viewer.GetChangesInDateRangeAsync(configId, fromDate, toDate);
+Console.WriteLine($"Recent changes: {recentChanges.Count}");
+
+// Display changes to a specific configuration key
+await viewer.DisplayKeyChangeHistoryAsync(configId, "Database:Host");
+
+// Generate an audit report showing activity summary
+await viewer.DisplayAuditReportAsync(configId, days: 30);
+
+// Export audit logs to CSV
+await viewer.ExportAuditLogsAsync(configId, "audit-logs.csv");
+
+// Detect suspicious activity patterns
+await viewer.DetectAnomaliesAsync(configId);
+```
+
+### Public Members
+
+- `Id` - Unique identifier for the AuditLogViewer instance
+- `GetAuditLogsAsync(configurationId, action, fromDate, toDate, pageSize, pageNumber)` - Retrieve audit logs with optional filtering
+- `DisplayAuditLogsAsync(configurationId, action, pageSize)` - Display audit logs in formatted table
+- `GetUserChangesAsync(configurationId, user)` - Get changes made by a specific user
+- `GetChangesInDateRangeAsync(configurationId, fromDate, toDate)` - Get all configuration changes within a date range
+- `DisplayKeyChangeHistoryAsync(configurationId, keyName)` - Display changes to a specific configuration key
+- `DisplayAuditReportAsync(configurationId, days)` - Generate an audit report showing activity summary
+- `ExportAuditLogsAsync(configurationId, filePath)` - Export audit logs to CSV format
+- `DetectAnomaliesAsync(configurationId)` - Monitor for suspicious activity patterns
+
 ## WebhookDelivery
 
 The `WebhookDelivery` class represents a webhook delivery attempt that tracks the status and outcome of webhook notifications sent to subscribers when configuration changes occur. It manages retry logic, error tracking, response handling, and provides methods for marking deliveries as successful or failed.
