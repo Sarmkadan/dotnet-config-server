@@ -1674,6 +1674,134 @@ catch (ConcurrencyException ex) when (ex.ShouldRetryAutomatically())
 }
 ```
 
+## ConfigurationException
+
+The `ConfigurationException` class serves as the base exception type for all configuration-related errors in the Dotnet Config Server. It provides a consistent error handling pattern for configuration operations and includes constructors for creating exception instances with custom messages, inner exceptions, and error codes. This exception type is commonly thrown when configuration operations fail due to missing configurations, invalid keys, encryption failures, or webhook errors.
+
+### Public Members
+
+- `ConfigurationException(string message)` - Creates a configuration exception with a custom message
+- `ConfigurationException(string message, Exception innerException)` - Creates a configuration exception with a custom message and inner exception
+- `ConfigurationException(string message, string errorCode, object? details = null)` - Creates a configuration exception with message, error code, and optional details
+
+### Derived Exception Types
+
+- `ConfigurationNotFoundException` - Thrown when a requested configuration is not found
+- `ConfigurationKeyNotFoundException` - Thrown when a configuration key is not found
+- `EncryptionException` - Thrown when encryption or decryption fails
+- `ConfigurationSnapshotNotFoundException` - Thrown when a configuration snapshot is not found
+- `ConfigurationVersionNotFoundException` - Thrown when a configuration version is not found
+- `WebhookException` - Thrown when a webhook operation fails
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Exceptions;
+using Microsoft.Extensions.Logging;
+
+// Example 1: Basic ConfigurationException usage
+try
+{
+    var configuration = await configurationService.GetConfigurationAsync(configurationId);
+}
+catch (ConfigurationException ex)
+{
+    logger.LogError(ex, "Configuration operation failed");
+    
+    // Access error code
+    Console.WriteLine($"Error code: {ex.ErrorCode}");
+    
+    // Access error details if available
+    if (ex.Details != null)
+    {
+        Console.WriteLine($"Details: {ex.Details}");
+    }
+}
+
+// Example 2: Handling specific configuration exceptions
+try
+{
+    var config = await configurationService.GetConfigurationAsync("non-existent-config");
+}
+catch (ConfigurationNotFoundException ex)
+{
+    // ConfigurationNotFoundException(string configId)
+    Console.WriteLine($"Configuration not found: {ex.Message}");
+    
+    // Access the configuration ID that was not found
+    if (ex.Details is IDictionary<string, object> details && details.TryGetValue("ConfigurationId", out var configId))
+    {
+        Console.WriteLine($"Missing configuration ID: {configId}");
+    }
+}
+
+// Example 3: Handling configuration key not found
+try
+{
+    var value = await configurationService.GetConfigurationValueAsync(configId, "NonExistent:Key");
+}
+catch (ConfigurationKeyNotFoundException ex)
+{
+    // ConfigurationKeyNotFoundException(string key)
+    Console.WriteLine($"Configuration key not found: {ex.Message}");
+    
+    // Access the key that was not found
+    if (ex.Details is IDictionary<string, object> details && details.TryGetValue("Key", out var key))
+    {
+        Console.WriteLine($"Missing key: {key}");
+    }
+}
+
+// Example 4: Handling encryption failures
+try
+{
+    var decryptedValue = await encryptionService.DecryptAsync(encryptedValue);
+}
+catch (EncryptionException ex)
+{
+    // EncryptionException(string message)
+    logger.LogError(ex, "Failed to decrypt configuration value");
+    
+    // EncryptionException(string message, Exception innerException)
+    throw new InvalidOperationException("Configuration decryption failed - check encryption keys", ex);
+}
+
+// Example 5: Using ConfigurationException with error codes
+try
+{
+    await webhookService.RegisterWebhookAsync(webhookRequest);
+}
+catch (WebhookException ex) when (ex.ErrorCode == "WEBHOOK_ERROR")
+{
+    Console.WriteLine($"Webhook error occurred: {ex.Message}");
+    
+    if (ex.Details is IDictionary<string, object> details && details.TryGetValue("WebhookId", out var webhookId))
+    {
+        Console.WriteLine($"Webhook ID: {webhookId}");
+    }
+}
+
+// Example 6: Creating custom configuration exceptions with details
+try
+{
+    // Simulate a configuration validation failure
+    if (string.IsNullOrEmpty(configValue))
+    {
+        throw new ConfigurationException(
+            "Configuration value cannot be null or empty",
+            "VALIDATION_FAILED",
+            new { Field = "ConnectionString", MaxLength = 255 }
+        );
+    }
+}
+catch (ConfigurationException ex)
+{
+    logger.LogError(ex, "Configuration validation failed");
+    Console.WriteLine($"Validation failed with error code: {ex.ErrorCode}");
+    Console.WriteLine($"Additional details: {ex.Details}");
+}
+```
+
 ## ConfigurationExceptionExtensions
 
 The `ConfigurationExceptionExtensions` class provides extension methods for `ConfigurationException` and its derived exception types to simplify common configuration error handling scenarios. These methods help identify specific exception types, extract configuration IDs and keys, convert between exception types, and access detailed error information for better error handling and debugging.
