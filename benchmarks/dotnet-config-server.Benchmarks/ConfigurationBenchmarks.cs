@@ -12,21 +12,65 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetConfigServer.Benchmarks;
 
+/// <summary>
+/// Benchmark tests for configuration-related operations to measure performance of the configuration service.
+/// Tests various CRUD operations, searching, and encryption scenarios to identify performance bottlenecks.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
 public class ConfigurationBenchmarks
 {
+    /// <summary>
+    /// Configuration service for managing application configurations and keys.
+    /// </summary>
     private IConfigurationService _configurationService;
+
+    /// <summary>
+    /// Encryption service for handling encrypted configuration values.
+    /// </summary>
     private IEncryptionService _encryptionService;
+
+    /// <summary>
+    /// Versioning service for managing configuration versions and history.
+    /// </summary>
     private IVersioningService _versioningService;
-private IMemoryCache _memoryCache;
+
+    /// <summary>
+    /// Memory cache for caching frequently accessed configuration data.
+    /// </summary>
+    private IMemoryCache _memoryCache;
+
+    /// <summary>
+    /// Application identifier used for benchmark testing.
+    /// </summary>
     private Guid _testApplicationId;
+
+    /// <summary>
+    /// Configuration identifier used for benchmark testing.
+    /// </summary>
     private Guid _testConfigurationId;
+
+    /// <summary>
+    /// Collection of test configuration keys created during setup.
+    /// </summary>
     private List<ConfigurationKey> _testKeys;
+
+    /// <summary>
+    /// Service provider for dependency injection in benchmark tests.
+    /// </summary>
     private ServiceProvider _serviceProvider;
+
+    /// <summary>
+    /// Random number generator with fixed seed for reproducible benchmark results.
+    /// </summary>
     private Random _random = new Random(42);
 
+    /// <summary>
+    /// Sets up the benchmark environment by configuring dependency injection, creating test data,
+    /// and initializing services used throughout the benchmark tests.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous setup operation.</returns>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -35,7 +79,7 @@ private IMemoryCache _memoryCache;
 
         services.AddLogging(configure => configure.AddConsole());
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
+        options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
         services.AddScoped<IConfigurationService, ConfigurationService>();
         services.AddScoped<IEncryptionService, EncryptionService>();
@@ -106,6 +150,10 @@ private IMemoryCache _memoryCache;
         _versioningService = scope.ServiceProvider.GetRequiredService<IVersioningService>();
     }
 
+    /// <summary>
+    /// Cleans up the benchmark environment by disposing of the service provider and deleting the test database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous cleanup operation.</returns>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -115,6 +163,11 @@ private IMemoryCache _memoryCache;
         _serviceProvider.Dispose();
     }
 
+    /// <summary>
+    /// Benchmark test for creating a new configuration.
+    /// Measures the time to create a new configuration in the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task CreateConfiguration()
     {
@@ -131,18 +184,33 @@ private IMemoryCache _memoryCache;
         await _configurationService.CreateAsync(config, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for retrieving a configuration by its unique identifier.
+    /// Measures the time to fetch a single configuration from the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationById()
     {
         await _configurationService.GetByIdAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark test for retrieving all configurations for a specific application.
+    /// Measures the time to fetch multiple configurations from the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationsByApplication()
     {
         await _configurationService.GetByApplicationAsync(_testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark test for updating an existing configuration.
+    /// Measures the time to update a configuration in the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task UpdateConfiguration()
     {
@@ -159,30 +227,55 @@ private IMemoryCache _memoryCache;
         await _configurationService.UpdateAsync(_testConfigurationId, config, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for searching configurations by keyword.
+    /// Measures the time to search for configurations containing a specific term.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task SearchConfigurations()
     {
         await _configurationService.SearchAsync("Benchmark", _testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark test for retrieving all configuration keys for a specific configuration.
+    /// Measures the time to fetch configuration keys from the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetKeys()
     {
         await _configurationService.GetKeysAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark test for searching configuration keys by keyword.
+    /// Measures the time to search for configuration keys containing a specific term.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task SearchKeys()
     {
         await _configurationService.SearchKeysAsync("Benchmark.Key", null, _testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark test for counting configurations for a specific application.
+    /// Measures the time to count configurations in the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationCount()
     {
         await _configurationService.GetConfigurationCountAsync(_testApplicationId);
     }
 
+    /// <summary>
+    /// Benchmark test for adding a new configuration key.
+    /// Measures the time to create a new configuration key in the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task AddKey()
     {
@@ -200,6 +293,11 @@ private IMemoryCache _memoryCache;
         await _configurationService.AddKeyAsync(_testConfigurationId, key, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for updating an existing configuration key.
+    /// Measures the time to update a configuration key in the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task UpdateKey()
     {
@@ -207,6 +305,11 @@ private IMemoryCache _memoryCache;
         await _configurationService.UpdateKeyAsync(key.Id, "UpdatedValue", "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for deleting a configuration key.
+    /// Measures the time to remove a configuration key from the database.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task DeleteKey()
     {
@@ -214,6 +317,11 @@ private IMemoryCache _memoryCache;
         await _configurationService.DeleteKeyAsync(key.Id, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for creating a configuration with encrypted keys.
+    /// Measures the time to create a new configuration and add encrypted configuration keys.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task CreateConfigurationWithEncryption()
     {
@@ -243,6 +351,11 @@ private IMemoryCache _memoryCache;
         await _configurationService.AddKeyAsync(config.Id, key, "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark test for retrieving a configuration with encrypted keys.
+    /// Measures the time to fetch a configuration that contains encrypted keys.
+    /// </summary>
+    /// <returns>A Task representing the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetConfigurationWithEncryption()
     {
