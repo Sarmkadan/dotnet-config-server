@@ -724,6 +724,130 @@ var age = birthDate.GetAge();
 Console.WriteLine($"Age from birth date {birthDate:yyyy-MM-dd}: {age} years");
 ```
 
+## JsonExtensions
+
+The `JsonExtensions` static class provides extension methods for JSON serialization, deserialization, and manipulation. It includes utilities for converting objects to/from JSON strings, validating JSON, merging JSON objects, extracting values by path, and cleaning JSON data by removing null values. These extensions are particularly useful for configuration management, API communication, and data transformation in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using System;
+using System.Text.Json.Nodes;
+
+// Create a sample configuration object
+var config = new
+{
+    Database = new
+    {
+        ConnectionString = "Server=localhost;Database=ConfigServer",
+        Timeout = 30,
+        PoolSize = 100
+    },
+    Cache = new
+    {
+        Enabled = true,
+        Size = 500
+    },
+    Logging = new
+    {
+        Level = "Information",
+        FilePath = "/var/log/config-server.log"
+    }
+};
+
+// Serialize an object to JSON string
+var jsonString = config.ToJson();
+Console.WriteLine("Serialized JSON:");
+Console.WriteLine(jsonString);
+
+// Serialize with pretty printing
+var prettyJson = config.ToJson(pretty: true);
+Console.WriteLine("\nPretty JSON:");
+Console.WriteLine(prettyJson);
+
+// Deserialize JSON back to object
+var deserializedConfig = jsonString.FromJson<object>();
+Console.WriteLine($"\nDeserialized successfully: {deserializedConfig != null}");
+
+// Safe deserialization that returns null on failure
+var safeConfig = invalidJson.TryFromJson<object>();
+Console.WriteLine($"Safe deserialization result: {safeConfig == null}");
+
+// Create a JsonObject for manipulation
+var jsonObject = new JsonObject
+{
+    ["name"] = "OrderProcessingService",
+    ["environment"] = "Development",
+    ["enabled"] = true,
+    ["timeout"] = 30
+};
+
+// Convert dictionary to JsonObject
+var settingsDict = new Dictionary<string, object?>
+{
+    ["Database:ConnectionString"] = "Server=localhost;Database=Orders",
+    ["Database:Timeout"] = 30,
+    ["Cache:Enabled"] = true
+};
+var dictAsJson = settingsDict.ToJsonObject();
+Console.WriteLine($"\nDictionary as JsonObject: {dictAsJson}");
+
+// Get value by path (dot notation)
+var connectionString = dictAsJson.GetValueByPath("Database:ConnectionString");
+Console.WriteLine($"Connection string: {connectionString?.GetValue<string>()}");
+
+// Merge two JSON objects
+var baseConfig = new JsonObject
+{
+    ["name"] = "ConfigServer",
+    ["version"] = "1.0"
+};
+
+var overrideConfig = new JsonObject
+{
+    ["version"] = "2.0",
+    ["environment"] = "Production"
+};
+
+baseConfig.Merge(overrideConfig);
+Console.WriteLine($"\nMerged config: {baseConfig}");
+
+// Check if JSON is valid
+var isValid = jsonString.IsValidJson();
+Console.WriteLine($"\nIs JSON valid: {isValid}");
+
+// Pretty print and minify JSON
+var minified = jsonString.Minify();
+Console.WriteLine($"\nMinified length: {minified.Length}");
+
+var pretty = jsonString.PrettyPrint();
+Console.WriteLine($"Pretty print length: {pretty.Length}");
+
+// Convert JSON to dictionary
+var jsonDict = jsonString.ToJsonDictionary();
+Console.WriteLine($"\nJSON as dictionary: {jsonDict?.Count} entries");
+
+// Extract values by paths
+var extracted = dictAsJson.Extract("Database:ConnectionString", "Cache:Enabled");
+Console.WriteLine($"\nExtracted values: {extracted.Count} paths");
+
+// Remove null values from JSON object
+var jsonWithNulls = new JsonObject
+{
+    ["name"] = "TestService",
+    ["timeout"] = null,
+    ["config"] = new JsonObject
+    {
+        ["enabled"] = true,
+        ["disabled"] = null
+    }
+};
+
+jsonWithNulls.RemoveNulls();
+Console.WriteLine($"\nJSON after removing nulls: {jsonWithNulls}");
+```
+
 ## CacheKeyGenerator
 
 The `CacheKeyGenerator` static class provides a centralized way to generate consistent and predictable cache keys for various entities and scenarios within the Dotnet Config Server. It ensures cache keys follow a standardized naming convention using colon-separated segments, making cache management more maintainable and reducing the risk of key collisions. The generator provides methods for creating keys for configurations, applications, versions, webhook subscriptions, and search operations, along with helper methods to generate invalidation patterns for cache cleanup.
