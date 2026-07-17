@@ -1329,6 +1329,80 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ExternalApiClient
+
+The `ExternalApiClient` class provides a robust HTTP client for making external API calls with built-in retry logic, timeout handling, and comprehensive error logging. It simplifies making GET, POST, PUT, and DELETE requests while automatically managing connection retries and request timeouts.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Integration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Configure services (typically in Program.cs or Startup.cs)
+services.AddHttpClient<ExternalApiClient>();
+services.Configure<ExternalApiClientOptions>(options =>
+{
+    options.Timeout = TimeSpan.FromSeconds(60);
+    options.MaxRetries = 5;
+    options.RetryDelay = 2000;
+});
+
+// Resolve the client (via dependency injection)
+var externalApiClient = serviceProvider.GetRequiredService<ExternalApiClient>();
+
+// Example 1: GET request
+try
+{
+    var userData = await externalApiClient.GetAsync<User>(
+        "https://api.example.com/users/123",
+        new Dictionary<string, string> { ["Authorization"] = "Bearer token123" }
+    );
+    Console.WriteLine($"User: {userData?.Name}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Failed to get user: {ex.Message}");
+}
+
+// Example 2: POST request with request/response types
+var newOrder = new { ProductId = 456, Quantity = 2 };
+var orderResponse = await externalApiClient.PostAsync<
+    object,  // Request type
+    OrderResponse  // Response type
+>(
+    "https://api.example.com/orders",
+    newOrder,
+    new Dictionary<string, string> { ["Authorization"] = "Bearer token123" }
+);
+
+// Example 3: PUT request to update a resource
+var updateData = new { Status = "completed", Notes = "Shipped on time" };
+var updatedOrder = await externalApiClient.PutAsync<
+    object,
+    OrderResponse
+>(
+    "https://api.example.com/orders/789",
+    updateData
+);
+
+// Example 4: DELETE request
+await externalApiClient.DeleteAsync(
+    "https://api.example.com/orders/999"
+);
+```
+
+### Public Members
+
+- `GetAsync<T>(string url, Dictionary<string, string>? headers = null)` - Makes a GET request to an external API and deserializes the JSON response into type T
+- `PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)` - Makes a POST request with JSON request body and deserializes the JSON response
+- `PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)` - Makes a PUT request with JSON request body and deserializes the JSON response
+- `DeleteAsync(string url, Dictionary<string, string>? headers = null)` - Makes a DELETE request to an external API
+- `Timeout` (property from `ExternalApiClientOptions`) - HTTP request timeout duration
+- `MaxRetries` (property from `ExternalApiClientOptions`) - Maximum number of retry attempts for failed requests
+- `RetryDelay` (property from `ExternalApiClientOptions`) - Base delay in milliseconds between retry attempts (exponential backoff is applied)
+
 ## ConfigurationEventHandlers
 
 The `ConfigurationEventHandlers` class is responsible for executing side effects in response to domain events within the configuration system. It manages essential tasks like invalidating cache entries, triggering webhook notifications, and generating internal system notifications whenever configuration changes occur.
