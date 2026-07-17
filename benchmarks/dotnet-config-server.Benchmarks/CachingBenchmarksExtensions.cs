@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using DotnetConfigServer.Models;
 using Microsoft.Extensions.Caching.Memory;
@@ -26,7 +24,7 @@ public static class CachingBenchmarksExtensions
         ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(configurationIds);
 
-        foreach (var configId in configurationIds)
+        foreach (var _ in configurationIds)
         {
             await benchmarks.GetConfiguration_CacheMiss();
         }
@@ -44,7 +42,7 @@ public static class CachingBenchmarksExtensions
         ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(configurationIds);
 
-        foreach (var configId in configurationIds)
+        foreach (var _ in configurationIds)
         {
             await benchmarks.GetConfiguration_CacheHit();
         }
@@ -62,7 +60,7 @@ public static class CachingBenchmarksExtensions
         ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(configurationIds);
 
-        foreach (var configId in configurationIds)
+        foreach (var _ in configurationIds)
         {
             await benchmarks.GetConfiguration_WithCacheAside();
         }
@@ -82,7 +80,7 @@ public static class CachingBenchmarksExtensions
         ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentOutOfRangeException.ThrowIfLessThan(concurrencyLevel, 1);
 
-        var tasks = new List<Task>();
+        var tasks = new List<Task>(concurrencyLevel * 2);
         for (int i = 0; i < concurrencyLevel; i++)
         {
             tasks.Add(benchmarks.GetConfiguration_CacheHit());
