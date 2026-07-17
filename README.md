@@ -878,6 +878,75 @@ if (result.FailureCount > 0)
 }
 ```
 
+## IConfigurationManager
+
+The `IConfigurationManager` interface provides a type-safe abstraction for accessing configuration values from the Dotnet Config Server. It supports both synchronous access to cached values and event-based notifications when configuration changes occur. This interface is designed for integration into .NET services that need to dynamically access configuration without direct HTTP calls.
+
+The manager maintains a local cache that synchronizes with the server periodically (every 5 minutes) and provides fallback to cached values when the server is unavailable. Configuration changes are automatically detected and can trigger application-specific reload logic through the `ConfigurationChanged` event.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+// In your service's Program.cs or Startup.cs
+var builder = Host.CreateDefaultBuilder(args);
+
+builder.ConfigureServices((context, services) =>
+{
+    // Add configuration manager with server URL and configuration ID
+    services.AddConfigurationManager(
+        configServerUrl: "https://config-server.example.com",
+        configurationId: "550e8400-e29b-41d4-a716-446655440001");
+
+    // Add your services
+    services.AddScoped<OrderService>();
+
+    // Listen for configuration changes
+    var provider = services.BuildServiceProvider();
+    var configManager = provider.GetRequiredService<IConfigurationManager>();
+    
+    configManager.ConfigurationChanged += (sender, args) =>
+    {
+        Console.WriteLine($"Configuration changed: {args.Key} = {args.NewValue}");
+        // Trigger application-specific reload logic
+    };
+});
+
+var host = builder.Build();
+
+// Use the configuration in your services
+using (var scope = host.Services.CreateScope())
+{
+    var orderService = scope.ServiceProvider.GetRequiredService<OrderService>();
+    var order = new Order { Id = Guid.NewGuid(), Total = 99.99m };
+    await orderService.ProcessOrderAsync(order);
+}
+
+await host.RunAsync();
+```
+
+### Public Members
+
+- `Task<string> GetConfigurationValueAsync(string key)` - Retrieves configuration value by key
+- `Task<T> GetConfigurationAsync<T>(string key) where T : class` - Retrieves typed configuration value
+- `event EventHandler<ConfigurationChangedEventArgs> ConfigurationChanged` - Event fired when configuration changes
+
+### Related Classes
+
+- `CachedConfigurationManager` - Implementation of IConfigurationManager with caching
+- `ConfigurationChangedEventArgs` - Event arguments containing change details:
+  - `Key` - The configuration key that changed
+  - `OldValue` - Previous value
+  - `NewValue` - New value
+  - `Timestamp` - When the change occurred
+- `ConfigurationSyncBackgroundService` - Background service for periodic synchronization
+- `OrderService` - Example service demonstrating usage
+- `ConfigurationManagerExtensions` - Extension methods for dependency injection
+
 ## ConfigurationClientFactory
 
 The `ConfigurationClientFactory` class provides a convenient way to create and manage HTTP clients for interacting with the Dotnet Config Server API. It handles authentication, automatic retry logic for transient failures, timeout configuration, and provides both raw HTTP clients and strongly-typed client wrappers.
