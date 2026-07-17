@@ -16,11 +16,11 @@ namespace DotnetConfigServer.Benchmarks;
 [RankColumn]
 public class VersioningBenchmarks
 {
-    private IVersioningService _versioningService;
-    private IConfigurationService _configurationService;
-    private Guid _testConfigurationId;
-    private List<Guid> _createdVersions;
-    private ServiceProvider _serviceProvider;
+    internal IVersioningService _versioningService;
+    internal IConfigurationService _configurationService;
+    internal Guid _testConfigurationId;
+    internal List<Guid> _createdVersions;
+    internal ServiceProvider _serviceProvider;
 
     [GlobalSetup]
     public async Task GlobalSetup()
