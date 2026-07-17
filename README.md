@@ -404,6 +404,96 @@ public async Task<TimeSpan> GetServiceTimeoutAsync(string serviceName)
 }
 ```
 
+## ICacheService
+
+The `ICacheService` interface defines the contract for distributed caching operations in the Dotnet Config Server. It abstracts over different cache implementations (in-memory, Redis, etc.) and provides essential caching operations including get, set, remove, existence checks, and bulk operations. The interface also exposes comprehensive cache statistics through `GetStatsAsync()` method, which tracks hits, misses, sets, deletes, and current cache size for monitoring and debugging purposes.
+
+**Key Features:**
+- Thread-safe asynchronous operations with async/await pattern
+- Support for custom expiration times on cache entries
+- Bulk operations for removing multiple keys
+- Pattern-based key retrieval with `GetKeysAsync`
+- Cache statistics tracking for monitoring and debugging
+- Generic methods for type-safe caching operations
+
+### Usage Example
+
+```csharp
+// Register in DI container (Program.cs)
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+
+// Usage in a service
+public class ConfigurationService
+{
+    private readonly ICacheService _cache;
+    private readonly ConfigurationRepository _repository;
+
+    public ConfigurationService(ICacheService cache, ConfigurationRepository repository)
+    {
+        _cache = cache;
+        _repository = repository;
+    }
+
+    public async Task<Configuration> GetConfigurationWithCachingAsync(Guid configurationId, string environment)
+    {
+        // Create a cache key based on configuration ID and environment
+        var cacheKey = $"config:{configurationId}:{environment}";
+
+        // Try to get from cache first
+        var cachedConfig = await _cache.GetAsync<Configuration>(cacheKey);
+        if (cachedConfig != null)
+        {
+            return cachedConfig;
+        }
+
+        // Cache miss - fetch from database
+        var configuration = await _repository.GetByIdAsync(configurationId);
+        if (configuration != null)
+        {
+            // Cache for 5 minutes
+            await _cache.SetAsync(cacheKey, configuration, TimeSpan.FromMinutes(5));
+        }
+
+        return configuration;
+    }
+
+    public async Task UpdateConfigurationWithCacheInvalidationAsync(Guid configurationId, string environment, Configuration updatedConfig)
+    {
+        // Update in database
+        await _repository.UpdateAsync(updatedConfig);
+        await _repository.SaveChangesAsync();
+
+        // Invalidate cache for this configuration
+        var cacheKey = $"config:{configurationId}:{environment}";
+        await _cache.RemoveAsync(cacheKey);
+    }
+
+    public async Task CheckCacheStatisticsAsync()
+    {
+        var stats = await _cache.GetStatsAsync();
+        Console.WriteLine($"Cache Stats - Hits: {stats.Hits}, Misses: {stats.Misses}, Sets: {stats.Sets}, Deletes: {stats.Deletes}, Size: {stats.Size}");
+    }
+
+    public async Task ClearAllCacheAsync()
+    {
+        // Clear all entries from cache
+        await _cache.ClearAsync();
+    }
+
+    public async Task RemoveMultipleKeysAsync(IEnumerable<string> keys)
+    {
+        // Remove multiple cache entries at once
+        await _cache.RemoveAsync(keys);
+    }
+
+    public async Task<bool> CheckKeyExistsAsync(string key)
+    {
+        // Check if a key exists in cache
+        return await _cache.ExistsAsync(key);
+    }
+}
+```
+
 ## CollectionExtensions
 
 The `CollectionExtensions` static class provides a comprehensive set of utility methods for working with collections and enumerables in .NET. It includes methods for batching collections, checking collection state, performing LINQ-like operations, and manipulating sequences with additional functionality beyond the standard .NET collection APIs. These extensions are particularly useful for processing configuration data, managing collections of configuration keys, and handling various collection-based scenarios in the configuration server.
