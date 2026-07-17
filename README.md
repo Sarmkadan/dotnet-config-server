@@ -1618,6 +1618,129 @@ request.MarkApplied("deployment-bot");
 Console.WriteLine($"Direct application - Status: {request.Status}"); // Status: Applied
 ```
 
+## VersioningServiceTests
+
+The `VersioningServiceTests` class provides comprehensive unit tests for the `VersioningService` functionality. It validates versioning operations including creating versions from configurations, publishing versions to make them active, retrieving active versions, rolling back to previous versions, and handling error scenarios like non-existent configurations or versions.
+
+### What It Tests
+
+- **Version Creation**: Tests creating new configuration versions with proper version numbering (1.0.0 → 1.0.1), copying keys from previous versions, and setting PreviousVersionId
+- **Version Publishing**: Validates that draft versions can be published to become active versions with timestamps
+- **Active Version Retrieval**: Tests getting the currently active version or null when none exists
+- **Version Retrieval**: Validates retrieving specific versions by ID
+- **Rollback Operations**: Tests rolling back configurations to previous versions by creating new versions with restored keys
+- **Error Handling**: Verifies proper exception throwing for non-existent configurations or versions
+
+### Public Members
+
+- `CreateVersionAsync_WithNonExistentConfiguration_ThrowsConfigurationNotFoundException` - Tests error handling for missing configurations
+- `CreateVersionAsync_FirstVersion_StartsAt1_0_0` - Tests first version numbering starts at 1.0.0
+- `CreateVersionAsync_WithPreviousVersion_CopiesKeys` - Tests copying keys from previous active version
+- `CreateVersionAsync_SetsPreviousVersionId` - Tests PreviousVersionId is set correctly
+- `GetActiveVersionAsync_ReturnsPublishedVersion` - Tests retrieving active published version
+- `GetActiveVersionAsync_NoActiveVersion_ReturnsNull` - Tests handling when no active version exists
+- `PublishVersionAsync_WithValidVersion_ChangesStatusToPublished` - Tests publishing draft versions to active status
+- `PublishVersionAsync_WithNonExistentVersion_ThrowsConfigurationNotFoundException` - Tests error handling for missing versions
+- `RollbackAsync_ToSpecificVersion_RestoresKeysFromPreviousVersion` - Tests rollback creates new version with restored keys
+- `GetVersionAsync_WithValidId_ReturnsVersion` - Tests retrieving specific version by ID
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var versionRepositoryMock = new Mock<IConfigurationVersionRepository>();
+var configRepositoryMock = new Mock<IConfigurationRepository>();
+var keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
+var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
+var loggerMock = new Mock<ILogger<VersioningService>>();
+
+// Create the service under test
+var versioningService = new VersioningService(
+    versionRepositoryMock.Object,
+    configRepositoryMock.Object,
+    keyRepositoryMock.Object,
+    auditLogRepositoryMock.Object,
+    loggerMock.Object
+);
+
+// Test 1: Create first version of a configuration
+var configId = Guid.NewGuid();
+var config = new Configuration
+{
+    Id = configId,
+    Name = "MyService",
+    ApplicationId = Guid.NewGuid(),
+    CreatedBy = "admin"
+};
+
+configRepositoryMock.Setup(r => r.GetByIdAsync(configId)).ReturnsAsync(config);
+versionRepositoryMock.Setup(r => r.GetActiveVersionAsync(configId)).ReturnsAsync((ConfigurationVersion?)null);
+keyRepositoryMock.Setup(r => r.GetByVersionAsync(It.IsAny<Guid>())).ReturnsAsync(new List<ConfigurationKey>());
+versionRepositoryMock.Setup(r => r.AddAsync(It.IsAny<ConfigurationVersion>())).Returns(Task.CompletedTask);
+versionRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+var newVersion = await versioningService.CreateVersionAsync(configId, "Initial release", "admin");
+Console.WriteLine($"Created version {newVersion.VersionNumber}"); // Output: Created version 1.0.0
+
+// Test 2: Create version with previous version (copies keys)
+var previousVersionId = Guid.NewGuid();
+var previousVersion = new ConfigurationVersion
+{
+    Id = previousVersionId,
+    ConfigurationId = configId,
+    VersionNumber = "1.0.0",
+    Status = ConfigurationVersionStatus.Active,
+    CreatedBy = "admin",
+    Keys = new List<ConfigurationKey>
+    {
+        new ConfigurationKey { Key = "Database:Host", Value = "localhost", ConfigurationId = configId, VersionId = previousVersionId, CreatedBy = "admin" },
+        new ConfigurationKey { Key = "Database:Port", Value = "5432", ConfigurationId = configId, VersionId = previousVersionId, CreatedBy = "admin" }
+    }
+};
+
+configRepositoryMock.Setup(r => r.GetByIdAsync(configId)).ReturnsAsync(config);
+versionRepositoryMock.Setup(r => r.GetActiveVersionAsync(configId)).ReturnsAsync(previousVersion);
+keyRepositoryMock.Setup(r => r.GetByVersionAsync(previousVersionId)).ReturnsAsync(previousVersion.Keys);
+
+var versionWithPrevious = await versioningService.CreateVersionAsync(configId, "Update for Q2", "admin");
+Console.WriteLine($"Created version {versionWithPrevious.VersionNumber} with {versionWithPrevious.Keys.Count} keys"); // Output: Created version 1.0.1 with 2 keys
+
+// Test 3: Publish a draft version to make it active
+var draftVersion = new ConfigurationVersion
+{
+    Id = Guid.NewGuid(),
+    ConfigurationId = configId,
+    VersionNumber = "1.0.1",
+    Status = ConfigurationVersionStatus.Draft,
+    CreatedBy = "admin"
+};
+
+versionRepositoryMock.Setup(r => r.GetByIdAsync(draftVersion.Id)).ReturnsAsync(draftVersion);
+versionRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationVersion>())).Returns(Task.CompletedTask);
+versionRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+auditLogRepositoryMock.Setup(r => r.AddAsync(It.IsAny<AuditLog>())).Returns(Task.CompletedTask);
+auditLogRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+await versioningService.PublishVersionAsync(draftVersion.Id, "admin");
+Console.WriteLine($"Published version - Status: {draftVersion.Status}"); // Output: Published version - Status: Active
+
+// Test 4: Get active version
+var activeVersion = await versioningService.GetActiveVersionAsync(configId);
+if (activeVersion != null)
+{
+    Console.WriteLine($"Active version: {activeVersion.VersionNumber}"); // Output: Active version: 1.0.1
+}
+
+// Test 5: Rollback to a previous version
+var rollbackVersion = await versioningService.RollbackAsync(configId, previousVersionId, "admin");
+Console.WriteLine($"Rollback created version {rollbackVersion.VersionNumber}"); // Output: Rollback created version 1.0.2
+```
+
 ## CollectionExtensionsTests
 
 The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
