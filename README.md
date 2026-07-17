@@ -404,6 +404,103 @@ public async Task<TimeSpan> GetServiceTimeoutAsync(string serviceName)
 }
 ```
 
+## CollectionExtensions
+
+The `CollectionExtensions` static class provides a comprehensive set of utility methods for working with collections and enumerables in .NET. It includes methods for batching collections, checking collection state, performing LINQ-like operations, and manipulating sequences with additional functionality beyond the standard .NET collection APIs. These extensions are particularly useful for processing configuration data, managing collections of configuration keys, and handling various collection-based scenarios in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+// Create sample configuration data
+var configKeys = new List<ConfigurationKey>
+{
+    new ConfigurationKey { KeyName = "Database:ConnectionString", Value = "Server=localhost;Database=ConfigDb" },
+    new ConfigurationKey { KeyName = "Database:Timeout", Value = "30" },
+    new ConfigurationKey { KeyName = "Cache:Enabled", Value = "true" },
+    new ConfigurationKey { KeyName = "Cache:Size", Value = "100" },
+    new ConfigurationKey { KeyName = "Logging:Level", Value = "Information" }
+};
+
+// Batch configuration keys into groups of 2
+var batchedKeys = configKeys.Batch(2);
+foreach (var batch in batchedKeys)
+{
+    Console.WriteLine($"Batch with {batch.Count()} keys:");
+    foreach (var key in batch)
+    {
+        Console.WriteLine($"  - {key.KeyName} = {key.Value}");
+    }
+    Console.WriteLine();
+}
+
+// Check if collection is null or empty
+if (configKeys.IsNullOrEmpty())
+{
+    Console.WriteLine("No configuration keys found.");
+}
+else
+{
+    Console.WriteLine($"Found {configKeys.Count} configuration keys.");
+}
+
+// Check if collection has only one item
+if (configKeys.IsSingle())
+{
+    Console.WriteLine("Only one configuration key exists.");
+}
+else
+{
+    Console.WriteLine("Multiple configuration keys exist.");
+}
+
+// Skip the last configuration key
+var allButLast = configKeys.SkipLast(1);
+Console.WriteLine($"All keys except last: {allButLast.Count()}");
+
+// Get distinct configuration key prefixes using DistinctBy
+var prefixes = configKeys
+    .Select(k => k.KeyName.Split(':')[0])
+    .DistinctBy(prefix => prefix)
+    .ToList();
+
+Console.WriteLine("Unique prefixes:");
+prefixes.ForEach(p => Console.WriteLine($"  - {p}"));
+
+// Shuffle configuration keys for random processing order
+var shuffledKeys = configKeys.Shuffle().ToList();
+Console.WriteLine("Processing configuration keys in random order:");
+shuffledKeys.ForEach(k => Console.WriteLine($"  - {k.KeyName}"));
+
+// Zip configuration keys with their values as tuples
+var zipped = configKeys.ZipWith(k => k.KeyName, k => k.Value);
+Console.WriteLine("Configuration key-value pairs:");
+zipped.ForEach(t => Console.WriteLine($"  - {t.Item1} = {t.Item2}"));
+
+// Convert to dictionary for quick lookup
+var keyDictionary = configKeys.ToDictionary(k => k.KeyName, k => k.Value);
+Console.WriteLine($"Dictionary contains {keyDictionary.Count} entries.");
+
+// Process each configuration key using ForEach extension
+Console.WriteLine("Processing all configuration keys:");
+configKeys.ForEach(key =>
+{
+    Console.WriteLine($"  Processing: {key.KeyName}");
+    // Additional processing logic here
+});
+
+// Check if there are multiple database-related keys
+var databaseKeys = configKeys.Where(k => k.KeyName.StartsWith("Database:"));
+if (databaseKeys.HasMultiple())
+{
+    Console.WriteLine("Multiple database configuration keys found.");
+}
+```
+
 ## CacheKeyGenerator
 
 The `CacheKeyGenerator` static class provides a centralized way to generate consistent and predictable cache keys for various entities and scenarios within the Dotnet Config Server. It ensures cache keys follow a standardized naming convention using colon-separated segments, making cache management more maintainable and reducing the risk of key collisions. The generator provides methods for creating keys for configurations, applications, versions, webhook subscriptions, and search operations, along with helper methods to generate invalidation patterns for cache cleanup.
