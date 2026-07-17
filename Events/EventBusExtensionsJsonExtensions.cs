@@ -40,7 +40,8 @@ public static class EventBusExtensionsJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized <see cref="EventBus"/> instance; or null if deserialization fails.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+/// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty.</exception>
     public static EventBus? FromJson(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
@@ -61,7 +62,8 @@ public static class EventBusExtensionsJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">The deserialized <see cref="EventBus"/> instance; or null if deserialization fails.</param>
     /// <returns>True if deserialization is successful; otherwise false.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+/// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty.</exception>
     public static bool TryFromJson(string json, out EventBus? value)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
@@ -69,7 +71,7 @@ public static class EventBusExtensionsJsonExtensions
         try
         {
             value = JsonSerializer.Deserialize<EventBus>(json, _options);
-            return value != null;
+            return value is not null;
         }
         catch (JsonException)
         {
