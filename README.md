@@ -1506,6 +1506,118 @@ await configurationService.DeleteAsync(createdConfig.Id, "admin");
 Console.WriteLine("Configuration marked as deleted");
 ```
 
+## ChangeRequestServiceTests
+
+The `ChangeRequestServiceTests` class provides comprehensive unit tests for the `ChangeRequestService` functionality. It validates change request workflows including submission, approval, rejection, and cancellation operations with proper validation, status transitions, and error handling.
+
+### What It Tests
+
+- **Request Submission**: Validates that change requests can be submitted with proper validation of required fields (RequestedBy cannot be empty or whitespace)
+- **Status Transitions**: Tests all valid status transitions (Pending → Approved/Rejected/Cancelled → Applied) and prevents invalid transitions
+- **Approval Workflow**: Validates approval with immediate application vs delayed application, reviewer assignment, and timestamps
+- **Rejection Workflow**: Tests rejection with reviewer assignment and comment recording
+- **Cancellation Workflow**: Validates cancellation of pending requests only
+- **Error Handling**: Verifies proper exception throwing for non-existent requests and invalid status operations
+- **Integration**: Tests interaction with configuration service for applying approved changes
+- **Query Operations**: Validates retrieval of pending requests and individual request lookup
+
+### Public Members
+
+- `SubmitAsync_WithValidRequest_SetsStatusToPendingAndSaves` - Tests successful change request submission with status transition
+- `SubmitAsync_WithEmptyRequestedBy_ThrowsValidationException` - Tests validation of empty RequestedBy field
+- `SubmitAsync_WithWhitespaceRequestedBy_ThrowsValidationException` - Tests validation of whitespace-only RequestedBy field
+- `GetByIdAsync_WithValidId_ReturnsRequest` - Tests retrieval of existing change request
+- `GetByIdAsync_WithNonExistentId_ReturnsNull` - Tests handling of non-existent request IDs
+- `ApproveAsync_WithNonExistentRequest_ThrowsConfigurationNotFoundException` - Tests error handling for missing requests
+- `ApproveAsync_WithAlreadyApprovedRequest_ThrowsConfigurationException` - Tests prevention of re-approval
+- `ApproveAsync_WithPendingRequest_SetsStatusToApproved` - Tests successful approval with immediate application
+- `ApproveAsync_WithApplyImmediatelyFalse_DoesNotApplyChange` - Tests delayed application workflow
+- `RejectAsync_WithNonExistentRequest_ThrowsConfigurationNotFoundException` - Tests error handling for missing requests
+- `RejectAsync_WithPendingRequest_SetsStatusToRejected` - Tests successful rejection workflow
+- `RejectAsync_WithNonPendingRequest_ThrowsConfigurationException` - Tests prevention of rejection on non-pending requests
+- `CancelAsync_WithNonExistentRequest_ThrowsConfigurationNotFoundException` - Tests error handling for missing requests
+- `CancelAsync_WithPendingRequest_SetsStatusToCancelled` - Tests successful cancellation workflow
+- `CancelAsync_WithNonPendingRequest_ThrowsConfigurationException` - Tests prevention of cancellation on non-pending requests
+- `GetPendingAsync_ReturnsPendingRequests` - Tests retrieval of pending change requests
+- `ChangeRequest_Approve_SetsReviewerAndTimestamp` - Tests ChangeRequest instance approval method
+- `ChangeRequest_Reject_SetsReviewerAndStatus` - Tests ChangeRequest instance rejection method
+- `ChangeRequest_MarkApplied_SetsAppliedByAndTimestamp` - Tests ChangeRequest instance application method
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var repositoryMock = new Mock<IChangeRequestRepository>();
+var configServiceMock = new Mock<IConfigurationService>();
+var loggerMock = new Mock<ILogger<ChangeRequestService>>();
+
+// Create the service under test
+var changeRequestService = new ChangeRequestService(
+    repositoryMock.Object,
+    configServiceMock.Object,
+    loggerMock.Object
+);
+
+// Test 1: Submit a new change request
+var newRequest = new ChangeRequest
+{
+    ConfigurationId = Guid.NewGuid(),
+    ConfigurationKeyId = Guid.NewGuid(),
+    RequestedBy = "developer@example.com",
+    Operation = ChangeRequestOperation.UpdateKey,
+    Payload = "{\"Value\":\"new-database-host\"}",
+    Summary = "Update database connection string for production"
+};
+
+var submittedRequest = await changeRequestService.SubmitAsync(newRequest);
+Console.WriteLine($"Request submitted - Status: {submittedRequest.Status}"); // Status: Pending
+
+// Test 2: Approve the change request (immediate application)
+var approvedRequest = await changeRequestService.ApproveAsync(
+    submittedRequest.Id,
+    "security-team@example.com",
+    "Approved after security review",
+    applyImmediately: true
+);
+Console.WriteLine($"Request approved - Status: {approvedRequest.Status}"); // Status: Applied
+Console.WriteLine($"Applied by: {approvedRequest.AppliedBy}"); // Applied by: security-team@example.com
+
+// Test 3: Reject a change request
+var rejectedRequest = await changeRequestService.RejectAsync(
+    submittedRequest.Id,
+    "security-team@example.com",
+    "Contains sensitive data in payload"
+);
+Console.WriteLine($"Request rejected - Status: {rejectedRequest.Status}"); // Status: Rejected
+
+// Test 4: Get pending change requests for review
+var pendingRequests = await changeRequestService.GetPendingAsync();
+Console.WriteLine($"Pending requests count: {pendingRequests.Count}");
+
+// Test 5: Cancel a pending request
+var cancelledRequest = await changeRequestService.CancelAsync(
+    submittedRequest.Id,
+    "developer@example.com"
+);
+Console.WriteLine($"Request cancelled - Status: {cancelledRequest.Status}"); // Status: Cancelled
+
+// Test 6: Direct ChangeRequest instance methods
+var request = new ChangeRequest { RequestedBy = "test-user" };
+request.Approve("reviewer@example.com", "Looks good to me");
+Console.WriteLine($"Direct approval - Status: {request.Status}"); // Status: Approved
+
+request.Reject("reviewer@example.com", "Does not meet standards");
+Console.WriteLine($"Direct rejection - Status: {request.Status}"); // Status: Rejected
+
+request.MarkApplied("deployment-bot");
+Console.WriteLine($"Direct application - Status: {request.Status}"); // Status: Applied
+```
+
 ## CollectionExtensionsTests
 
 The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
