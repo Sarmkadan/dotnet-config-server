@@ -1231,6 +1231,90 @@ The middleware handles specific exception types with appropriate HTTP status cod
 - `ConfigurationNotFoundException` - Exception thrown when a configuration is not found
 - `ConfigurationKeyNotFoundException` - Exception thrown when a configuration key is not found
 
+## PerformanceMonitoringMiddleware
+
+The `PerformanceMonitoringMiddleware` class monitors HTTP request performance metrics including request duration, memory usage, and CPU time. It helps identify performance bottlenecks by tracking request metrics and logging warnings when requests exceed configured thresholds. The middleware integrates with the `PerformanceMetrics` class to provide aggregated performance statistics and historical data.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Middleware;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// In your Program.cs or Startup.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Register the performance metrics service
+builder.Services.AddSingleton<PerformanceMetrics>();
+
+var app = builder.Build();
+
+// Use the performance monitoring middleware
+// Typically registered after UseRouting() and before UseEndpoints()
+app.UsePerformanceMonitoring();
+
+// Access metrics for monitoring and diagnostics
+var metrics = app.Services.GetRequiredService<PerformanceMetrics>();
+
+// Get recent performance metrics
+var recentMetrics = metrics.GetRecentMetrics(100);
+foreach (var metric in recentMetrics)
+{
+    Console.WriteLine($"{metric.Timestamp:yyyy-MM-dd HH:mm:ss} | {metric.Method} {metric.Path} | {metric.DurationMs}ms | {metric.MemoryUsedBytes / 1024 / 1024}MB");
+}
+
+// Calculate average duration for a specific endpoint
+var avgDuration = metrics.GetAverageDurationMs("/api/v1/configurations");
+Console.WriteLine($"Average duration for /api/v1/configurations: {avgDuration}ms");
+
+// Log performance summary
+metrics.LogSummary();
+```
+
+### Public Members
+
+#### PerformanceMonitoringMiddleware
+
+- `PerformanceMonitoringMiddleware(RequestDelegate next, ILogger<PerformanceMonitoringMiddleware> logger, PerformanceMetrics metrics)` - Constructor that accepts the next middleware in the pipeline, logger, and metrics service
+- `InvokeAsync(HttpContext context)` - Main middleware entry point that processes HTTP requests and records performance metrics
+
+#### PerformanceMetrics
+
+- `PerformanceMetrics(ILogger<PerformanceMetrics> logger)` - Constructor that initializes the metrics service with a logger
+- `void RecordRequest(RequestMetric metric)` - Records a new request metric
+- `IEnumerable<RequestMetric> GetRecentMetrics(int count = 100)` - Retrieves recent request metrics (default: last 100)
+- `double GetAverageDurationMs(string path = null)` - Calculates average request duration in milliseconds, optionally filtered by path
+- `void LogSummary()` - Logs a performance summary with average duration, memory usage, and slow request count
+
+#### RequestMetric
+
+- `Path` (string) - The HTTP request path
+- `Method` (string) - The HTTP request method (GET, POST, etc.)
+- `StatusCode` (int) - The HTTP response status code
+- `DurationMs` (long) - Request duration in milliseconds
+- `MemoryUsedBytes` (long) - Memory used by the request in bytes
+- `Timestamp` (DateTime) - When the request was processed (UTC)
+
+### Metrics Endpoint
+
+To access live metrics collected by the middleware, use the `/metrics` endpoint:
+
+```bash
+curl -s http://localhost:5000/metrics | jq .
+```
+
+This returns Prometheus-compatible metrics including:
+- Request duration histograms
+- Memory usage statistics
+- Request counts by endpoint
+- Error rates
+
+### Related Classes
+
+- `RequestMetric` - Represents a single request performance measurement with properties for path, method, status code, duration, memory usage, and timestamp
+
 ## BatchConfigurationImporter
 
 The `BatchConfigurationImporter` class provides utilities for bulk importing, exporting, cloning, and merging configuration keys across different environments. It simplifies common batch operations like migrating configurations from JSON files, setting up new environments, and synchronizing configurations between development, staging, and production environments.
