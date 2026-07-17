@@ -32,7 +32,7 @@ public static class EventBusJsonExtensions
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var options = indented ? _options : _options with { WriteIndented = false };
+        var options = indented ? _options : new JsonSerializerOptions(_options) { WriteIndented = false };
         return JsonSerializer.Serialize(value, options);
     }
 
