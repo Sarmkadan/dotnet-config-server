@@ -1535,6 +1535,70 @@ var encryptionService = app.Services.GetRequiredService<IEncryptionService>();
 - `AddSwaggerConfiguration(IServiceCollection)` - Configures Swagger/OpenAPI documentation
 - `InitializeDatabaseAsync(IServiceProvider)` - Applies pending database migrations asynchronously
 
+## ConcurrencyExceptionExtensions
+
+The `ConcurrencyExceptionExtensions` class provides extension methods for `ConcurrencyException` and its derived types (`OptimisticConcurrencyException`, `CircularDependencyException`) to simplify common concurrency conflict handling scenarios. These methods help identify exception types, extract detailed conflict information, generate user-friendly messages, and determine appropriate retry strategies.
+
+### Public Members
+
+- `IsOptimisticConcurrency` - Checks if exception is an optimistic concurrency conflict
+- `IsCircularDependency` - Checks if exception is a circular dependency conflict
+- `GetEntityType` - Extracts the entity type from optimistic concurrency exceptions
+- `GetEntityId` - Extracts the entity ID from optimistic concurrency exceptions
+- `GetExpectedVersion` - Extracts the expected version string
+- `GetActualVersion` - Extracts the actual version string
+- `ToRetryMessage` - Creates a user-friendly retry message with formatted details
+- `ShouldRetryAutomatically` - Determines if automatic retry is recommended
+- `GetAllMessages` - Gets all exception messages in the hierarchy
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Exceptions;
+using System;
+
+// Simulate a concurrency conflict
+try
+{
+    // Attempt to save configuration that was modified by another process
+    await configurationService.UpdateConfigurationAsync(configId, newConfig);
+}
+catch (ConcurrencyException ex) when (ex.ShouldRetryAutomatically())
+{
+    // Check exception type and extract details
+    if (ex.IsOptimisticConcurrency())
+    {
+        Console.WriteLine($"Optimistic concurrency detected!");
+        Console.WriteLine($"Entity Type: {ex.GetEntityType()}");
+        Console.WriteLine($"Entity ID: {ex.GetEntityId()}");
+        Console.WriteLine($"Expected Version: {ex.GetExpectedVersion()}");
+        Console.WriteLine($"Actual Version: {ex.GetActualVersion()}");
+    }
+    else if (ex.IsCircularDependency())
+    {
+        Console.WriteLine("Circular dependency detected in configuration dependencies!");
+    }
+
+    // Generate a user-friendly retry message
+    var retryMessage = ex.ToRetryMessage(retryCount: 2);
+    Console.WriteLine(retryMessage);
+
+    // Get all messages in the exception hierarchy
+    var allMessages = ex.GetAllMessages();
+    foreach (var message in allMessages)
+    {
+        Console.WriteLine($"- {message}");
+    }
+
+    // Automatic retry is recommended for these exception types
+    if (ex.ShouldRetryAutomatically())
+    {
+        await Task.Delay(TimeSpan.FromMilliseconds(100 * Math.Pow(2, retryCount)));
+        await RetryUpdateConfigurationAsync(configId, newConfig, retryCount + 1);
+    }
+}
+```
+
 ## ValidationResult
 
 `ValidationResult` is a sealed record used to represent the outcome of validation operations throughout the Dotnet Config Server application. It provides a simple way to indicate whether validation succeeded or failed, and includes methods for serializing/deserializing validation results to/from JSON.
