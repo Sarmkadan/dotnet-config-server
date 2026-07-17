@@ -1674,6 +1674,113 @@ catch (ConcurrencyException ex) when (ex.ShouldRetryAutomatically())
 }
 ```
 
+## ConfigurationExceptionExtensions
+
+The `ConfigurationExceptionExtensions` class provides extension methods for `ConfigurationException` and its derived exception types to simplify common configuration error handling scenarios. These methods help identify specific exception types, extract configuration IDs and keys, convert between exception types, and access detailed error information for better error handling and debugging.
+
+### What It Does
+
+This extension class provides methods to:
+- Check if an exception is a specific type of configuration error
+- Safely extract configuration IDs and keys from exceptions
+- Convert generic configuration exceptions to more specific types
+- Access detailed error information and error codes
+- Work with exception details objects for additional context
+
+### Public Members
+
+- `IsConfigurationNotFound` - Checks if exception is a configuration not found error
+- `IsConfigurationKeyNotFound` - Checks if exception is a configuration key not found error
+- `IsEncryptionException` - Checks if exception is an encryption error
+- `IsConfigurationSnapshotNotFound` - Checks if exception is a configuration snapshot not found error
+- `IsConfigurationVersionNotFound` - Checks if exception is a configuration version not found error
+- `IsWebhookException` - Checks if exception is a webhook error
+- `TryGetConfigurationId` - Safely extracts configuration ID from exceptions
+- `TryGetConfigurationId` (Guid overload) - Extracts configuration ID as GUID
+- `TryGetKey` - Safely extracts key from configuration key not found exceptions
+- `TryGetKeyId` - Extracts key ID as GUID
+- `ToConfigurationNotFound` - Converts to ConfigurationNotFoundException
+- `ToConfigurationKeyNotFound` - Converts to ConfigurationKeyNotFoundException
+- `ToEncryptionException` - Converts to EncryptionException
+- `GetDetails` - Gets the error details object
+- `GetDetailsDictionary` - Gets all error details as a dictionary
+- `HasErrorCode` - Checks if exception has a specific error code
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Exceptions;
+using System;
+
+try
+{
+    // Attempt to get a configuration that doesn't exist
+    var config = await configurationService.GetConfigurationAsync(configurationId);
+}
+catch (ConfigurationException ex)
+{
+    // Check exception type
+    if (ex.IsConfigurationNotFound())
+    {
+        Console.WriteLine("Configuration not found - creating a new one...");
+        
+        // Safely extract configuration ID
+        if (ex.TryGetConfigurationId(out var configId))
+        {
+            Console.WriteLine($"Configuration ID: {configId}");
+        }
+        
+        // Convert to specific exception type
+        throw ex.ToConfigurationNotFound();
+    }
+    else if (ex.IsConfigurationKeyNotFound())
+    {
+        Console.WriteLine("Configuration key not found - adding default value...");
+        
+        // Safely extract key
+        if (ex.TryGetKey(out var key))
+        {
+            Console.WriteLine($"Missing key: {key}");
+        }
+        
+        // Convert to specific exception type
+        throw ex.ToConfigurationKeyNotFound();
+    }
+    else if (ex.IsEncryptionException())
+    {
+        Console.WriteLine("Encryption error occurred - handling decryption failure...");
+        
+        // Get error details
+        var details = ex.GetDetails();
+        var detailsDict = ex.GetDetailsDictionary();
+        
+        Console.WriteLine($"Error code: {ex.ErrorCode}");
+        Console.WriteLine($"Has error code 'CONFIG-ENCRYPT-001': {ex.HasErrorCode("CONFIG-ENCRYPT-001")}");
+        
+        // Convert to specific exception type
+        throw ex.ToEncryptionException();
+    }
+}
+
+// Example with configuration ID extraction
+try
+{
+    await configurationService.UpdateConfigurationAsync(configurationId, updatedConfig);
+}
+catch (ConfigurationException ex) when (ex.TryGetConfigurationId(out var configId))
+{
+    Console.WriteLine($"Failed to update configuration {configId}");
+    logger.LogError(ex, "Configuration update failed for {ConfigId}", configId);
+    
+    // Access all details as dictionary
+    var details = ex.GetDetailsDictionary();
+    foreach (var kvp in details)
+    {
+        Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+    }
+}
+```
+
 ## ValidationResult
 
 `ValidationResult` is a sealed record used to represent the outcome of validation operations throughout the Dotnet Config Server application. It provides a simple way to indicate whether validation succeeded or failed, and includes methods for serializing/deserializing validation results to/from JSON.
