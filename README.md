@@ -1534,6 +1534,119 @@ if (isHealthy)
 - `Configuration` - Represents a configuration with properties: `Id`, `ApplicationId`, `Environment`, `Description`, `Keys`, `CreatedAt`, `LastModifiedAt`
 - `ConfigurationKey` - Represents a configuration key with properties: `Id`, `Key`, `Value`, `IsEncrypted`, `Description`
 
+## IConfigurationImportService
+
+The `IConfigurationImportService` interface provides methods for importing configuration data from various formats including JSON, CSV, and environment variable formats. This service is essential for bulk configuration migrations, environment setup automation, and configuration version control workflows. It validates input data before processing and returns structured results with detailed error information when validation fails.
+
+The service supports three import formats:
+- **JSON**: Import configuration keys from JSON objects
+- **CSV**: Import configuration keys from comma-separated values files
+- **Environment**: Import configuration keys from environment variable format
+
+Each import method returns a list of `ConfigurationKey` objects ready for persistence, along with validation capabilities to check data integrity before actual import operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+
+// Setup dependency injection container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IConfigurationImportService, ConfigurationImportService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var importService = serviceProvider.GetRequiredService<IConfigurationImportService>();
+
+// Example 1: Import from JSON format
+var jsonData = @"
+{
+  "Database": {
+    "Host": "localhost",
+    "Port": "5432",
+    "Username": "admin"
+  },
+  "Api": {
+    "BaseUrl": "https://api.example.com",
+    "Timeout": "30"
+  }
+}";
+
+var configurationId = Guid.NewGuid();
+var importedKeysFromJson = await importService.ImportFromJsonAsync(jsonData, configurationId);
+Console.WriteLine($"Imported {importedKeysFromJson.Count} keys from JSON");
+
+// Example 2: Import from CSV format
+var csvData = @"Key,Value
+Database:Host,localhost
+Database:Port,5432
+Database:Username,admin
+Api:BaseUrl,https://api.example.com
+Api:Timeout,30
+";
+
+var importedKeysFromCsv = await importService.ImportFromCsvAsync(csvData, configurationId);
+Console.WriteLine($"Imported {importedKeysFromCsv.Count} keys from CSV");
+
+// Example 3: Import from environment variable format
+var envData = @"# Database Configuration
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=admin
+
+# API Configuration
+API_BASEURL=https://api.example.com
+API_TIMEOUT=30
+";
+
+var importedKeysFromEnv = await importService.ImportFromEnvAsync(envData, configurationId);
+Console.WriteLine($"Imported {importedKeysFromEnv.Count} keys from environment format");
+
+// Example 4: Validate data before import
+var validationResult = await importService.ValidateAsync(jsonData, "json");
+if (validationResult.IsValid)
+{
+    Console.WriteLine("Validation passed! Data is ready for import.");
+    Console.WriteLine($"Estimated row count: {validationResult.EstimatedRowCount}");
+}
+else
+{
+    Console.WriteLine("Validation failed:");
+    foreach (var error in validationResult.Errors)
+    {
+        Console.WriteLine($"  - {error}");
+    }
+}
+
+// Example 5: Check if validation failed
+if (!validationResult.IsValid)
+{
+    Console.WriteLine("Cannot proceed with import due to validation errors.");
+    return;
+}
+
+// Process the imported keys (e.g., save to database)
+foreach (var key in importedKeysFromJson)
+{
+    Console.WriteLine($"Key: {key.Key}, Value: {key.Value}");
+}
+```
+
+### Public Members
+
+- `ImportFromJsonAsync(string json, Guid configurationId)` - Imports configuration keys from JSON format
+- `ImportFromCsvAsync(string csv, Guid configurationId)` - Imports configuration keys from CSV format
+- `ImportFromEnvAsync(string envContent, Guid configurationId)` - Imports configuration keys from environment variable format
+- `ValidateAsync(string data, string format)` - Validates import data before processing
+- `ImportValidationResult.IsValid` - Gets whether the validation passed
+- `ImportValidationResult.Errors` - Gets the list of validation errors
+- `ImportValidationResult.EstimatedRowCount` - Gets the estimated number of rows to be imported
+
 ## DiffViewerService
 
 The `DiffViewerService` class provides rich diff visualization and non-destructive rollback preview for configuration versions. It enables developers to compare configuration states across different versions, visualize changes (additions, modifications, deletions), and preview the impact of rolling back to a previous configuration state before making any destructive changes.
