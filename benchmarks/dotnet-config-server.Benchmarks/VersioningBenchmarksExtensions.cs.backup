@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using DotnetConfigServer.Common;
@@ -24,10 +25,7 @@ public static class VersioningBenchmarksExtensions
     /// <param name="prefix">Optional prefix for version descriptions.</param>
     /// <param name="userName">The user creating the versions.</param>
     /// <returns>List of created version IDs.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="userName"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="userName"/> is empty.</exception>
+    /// <exception cref="ArgumentException">Thrown when configurationId is empty.</exception>
     public static async Task<IReadOnlyList<Guid>> CreateVersionBatchAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId,
@@ -35,11 +33,7 @@ public static class VersioningBenchmarksExtensions
         string prefix = "Batch",
         string userName = "benchmark-user")
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
         ArgumentException.ThrowIfNullOrEmpty(userName);
 
         var versionIds = new List<Guid>(versionCount);
@@ -48,7 +42,7 @@ public static class VersioningBenchmarksExtensions
         {
             var version = await benchmarks._versioningService.CreateVersionAsync(
                 configurationId,
-                $"{prefix} version {i}",
+                $"{prefix} version {i.ToString(CultureInfo.InvariantCulture)}",
                 userName);
             versionIds.Add(version.Id);
         }
@@ -62,17 +56,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="benchmarks">The benchmarks instance.</param>
     /// <param name="configurationId">The configuration ID.</param>
     /// <returns>Count of versions.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when configurationId is empty.</exception>
     public static async Task<int> GetVersionCountAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId)
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
 
         var versions = await benchmarks._versioningService.GetVersionsAsync(configurationId);
         return versions.Count;
@@ -85,15 +74,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="versionIds">List of version IDs to publish.</param>
     /// <param name="userName">The user publishing the versions.</param>
     /// <returns>List of publish tasks.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="versionIds"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="userName"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when versionIds is null.</exception>
     public static async Task<IReadOnlyList<Task>> PublishVersionBatchAsync(
         this VersioningBenchmarks benchmarks,
         IReadOnlyList<Guid> versionIds,
         string userName = "benchmark-user")
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(versionIds);
         ArgumentException.ThrowIfNullOrEmpty(userName);
 
@@ -114,18 +100,13 @@ public static class VersioningBenchmarksExtensions
     /// <param name="configurationId">The configuration ID.</param>
     /// <param name="status">The version status to filter by.</param>
     /// <returns>Filtered list of versions.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when configurationId is empty.</exception>
     public static async Task<IReadOnlyList<ConfigurationVersion>> GetVersionsByStatusAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId,
         ConfigurationVersionStatus status)
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
 
         var allVersions = await benchmarks._versioningService.GetVersionsAsync(configurationId);
         return allVersions.Where(v => v.Status == status).ToList().AsReadOnly();
@@ -137,17 +118,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="benchmarks">The benchmarks instance.</param>
     /// <param name="configurationId">The configuration ID.</param>
     /// <returns>The most recent version, or null if none exists.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when configurationId is empty.</exception>
     public static async Task<ConfigurationVersion?> GetMostRecentVersionAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId)
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
 
         var versions = await benchmarks._versioningService.GetVersionsAsync(configurationId);
         return versions.OrderByDescending(v => v.CreatedAt).FirstOrDefault();
@@ -160,20 +136,14 @@ public static class VersioningBenchmarksExtensions
     /// <param name="configurationId">The configuration ID.</param>
     /// <param name="description">The description to search for.</param>
     /// <returns>The matching version, or null if not found.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="description"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="description"/> is empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when configurationId or description is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when description is empty.</exception>
     public static async Task<ConfigurationVersion?> GetVersionByDescriptionAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId,
         string description)
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
         ArgumentException.ThrowIfNullOrEmpty(description);
 
         var versions = await benchmarks._versioningService.GetVersionsAsync(configurationId);
@@ -186,17 +156,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="benchmarks">The benchmarks instance.</param>
     /// <param name="configurationId">The configuration ID.</param>
     /// <returns>Dictionary mapping version status to count.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when configurationId is empty.</exception>
     public static async Task<Dictionary<ConfigurationVersionStatus, int>> GetVersionCountsByStatusAsync(
         this VersioningBenchmarks benchmarks,
         Guid configurationId)
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
-        if (configurationId == Guid.Empty)
-    {
-        throw new ArgumentException("Value cannot be empty.", nameof(configurationId));
-    }
+        ArgumentNullException.ThrowIfNull(configurationId);
 
         var allVersions = await benchmarks._versioningService.GetVersionsAsync(configurationId);
         return allVersions
@@ -211,15 +176,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="versionIds">List of version IDs to archive.</param>
     /// <param name="userName">The user archiving the versions.</param>
     /// <returns>List of archive tasks.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="versionIds"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="userName"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when versionIds is null.</exception>
     public static async Task<IReadOnlyList<Task>> ArchiveVersionBatchAsync(
         this VersioningBenchmarks benchmarks,
         IReadOnlyList<Guid> versionIds,
         string userName = "benchmark-user")
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(versionIds);
         ArgumentException.ThrowIfNullOrEmpty(userName);
 
@@ -240,15 +202,12 @@ public static class VersioningBenchmarksExtensions
     /// <param name="versionIds">List of version IDs to deprecate.</param>
     /// <param name="userName">The user deprecating the versions.</param>
     /// <returns>List of deprecate tasks.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="versionIds"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException"><paramref name="userName"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when versionIds is null.</exception>
     public static async Task<IReadOnlyList<Task>> DeprecateVersionBatchAsync(
         this VersioningBenchmarks benchmarks,
         IReadOnlyList<Guid> versionIds,
         string userName = "benchmark-user")
     {
-        ArgumentNullException.ThrowIfNull(benchmarks);
         ArgumentNullException.ThrowIfNull(versionIds);
         ArgumentException.ThrowIfNullOrEmpty(userName);
 
