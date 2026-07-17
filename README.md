@@ -1452,6 +1452,46 @@ await benchmarks.GlobalCleanup();
 
 The `WebhookBenchmarks` class provides a set of performance benchmarks for webhook operations, including subscription management (CRUD), event dispatching, and retry queue processing. It helps evaluate the efficiency of the webhook system under different workloads, ensuring reliable delivery and performance for configuration change notifications.
 
+## ConfigurationBenchmarks
+
+The `ConfigurationBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance of core configuration operations including setup, teardown, and CRUD operations on configurations and configuration keys. It covers scenarios for creating, retrieving, updating, and deleting configurations, as well as searching and counting operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new ConfigurationBenchmarks();
+
+// Initialize dependencies and test data (required before running benchmarks)
+await benchmarks.GlobalSetup();
+
+// Execute configuration lifecycle benchmarks
+await benchmarks.CreateConfiguration();
+await benchmarks.GetConfigurationById();
+await benchmarks.GetConfigurationsByApplication();
+await benchmarks.UpdateConfiguration();
+
+// Execute configuration search and count benchmarks
+await benchmarks.SearchConfigurations();
+await benchmarks.GetConfigurationCount();
+
+// Execute configuration key management benchmarks
+await benchmarks.GetKeys();
+await benchmarks.SearchKeys();
+await benchmarks.AddKey();
+await benchmarks.UpdateKey();
+await benchmarks.DeleteKey();
+
+// Execute encryption-related benchmarks
+await benchmarks.CreateConfigurationWithEncryption();
+await benchmarks.GetConfigurationWithEncryption();
+
+// Cleanup test data and resources
+await benchmarks.GlobalCleanup();
+```
+
 ### Usage Example
 
 ```csharp
