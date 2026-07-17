@@ -62,8 +62,11 @@ public static class DotnetConfigServerExceptionJsonExtensionsJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">The resulting <see cref="DotnetConfigServerException"/> instance if deserialization succeeds; otherwise, null.</param>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
     public static bool TryFromJson(string json, out DotnetConfigServerException? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         try
         {
             value = FromJson(json);
