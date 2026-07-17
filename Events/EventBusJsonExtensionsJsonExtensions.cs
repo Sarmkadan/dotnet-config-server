@@ -14,7 +14,7 @@ namespace DotnetConfigServer.Events;
 /// </summary>
 public static class EventBusJsonExtensionsJsonExtensions
 {
-    private static readonly JsonSerializerOptions _options = new()
+    private static readonly JsonSerializerOptions _options = new(JsonSerializerDefaults.General)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
@@ -30,9 +30,7 @@ public static class EventBusJsonExtensionsJsonExtensions
     public static string ToJson(this EventBus value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-
-        var options = indented ? _options : new JsonSerializerOptions(_options) { WriteIndented = false };
-        return JsonSerializer.Serialize(value, options);
+        return JsonSerializer.Serialize(value, GetOptions(indented));
     }
 
     /// <summary>
@@ -69,7 +67,7 @@ public static class EventBusJsonExtensionsJsonExtensions
         try
         {
             value = JsonSerializer.Deserialize<EventBus>(json, _options);
-            return value != null;
+            return value is not null;
         }
         catch (JsonException)
         {
@@ -77,4 +75,7 @@ public static class EventBusJsonExtensionsJsonExtensions
             return false;
         }
     }
+
+    private static JsonSerializerOptions GetOptions(bool indented)
+        => new(_options) { WriteIndented = indented };
 }
