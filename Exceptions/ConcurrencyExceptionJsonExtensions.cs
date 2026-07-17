@@ -3,6 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace DotnetConfigServer.Exceptions;
 
+/// <summary>
+/// Provides JSON serialization and deserialization extensions for <see cref="ConcurrencyException"/>.
+/// </summary>
 public static class ConcurrencyExceptionJsonExtensions
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
@@ -29,7 +32,6 @@ public static class ConcurrencyExceptionJsonExtensions
     public static string ToJson(this ConcurrencyException value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-
         return JsonSerializer.Serialize(value, indented ? _jsonOptionsIndented : _jsonOptions);
     }
 
@@ -38,15 +40,15 @@ public static class ConcurrencyExceptionJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized <see cref="ConcurrencyException"/> instance, or null if the JSON is null or empty.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
     /// <exception cref="JsonException">Thrown if the JSON is invalid or cannot be deserialized.</exception>
-    public static ConcurrencyException? FromJson(string json)
+    public static ConcurrencyException? FromJson(string? json)
     {
-        if (string.IsNullOrEmpty(json))
-        {
-            return null;
-        }
+        ArgumentNullException.ThrowIfNull(json);
 
-        return JsonSerializer.Deserialize<ConcurrencyException>(json, _jsonOptions);
+        return string.IsNullOrEmpty(json)
+            ? null
+            : JsonSerializer.Deserialize<ConcurrencyException>(json, _jsonOptions);
     }
 
     /// <summary>
@@ -55,8 +57,11 @@ public static class ConcurrencyExceptionJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">The resulting <see cref="ConcurrencyException"/> instance if deserialization succeeds; otherwise, null.</param>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
-    public static bool TryFromJson(string json, out ConcurrencyException? value)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
+    public static bool TryFromJson(string? json, out ConcurrencyException? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         try
         {
             value = FromJson(json);
