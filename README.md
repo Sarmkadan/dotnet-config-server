@@ -1111,6 +1111,126 @@ if (isHealthy)
 - `ConfigurationKey` - Represents a configuration key with properties: `Id`, `Key`, `Value`, `IsEncrypted`, `Description`
 - `PagedResult<T>` - Pagination wrapper with properties: `Items` (list of T), `TotalCount`, `PageSize`, `PageNumber`
 
+## ErrorHandlingMiddleware
+
+The `ErrorHandlingMiddleware` class is a global exception handling middleware that catches all unhandled exceptions during HTTP request processing and returns consistent, structured error responses with appropriate HTTP status codes. It centralizes error handling logic, provides detailed error messages, validation error details, and includes tracing information via the TraceId. The middleware automatically logs exceptions and transforms them into a standardized JSON error response format.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Middleware;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// In your Program.cs or Startup.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Register the middleware (automatically added in Program.cs by builder)
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+// Use the error handling middleware
+// Typically registered as the first middleware to catch all exceptions
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// Register other middleware
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
+
+app.Run();
+
+// Example controller that might throw exceptions
+[ApiController]
+[Route("api/[controller]")]
+public class ConfigurationsController : ControllerBase
+{
+    private readonly IConfigurationService _configService;
+    
+    public ConfigurationsController(IConfigurationService configService)
+    {
+        _configService = configService;
+    }
+    
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetConfiguration(Guid id)
+    {
+        // If this throws ConfigurationNotFoundException, it will be caught by ErrorHandlingMiddleware
+        var config = await _configService.GetConfigurationAsync(id);
+        return Ok(config);
+    }
+    
+    [HttpPost("{configId}/keys")]
+    public async Task<IActionResult> AddKey(Guid configId, [FromBody] ConfigurationKeyRequest request)
+    {
+        // If this throws ValidationException, it will be caught and formatted by ErrorHandlingMiddleware
+        var key = await _configService.AddConfigurationKeyAsync(configId, request);
+        return CreatedAtAction(nameof(GetConfiguration), new { id = configId }, key);
+    }
+}
+
+// Example of how the middleware transforms exceptions
+// Before: Unhandled exception with stack trace
+// After: Clean JSON response with status code
+
+// Request: GET /api/configurations/00000000-0000-0000-0000-000000000000
+// Response (404 Not Found):
+// {
+//   "message": "Configuration not found",
+//   "timestamp": "2026-07-19T14:30:00Z",
+//   "traceId": "00-1234567890abcdef1234567890abcdef-1234567890abcdef-00",
+//   "errors": null
+// }
+
+// Request: POST /api/configurations/config123/keys
+// Body: { "key": "", "value": "test", "isEncrypted": false }
+// Response (422 Unprocessable Entity):
+// {
+//   "message": "Validation failed",
+//   "timestamp": "2026-07-19T14:31:00Z",
+//   "traceId": "00-fedcba0987654321fedcba098765432-987654321fedcba0-01",
+//   "errors": {
+//     "key": ["The key field is required."]
+//   }
+// }
+```
+
+### Public Members
+
+- `ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)` - Constructor that accepts the next middleware in the pipeline and a logger instance
+- `InvokeAsync(HttpContext context)` - Main middleware entry point that processes HTTP requests and catches exceptions
+- `HandleExceptionAsync(HttpContext context, Exception exception)` - Static method that handles exception transformation and response generation
+
+### ErrorResponse Class
+
+The middleware returns an `ErrorResponse` object with the following properties:
+
+- `Message` (string) - Human-readable error message describing what went wrong
+- `Timestamp` (DateTime) - When the error occurred (UTC)
+- `TraceId` (string) - Correlation ID for tracing the request through logs and monitoring systems
+- `Errors` (Dictionary<string, List<string>>?) - Optional validation errors dictionary where keys are field names and values are lists of error messages (only present for ValidationException)
+
+### Exception Handling
+
+The middleware handles specific exception types with appropriate HTTP status codes:
+
+- `ValidationException` → 422 Unprocessable Entity
+- `ConfigurationNotFoundException` → 404 Not Found  
+- `ConfigurationKeyNotFoundException` → 404 Not Found
+- `ConfigurationException` → 400 Bad Request
+- `UnauthorizedAccessException` → 401 Unauthorized
+- All other exceptions → 500 Internal Server Error
+
+### Related Classes
+
+- `ErrorResponse` - The standardized error response structure returned by the middleware
+- `ValidationException` - Exception thrown when validation fails (from DotnetConfigServer.Exceptions)
+- `ConfigurationNotFoundException` - Exception thrown when a configuration is not found
+- `ConfigurationKeyNotFoundException` - Exception thrown when a configuration key is not found
+
 ## BatchConfigurationImporter
 
 The `BatchConfigurationImporter` class provides utilities for bulk importing, exporting, cloning, and merging configuration keys across different environments. It simplifies common batch operations like migrating configurations from JSON files, setting up new environments, and synchronizing configurations between development, staging, and production environments.
