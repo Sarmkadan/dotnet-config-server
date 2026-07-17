@@ -1718,6 +1718,254 @@ public class ApplicationClient
         return await response.Content.ReadFromJsonAsync<List<Configuration>>();
     }
 }
+
+## VersionsController
+
+The `VersionsController` provides RESTful API endpoints for managing configuration versions in the Dotnet Config Server. It enables version control for configuration changes, allowing users to track history, compare versions, roll back to previous states, and manage version lifecycle. The controller supports creating new versions, publishing active versions, archiving old versions, and cleanup operations.
+
+**Key Features:**
+- Retrieve all versions for a configuration
+- Get the currently active version
+- Create new configuration versions with release notes
+- Publish, archive, and rollback versions
+- Compare differences between versions with enriched diff output
+- Clean up old versions with configurable limits
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using VersionsController in a service
+public class VersionManagementService
+{
+    private readonly VersionsController _controller;
+    private readonly ILogger<VersionManagementService> _logger;
+
+    public VersionManagementService(
+        VersionsController controller,
+        ILogger<VersionManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)
+    {
+        var result = await _controller.GetVersions(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ConfigurationVersionSummary> versions)
+        {
+            return versions;
+        }
+
+        return new List<ConfigurationVersionSummary>();
+    }
+
+    public async Task<ConfigurationVersion> GetActiveVersionAsync(Guid configurationId)
+    {
+        var result = await _controller.GetActiveVersion(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            return version;
+        }
+
+        throw new Exception("No active version found");
+    }
+
+    public async Task<ConfigurationVersion> GetVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var result = await _controller.GetVersion(configurationId, versionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            return version;
+        }
+
+        throw new Exception("Version not found");
+    }
+
+    public async Task<ConfigurationVersion> CreateVersionAsync(
+        Guid configurationId,
+        string releaseNotes = null)
+    {
+        var request = new VersionsController.CreateVersionRequest
+        {
+            ReleaseNotes = releaseNotes
+        };
+
+        var result = await _controller.CreateVersion(configurationId, request);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is ConfigurationVersion version)
+        {
+            _logger.LogInformation("Created version {VersionId} for configuration {ConfigId}", 
+                version.Id, configurationId);
+            return version;
+        }
+
+        throw new Exception("Failed to create version");
+    }
+
+    public async Task<ConfigurationVersion> PublishVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var result = await _controller.PublishVersion(configurationId, versionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            _logger.LogInformation("Published version {VersionId}", versionId);
+            return version;
+        }
+
+        throw new Exception("Failed to publish version");
+    }
+
+    public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var result = await _controller.ArchiveVersion(configurationId, versionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            _logger.LogInformation("Archived version {VersionId}", versionId);
+            return version;
+        }
+
+        throw new Exception("Failed to archive version");
+    }
+
+    public async Task<ConfigurationVersion> RollbackAsync(
+        Guid configurationId,
+        Guid previousVersionId)
+    {
+        var result = await _controller.Rollback(configurationId, previousVersionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            _logger.LogInformation("Rolled back to version {VersionId}", previousVersionId);
+            return version;
+        }
+
+        throw new Exception("Failed to rollback version");
+    }
+
+    public async Task<EnrichedDiff> GetDiffAsync(
+        Guid configurationId,
+        Guid fromVersionId,
+        Guid toVersionId)
+    {
+        var result = await _controller.GetDiff(configurationId, fromVersionId, toVersionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is EnrichedDiff diff)
+        {
+            return diff;
+        }
+
+        throw new Exception("Failed to get diff");
+    }
+
+    public async Task<int> CleanupVersionsAsync(Guid configurationId, int maxVersions = 100)
+    {
+        var result = await _controller.Cleanup(configurationId, maxVersions);
+
+        if (result is OkObjectResult okResult && okResult.Value is VersionsController.CleanupResponse response)
+        {
+            _logger.LogInformation("Cleaned up {Count} old versions", response.ArchivedCount);
+            return response.ArchivedCount;
+        }
+
+        return 0;
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class VersionClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/configurations";
+
+    public VersionClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/versions");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<ConfigurationVersionSummary>>();
+    }
+
+    public async Task<ConfigurationVersion> GetActiveVersionAsync(Guid configurationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/versions/active");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<ConfigurationVersion> GetVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/versions/{versionId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<ConfigurationVersion> CreateVersionAsync(
+        Guid configurationId,
+        string releaseNotes = null)
+    {
+        var request = new { releaseNotes };
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{configurationId}/versions", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<ConfigurationVersion> PublishVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var response = await _httpClient.PostAsync($"{_baseUrl}/{configurationId}/versions/{versionId}/publish", null);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid configurationId, Guid versionId)
+    {
+        var response = await _httpClient.PostAsync($"{_baseUrl}/{configurationId}/versions/{versionId}/archive", null);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId)
+    {
+        var response = await _httpClient.PostAsync($"{_baseUrl}/{configurationId}/versions/{previousVersionId}/rollback", null);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationVersion>();
+    }
+
+    public async Task<EnrichedDiff> GetDiffAsync(
+        Guid configurationId,
+        Guid fromVersionId,
+        Guid toVersionId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/versions/{fromVersionId}/diff/{toVersionId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<EnrichedDiff>();
+    }
+
+    public async Task<int> CleanupVersionsAsync(Guid configurationId, int maxVersions = 100)
+    {
+        var response = await _httpClient.PostAsync($"{_baseUrl}/{configurationId}/versions/cleanup?maxVersions={maxVersions}", null);
+        response.EnsureSuccessStatusCode();
+        var result = await response.Content.ReadFromJsonAsync<VersionsController.CleanupResponse>();
+        return result?.ArchivedCount ?? 0;
+    }
+}
 ```
 
 ## ConfigurationsController
