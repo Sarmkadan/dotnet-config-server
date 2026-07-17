@@ -20,7 +20,7 @@ public static class ServiceExtensionsConfigurationValidation
     /// </summary>
     /// <param name="value">The ServiceExtensionsConfiguration instance to validate</param>
     /// <returns>A list of validation problems; empty if valid</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
     public static IReadOnlyList<string> Validate(this ServiceExtensionsConfiguration value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -28,101 +28,48 @@ public static class ServiceExtensionsConfigurationValidation
         var problems = new List<string>();
 
         // Validate DataServices
-        if (value.DataServices is not null)
-        {
-            if (value.DataServices.Length == 0)
-            {
-                problems.Add("DataServices array is empty");
-            }
-            else
-            {
-                for (int i = 0; i < value.DataServices.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(value.DataServices[i]))
-                    {
-                        problems.Add($"DataServices[{i}] is null or whitespace");
-                    }
-                }
-            }
-        }
+        ValidateStringArray(value.DataServices, nameof(value.DataServices), problems);
 
         // Validate BusinessServices
-        if (value.BusinessServices is not null)
-        {
-            if (value.BusinessServices.Length == 0)
-            {
-                problems.Add("BusinessServices array is empty");
-            }
-            else
-            {
-                for (int i = 0; i < value.BusinessServices.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(value.BusinessServices[i]))
-                    {
-                        problems.Add($"BusinessServices[{i}] is null or whitespace");
-                    }
-                }
-            }
-        }
+        ValidateStringArray(value.BusinessServices, nameof(value.BusinessServices), problems);
 
         // Validate WebhookClient
-        if (value.WebhookClient is not null)
-        {
-            if (value.WebhookClient.Length == 0)
-            {
-                problems.Add("WebhookClient array is empty");
-            }
-            else
-            {
-                for (int i = 0; i < value.WebhookClient.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(value.WebhookClient[i]))
-                    {
-                        problems.Add($"WebhookClient[{i}] is null or whitespace");
-                    }
-                }
-            }
-        }
+        ValidateStringArray(value.WebhookClient, nameof(value.WebhookClient), problems);
 
         // Validate SwaggerConfiguration
-        if (value.SwaggerConfiguration is not null)
-        {
-            if (value.SwaggerConfiguration.Length == 0)
-            {
-                problems.Add("SwaggerConfiguration array is empty");
-            }
-            else
-            {
-                for (int i = 0; i < value.SwaggerConfiguration.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(value.SwaggerConfiguration[i]))
-                    {
-                        problems.Add($"SwaggerConfiguration[{i}] is null or whitespace");
-                    }
-                }
-            }
-        }
+        ValidateStringArray(value.SwaggerConfiguration, nameof(value.SwaggerConfiguration), problems);
 
         // Validate DatabaseInitialization
-        if (value.DatabaseInitialization is not null)
+        ValidateStringArray(value.DatabaseInitialization, nameof(value.DatabaseInitialization), problems);
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Validates a string array property
+    /// </summary>
+    /// <param name="array">The array to validate</param>
+    /// <param name="propertyName">The name of the property being validated</param>
+    /// <param name="problems">The collection to add validation problems to</param>
+    private static void ValidateStringArray(string[]? array, string propertyName, List<string> problems)
+    {
+        if (array is not null)
         {
-            if (value.DatabaseInitialization.Length == 0)
+            if (array.Length == 0)
             {
-                problems.Add("DatabaseInitialization array is empty");
+                problems.Add($"{propertyName} array is empty");
             }
             else
             {
-                for (int i = 0; i < value.DatabaseInitialization.Length; i++)
+                for (int i = 0; i < array.Length; i++)
                 {
-                    if (string.IsNullOrWhiteSpace(value.DatabaseInitialization[i]))
+                    if (string.IsNullOrWhiteSpace(array[i]))
                     {
-                        problems.Add($"DatabaseInitialization[{i}] is null or whitespace");
+                        problems.Add($"{propertyName}[{i}] is null or whitespace");
                     }
                 }
             }
         }
-
-        return problems.AsReadOnly();
     }
 
     /// <summary>
@@ -130,18 +77,18 @@ public static class ServiceExtensionsConfigurationValidation
     /// </summary>
     /// <param name="value">The ServiceExtensionsConfiguration instance to check</param>
     /// <returns>True if valid; otherwise, false</returns>
-    /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
-    public static bool IsValid(this ServiceExtensionsConfiguration value)
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
+    public static bool IsValid(this ServiceExtensionsConfiguration? value)
     {
-        return value.Validate().Count == 0;
+        return value?.Validate().Count == 0;
     }
 
     /// <summary>
     /// Ensures that the ServiceExtensionsConfiguration instance is valid
     /// </summary>
     /// <param name="value">The ServiceExtensionsConfiguration instance to validate</param>
-    /// <exception cref="ArgumentException">Thrown when value is not valid, containing the validation problems</exception>
-    /// <exception cref="ArgumentNullException">Thrown when value is null</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> is not valid, containing the validation problems</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null</exception>
     public static void EnsureValid(this ServiceExtensionsConfiguration value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -150,7 +97,7 @@ public static class ServiceExtensionsConfigurationValidation
         if (problems.Count > 0)
         {
             throw new ArgumentException(
-                $"ServiceExtensionsConfiguration is not valid. Problems:\n{string.Join("\n", problems)}");
+                $"ServiceExtensionsConfiguration is not valid. Problems:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}");
         }
     }
 }
