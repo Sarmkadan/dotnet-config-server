@@ -30,7 +30,7 @@ public static class NotFoundExceptionValidationJsonExtensions
     /// <param name="value">The validation errors to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the validation errors.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this IReadOnlyList<string> value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -44,39 +44,39 @@ public static class NotFoundExceptionValidationJsonExtensions
 
     /// <summary>
     /// Deserializes a JSON string to a list of validation error messages.
-    /// Returns null if the JSON is null or empty.
+    /// Returns <see langword="null"/> if the JSON is null or empty.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized list of validation error messages, or null.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <returns>The deserialized list of validation error messages, or <see langword="null"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <see langword="null"/>.</exception>
+    /// <exception cref="JsonException">Thrown when the JSON is malformed and cannot be deserialized.</exception>
     public static IReadOnlyList<string>? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return null;
-        }
-
-        return JsonSerializer.Deserialize<IReadOnlyList<string>>(json, _jsonOptions);
+        return string.IsNullOrWhiteSpace(json)
+            ? null
+            : JsonSerializer.Deserialize<IReadOnlyList<string>>(json, _jsonOptions);
     }
 
     /// <summary>
     /// Attempts to deserialize a JSON string to a list of validation error messages.
-    /// Returns false and sets value to null if the JSON is invalid or deserialization fails.
+    /// Returns <see langword="false"/> and sets <paramref name="value"/> to <see langword="null"/> if the JSON is invalid or deserialization fails.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized value if successful.</param>
-    /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <see langword="null"/>.</exception>
     public static bool TryFromJson(string json, out IReadOnlyList<string>? value)
     {
         value = null;
 
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return false;
-        }
+        return !string.IsNullOrWhiteSpace(json)
+            && TryDeserialize(json, out value);
+    }
 
+    private static bool TryDeserialize(string json, out IReadOnlyList<string>? value)
+    {
         try
         {
             value = JsonSerializer.Deserialize<IReadOnlyList<string>>(json, _jsonOptions);
@@ -84,6 +84,7 @@ public static class NotFoundExceptionValidationJsonExtensions
         }
         catch (JsonException)
         {
+            value = null;
             return false;
         }
     }
