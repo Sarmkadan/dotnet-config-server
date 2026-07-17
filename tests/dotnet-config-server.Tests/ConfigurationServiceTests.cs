@@ -10,6 +10,10 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Unit tests for <see cref="ConfigurationService"/> functionality.
+/// Tests various operations including configuration creation, update, deletion, and key management.
+/// </summary>
 public class ConfigurationServiceTests
 {
     private readonly Mock<IConfigurationRepository> _configRepositoryMock = new();
@@ -20,6 +24,10 @@ public class ConfigurationServiceTests
     private readonly Mock<ILogger<ConfigurationService>> _loggerMock = new();
     private readonly ConfigurationService _service;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigurationServiceTests"/> class.
+    /// Sets up mock dependencies and creates the <see cref="ConfigurationService"/> instance under test.
+    /// </summary>
     public ConfigurationServiceTests()
     {
         _service = new ConfigurationService(
@@ -32,6 +40,10 @@ public class ConfigurationServiceTests
         );
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.CreateAsync"/> successfully creates a configuration
+    /// when provided with valid configuration data.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldCreateConfiguration_WhenValid()
     {
@@ -51,6 +63,10 @@ public class ConfigurationServiceTests
         _auditLogRepositoryMock.Verify(x => x.SaveChangesAsync(), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.CreateAsync"/> throws a <see cref="ConfigurationNotFoundException"/>
+    /// when attempting to create a configuration with a non-existent parent configuration ID.
+    /// </summary>
     [Fact]
     public async Task CreateAsync_ShouldThrowException_WhenParentNotFound()
     {
@@ -65,6 +81,10 @@ public class ConfigurationServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.UpdateAsync"/> successfully updates an existing configuration
+    /// when provided with valid configuration data.
+    /// </summary>
     [Fact]
     public async Task UpdateAsync_ShouldUpdateConfiguration_WhenValid()
     {
@@ -82,6 +102,10 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Configuration>()), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.DeleteAsync"/> successfully marks a configuration as deleted
+    /// by setting its DeletedAt property and persisting the change.
+    /// </summary>
     [Fact]
     public async Task DeleteAsync_ShouldDeleteConfiguration()
     {
@@ -98,6 +122,10 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Verify(x => x.UpdateAsync(config), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.AddKeyAsync"/> successfully adds a configuration key
+    /// when the configuration is not encrypted.
+    /// </summary>
     [Fact]
     public async Task AddKeyAsync_ShouldAddKey_WhenValid()
     {
@@ -116,6 +144,10 @@ public class ConfigurationServiceTests
         _keyRepositoryMock.Verify(x => x.AddAsync(key), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that <see cref="ConfigurationService.AddKeyAsync"/> encrypts the key value
+    /// when the configuration has encryption enabled.
+    /// </summary>
     [Fact]
     public async Task AddKeyAsync_ShouldEncryptKey_WhenConfigEncrypted()
     {
