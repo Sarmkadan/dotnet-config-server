@@ -648,6 +648,96 @@ if (databaseKeys.HasMultiple())
 }
 ```
 
+## ValidationExtensions
+
+The `ValidationExtensions` static class provides a comprehensive set of validation extension methods for common validation scenarios. It includes fluent API methods for validating strings, collections, GUIDs, and custom conditions with meaningful error messages. These extensions are particularly useful for validating configuration data, user inputs, and API parameters in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using DotnetConfigServer.Exceptions;
+using System;
+using System.Collections.Generic;
+
+// Validate configuration settings before creating a new application
+var appName = "OrderProcessingService";
+var description = "";
+var maxConnections = 150;
+var minConnections = 50;
+var email = "admin@example.com";
+var url = "https://api.example.com/webhook";
+var configId = Guid.NewGuid();
+var apiKeys = new List<string>();
+
+// Validate application name is not empty
+var nameValidation = appName.ValidateNotEmpty("Application Name");
+nameValidation.ThrowIfInvalid();
+
+// Validate description is not empty
+var descValidation = description.ValidateNotEmpty("Description");
+if (!descValidation.IsValid)
+{
+    Console.WriteLine($"Validation error: {descValidation.ErrorMessage}");
+}
+
+// Validate minimum and maximum length
+var lengthValidation = appName.ValidateMinLength(5, "Application Name").Combine(
+    new[] { appName.ValidateMaxLength(50, "Application Name") }
+);
+lengthValidation.ThrowIfInvalid();
+
+// Validate range for connection pool size
+var poolSizeValidation = maxConnections.ValidateRange(minConnections, 200, "Connection Pool Size");
+poolSizeValidation.ThrowIfInvalid();
+
+// Validate email format
+var emailValidation = email.ValidateEmail();
+emailValidation.ThrowIfInvalid();
+
+// Validate URL format
+var urlValidation = url.ValidateUrl();
+urlValidation.ThrowIfInvalid();
+
+// Validate GUID is not empty
+var guidValidation = configId.ValidateNotEmpty("Configuration ID");
+guidValidation.ThrowIfInvalid();
+
+// Validate collection is not empty
+var keysValidation = apiKeys.ValidateNotEmpty("API Keys");
+if (!keysValidation.IsValid)
+{
+    Console.WriteLine($"Error: {keysValidation.ErrorMessage}");
+}
+
+// Validate custom condition
+var conditionValidation = ValidationExtensions.ValidateCondition(
+    maxConnections > minConnections,
+    "Maximum connections must be greater than minimum connections",
+    "Connection Settings"
+);
+conditionValidation.ThrowIfInvalid();
+
+// Combine multiple validations
+var allValidations = new[]
+{
+    appName.ValidateNotEmpty("Application Name"),
+    appName.ValidateMinLength(3, "Application Name"),
+    appName.ValidateMaxLength(50, "Application Name"),
+    email.ValidateEmail(),
+    url.ValidateUrl(),
+    configId.ValidateNotEmpty("Configuration ID"),
+    apiKeys.ValidateNotEmpty("API Keys")
+};
+
+var combinedValidation = allValidations.Combine();
+if (!combinedValidation.IsValid)
+{
+    Console.WriteLine("Validation failed:");
+    Console.WriteLine(combinedValidation.ErrorMessage);
+}
+```
+
 ## DateTimeExtensions
 
 The `DateTimeExtensions` static class provides a comprehensive set of extension methods for `DateTime` manipulation and formatting. It includes utilities for converting dates to human-readable relative time strings, ISO 8601 formatting, and calculating start/end boundaries for days, weeks, months, and years. These extensions are particularly useful for logging, audit trails, scheduling, and date-based filtering in the configuration server.
