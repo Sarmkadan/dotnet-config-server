@@ -15,11 +15,16 @@ namespace DotnetConfigServer.Events;
 public static class DomainEventValidation
 {
     /// <summary>
+    /// Sealed to prevent inheritance, as this is a pure utility class.
+    /// </summary>
+    static DomainEventValidation() { }
+
+    /// <summary>
     /// Validates a domain event and returns a list of validation problems.
     /// </summary>
     /// <param name="value">The domain event to validate.</param>
     /// <returns>A read-only list of human-readable validation problems, or empty if valid.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this DomainEvent? value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -32,12 +37,13 @@ public static class DomainEventValidation
             problems.Add("DomainEvent.Id must not be empty");
         }
 
-        if (value.OccurredAt > DateTime.UtcNow.AddMinutes(5))
+        var utcNow = DateTime.UtcNow;
+        if (value.OccurredAt > utcNow.AddMinutes(5))
         {
             problems.Add("DomainEvent.OccurredAt must not be in the future");
         }
 
-        if (value.OccurredAt < DateTime.UtcNow.AddYears(-1))
+        if (value.OccurredAt < utcNow.AddYears(-1))
         {
             problems.Add("DomainEvent.OccurredAt must not be older than 1 year");
         }
@@ -87,7 +93,7 @@ public static class DomainEventValidation
     /// </summary>
     /// <param name="value">The domain event to check.</param>
     /// <returns>True if the event is valid; otherwise, false.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static bool IsValid(this DomainEvent? value)
     {
         return Validate(value).Count == 0;
@@ -97,7 +103,7 @@ public static class DomainEventValidation
     /// Ensures that a domain event is valid, throwing an exception if it is not.
     /// </summary>
     /// <param name="value">The domain event to validate.</param>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if the event is invalid, containing a list of validation problems.</exception>
     public static void EnsureValid(this DomainEvent? value)
     {
@@ -107,14 +113,23 @@ public static class DomainEventValidation
         if (problems.Count > 0)
         {
             throw new ArgumentException(
-                $"Domain event validation failed:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}");
+                $"Domain event validation failed:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}",
+                nameof(value));
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationCreatedEvent.
+    /// </summary>
+    /// <param name="createdEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationCreatedEvent(
         ConfigurationCreatedEvent createdEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (createdEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationCreatedEvent.ConfigurationId must not be empty");
@@ -136,10 +151,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationUpdatedEvent.
+    /// </summary>
+    /// <param name="updatedEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationUpdatedEvent(
         ConfigurationUpdatedEvent updatedEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (updatedEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationUpdatedEvent.ConfigurationId must not be empty");
@@ -165,10 +188,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationKeyChangedEvent.
+    /// </summary>
+    /// <param name="keyChangedEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationKeyChangedEvent(
         ConfigurationKeyChangedEvent keyChangedEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (keyChangedEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationKeyChangedEvent.ConfigurationId must not be empty");
@@ -190,10 +221,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationDeletedEvent.
+    /// </summary>
+    /// <param name="deletedEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationDeletedEvent(
         ConfigurationDeletedEvent deletedEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (deletedEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationDeletedEvent.ConfigurationId must not be empty");
@@ -210,10 +249,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationVersionCreatedEvent.
+    /// </summary>
+    /// <param name="versionCreatedEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationVersionCreatedEvent(
         ConfigurationVersionCreatedEvent versionCreatedEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (versionCreatedEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationVersionCreatedEvent.ConfigurationId must not be empty");
@@ -230,10 +277,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a ConfigurationRolledBackEvent.
+    /// </summary>
+    /// <param name="rolledBackEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateConfigurationRolledBackEvent(
         ConfigurationRolledBackEvent rolledBackEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (rolledBackEvent.ConfigurationId == Guid.Empty)
         {
             problems.Add("ConfigurationRolledBackEvent.ConfigurationId must not be empty");
@@ -255,10 +310,18 @@ public static class DomainEventValidation
         }
     }
 
+    /// <summary>
+    /// Validates a WebhookSubscriptionChangedEvent.
+    /// </summary>
+    /// <param name="webhookEvent">The event to validate.</param>
+    /// <param name="problems">The list to accumulate validation problems.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="problems"/> is null.</exception>
     private static void ValidateWebhookSubscriptionChangedEvent(
         WebhookSubscriptionChangedEvent webhookEvent,
         List<string> problems)
     {
+        ArgumentNullException.ThrowIfNull(problems);
+
         if (webhookEvent.SubscriptionId == Guid.Empty)
         {
             problems.Add("WebhookSubscriptionChangedEvent.SubscriptionId must not be empty");
