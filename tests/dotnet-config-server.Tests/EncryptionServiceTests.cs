@@ -17,10 +17,25 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Unit tests for <see cref="EncryptionService"/> encryption/decryption functionality.
+/// Tests cover symmetric encryption, key validation, key rotation, and error scenarios.
+/// </summary>
 public sealed class EncryptionServiceTests
 {
+    /// <summary>
+    /// Mock repository for testing encryption key persistence.
+    /// </summary>
     private readonly Mock<IEncryptionKeyRepository> _keyRepositoryMock;
+
+    /// <summary>
+    /// Mock logger for verifying service behavior.
+    /// </summary>
     private readonly Mock<ILogger<EncryptionService>> _loggerMock;
+
+    /// <summary>
+    /// System under test - the encryption service being validated.
+    /// </summary>
     private readonly EncryptionService _sut;
 
     public EncryptionServiceTests()
@@ -30,6 +45,10 @@ public sealed class EncryptionServiceTests
         _sut = new EncryptionService(_keyRepositoryMock.Object, _loggerMock.Object);
     }
 
+    /// <summary>
+    /// Creates a valid encryption key for testing purposes.
+    /// </summary>
+    /// <returns>A configured <see cref="EncryptionKey"/> with valid cryptographic properties.</returns>
     private static EncryptionKey CreateValidKey() => new()
     {
         KeyId = Guid.NewGuid().ToString(),
@@ -43,6 +62,10 @@ public sealed class EncryptionServiceTests
         CreatedBy = "system"
     };
 
+    /// <summary>
+    /// Tests that encryption followed by decryption returns the original plain text.
+    /// Verifies the basic symmetric encryption/decryption round-trip functionality.
+    /// </summary>
     [Fact]
     public void Encrypt_ThenDecrypt_ReturnsOriginalPlainText()
     {
@@ -55,6 +78,10 @@ public sealed class EncryptionServiceTests
         decrypted.Should().Be(plainText);
     }
 
+    /// <summary>
+    /// Tests that encrypting the same plain text multiple times produces different cipher texts.
+    /// Verifies that the encryption uses a random initialization vector (IV) for each operation.
+    /// </summary>
     [Fact]
     public void Encrypt_SamePlainText_ProducesDistinctCipherTextDueToRandomIv()
     {
@@ -67,6 +94,10 @@ public sealed class EncryptionServiceTests
         cipher1.Should().NotBe(cipher2);
     }
 
+    /// <summary>
+    /// Tests that the encryption output is valid Base64 encoded data.
+    /// Verifies that the cipher text can be safely transmitted as a string.
+    /// </summary>
     [Fact]
     public void Encrypt_OutputIsValidBase64()
     {
