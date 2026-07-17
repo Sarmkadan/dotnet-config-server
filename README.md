@@ -1435,6 +1435,32 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ConfigurationSnapshot
+
+The `ConfigurationSnapshot` class represents a point-in-time capture of a configuration's state, including the serialized configuration data and associated keys. Snapshots are automatically created whenever a configuration is modified, providing a complete audit trail for rollback operations and compliance reporting.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a new configuration snapshot
+var snapshot = new ConfigurationSnapshot
+{
+    ConfigurationId = Guid.NewGuid(),
+    ConfigurationState = "{\"Name\":\"ProductionService\",\"Environment\":\"Production\"}",
+    KeysState = "[{\"Key\":\"Database:Host\",\"Value\":\"prod-db.example.com\"},{\"Key\":\"Database:Port\",\"Value\":\"5432\"}]",
+    CreatedBy = "admin@example.com",
+    Reason = "Initial production deployment"
+};
+
+Console.WriteLine($"Snapshot created: {snapshot.Id}");
+Console.WriteLine($"Configuration: {snapshot.ConfigurationId}");
+Console.WriteLine($"Created at: {snapshot.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"State: {snapshot.ConfigurationState}");
+```
+
 ## ExternalApiClient
 
 The `ExternalApiClient` class provides a robust HTTP client for making external API calls with built-in retry logic, timeout handling, and comprehensive error logging. It simplifies making GET, POST, PUT, and DELETE requests while automatically managing connection retries and request timeouts.
