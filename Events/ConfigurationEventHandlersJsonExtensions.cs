@@ -6,6 +6,7 @@
 // =============================================================================
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace DotnetConfigServer.Events;
@@ -18,8 +19,9 @@ public static class ConfigurationEventHandlersJsonExtensions
     private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
-        WriteIndented = false
+        WriteIndented = false,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver()
     };
 
     /// <summary>
@@ -47,7 +49,7 @@ public static class ConfigurationEventHandlersJsonExtensions
     /// Deserializes a JSON string to a <see cref="ConfigurationEventHandlers"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized event handlers instance, or null if the JSON is empty.</returns>
+    /// <returns>The deserialized event handlers instance, or null if the JSON is empty or whitespace.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
     public static ConfigurationEventHandlers? FromJson(string json)
@@ -69,25 +71,20 @@ public static class ConfigurationEventHandlersJsonExtensions
     /// <param name="value">Receives the deserialized event handlers instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
-    public static bool TryFromJson(string json, out ConfigurationEventHandlers? value)
+public static bool TryFromJson(string json, out ConfigurationEventHandlers? value)
+{
+    ArgumentNullException.ThrowIfNull(json);
+
+    try
     {
-        ArgumentNullException.ThrowIfNull(json);
-
-        value = null;
-
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return true;
-        }
-
-        try
-        {
-            value = JsonSerializer.Deserialize<ConfigurationEventHandlers>(json, _jsonSerializerOptions);
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
+        value = FromJson(json);
+        return true;
     }
+    catch (JsonException)
+    {
+        value = null;
+        return false;
+    }
+}
+
 }
