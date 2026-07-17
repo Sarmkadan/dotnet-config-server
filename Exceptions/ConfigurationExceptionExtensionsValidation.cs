@@ -17,13 +17,17 @@ namespace DotnetConfigServer.Exceptions;
 public static class ConfigurationExceptionExtensionsValidation
 {
     /// <summary>
-    /// Validates a <see cref="ConfigurationException"/> instance using extension methods validation.
+    /// Validates a <see cref="ConfigurationException"/> instance using extension methods from <see cref="ConfigurationExceptionExtensions"/>.
+    /// This method validates that exception-specific properties (like Details) are properly set
+    /// based on the exception type.
     /// </summary>
     /// <param name="exception">The configuration exception to validate.</param>
-    /// <param name="_extensions">Reserved parameter to distinguish from other Validate methods.</param>
+    /// <param name="validateTypeSpecificProperties">When true, validates exception type-specific properties like Details.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
-    public static IReadOnlyList<string> Validate(this ConfigurationException exception, bool _extensions = true)
+    public static IReadOnlyList<string> Validate(
+        this ConfigurationException exception,
+        bool validateTypeSpecificProperties = true)
     {
         ArgumentNullException.ThrowIfNull(exception);
 
@@ -41,46 +45,30 @@ public static class ConfigurationExceptionExtensionsValidation
         }
 
         // Validate exception type-specific properties
-        switch (exception)
+        if (validateTypeSpecificProperties)
         {
-            case ConfigurationNotFoundException configNotFound:
-                if (configNotFound.Details is null)
-                {
+            switch (exception)
+            {
+                case ConfigurationNotFoundException configNotFound when configNotFound.Details is null:
                     problems.Add("ConfigurationNotFoundException.Details cannot be null");
-                }
-                break;
+                    break;
 
-            case ConfigurationKeyNotFoundException keyNotFound:
-                if (keyNotFound.Details is null)
-                {
+                case ConfigurationKeyNotFoundException keyNotFound when keyNotFound.Details is null:
                     problems.Add("ConfigurationKeyNotFoundException.Details cannot be null");
-                }
-                break;
+                    break;
 
-            case EncryptionException:
-                // EncryptionException has no additional required properties
-                break;
-
-            case ConfigurationSnapshotNotFoundException snapshotNotFound:
-                if (snapshotNotFound.Details is null)
-                {
+                case ConfigurationSnapshotNotFoundException snapshotNotFound when snapshotNotFound.Details is null:
                     problems.Add("ConfigurationSnapshotNotFoundException.Details cannot be null");
-                }
-                break;
+                    break;
 
-            case ConfigurationVersionNotFoundException versionNotFound:
-                if (versionNotFound.Details is null)
-                {
+                case ConfigurationVersionNotFoundException versionNotFound when versionNotFound.Details is null:
                     problems.Add("ConfigurationVersionNotFoundException.Details cannot be null");
-                }
-                break;
+                    break;
 
-            case WebhookException webhook:
-                if (webhook.Details is null)
-                {
+                case WebhookException webhook when webhook.Details is null:
                     problems.Add("WebhookException.Details cannot be null");
-                }
-                break;
+                    break;
+            }
         }
 
         return problems.AsReadOnly();
@@ -90,24 +78,28 @@ public static class ConfigurationExceptionExtensionsValidation
     /// Determines whether a <see cref="ConfigurationException"/> instance is valid using extension methods validation.
     /// </summary>
     /// <param name="exception">The configuration exception to check.</param>
+    /// <param name="validateTypeSpecificProperties">When true, validates exception type-specific properties like Details.</param>
     /// <returns><see langword="true"/> if the exception is valid; otherwise, <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
-    public static bool IsValid(this ConfigurationException exception)
-    {
-        return exception.Validate().Count == 0;
-    }
+    public static bool IsValid(
+        this ConfigurationException exception,
+        bool validateTypeSpecificProperties = true) =>
+        exception.Validate(validateTypeSpecificProperties).Count == 0;
 
     /// <summary>
     /// Ensures that a <see cref="ConfigurationException"/> instance is valid using extension methods validation.
     /// </summary>
     /// <param name="exception">The configuration exception to validate.</param>
+    /// <param name="validateTypeSpecificProperties">When true, validates exception type-specific properties like Details.</param>
     /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when the exception is not valid, containing a list of validation problems.</exception>
-    public static void EnsureValid(this ConfigurationException exception)
+    public static void EnsureValid(
+        this ConfigurationException exception,
+        bool validateTypeSpecificProperties = true)
     {
         ArgumentNullException.ThrowIfNull(exception);
 
-        var problems = exception.Validate();
+        var problems = exception.Validate(validateTypeSpecificProperties);
 
         if (problems.Count > 0)
         {
