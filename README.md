@@ -462,6 +462,63 @@ var history = await client.GetFromJsonAsync<List<RollbackRecord>>(
     $"/api/v1/configurations/{configId}/rollback/history");
 ```
 
+## RollbackResult
+
+The `RollbackResult` class represents the outcome of an executed rollback operation. It contains comprehensive information about the rollback including the configuration involved, the new version created, the version that was restored from, the reason for the rollback, who performed it, when it occurred, and how many keys were restored.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a rollback result representing a successful rollback operation
+var rollbackResult = new RollbackResult
+{
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    NewVersion = new ConfigurationVersionSummary
+    {
+        Id = Guid.NewGuid(),
+        Version = 3,
+        Status = "Published",
+        KeyCount = 42,
+        CreatedAt = DateTime.UtcNow,
+        Description = "Rollback to stable version"
+    },
+    RestoredFromVersion = new ConfigurationVersionSummary
+    {
+        Id = Guid.Parse("456e4567-e89b-12d3-a456-426614174001"),
+        Version = 2,
+        Status = "Archived",
+        KeyCount = 42,
+        CreatedAt = DateTime.UtcNow.AddHours(-2),
+        Description = "Stable production configuration"
+    },
+    Reason = "Reverting breaking changes introduced in version 3",
+    PerformedBy = "admin@example.com",
+    PerformedAt = DateTime.UtcNow,
+    KeysRestored = 42
+};
+
+Console.WriteLine($"Rollback successful!");
+Console.WriteLine($"Configuration: {rollbackResult.ConfigurationId}");
+Console.WriteLine($"New version: {rollbackResult.NewVersion.Version} ({rollbackResult.NewVersion.Status})");
+Console.WriteLine($"Restored from: v{rollbackResult.RestoredFromVersion.Version}");
+Console.WriteLine($"Keys restored: {rollbackResult.KeysRestored}");
+Console.WriteLine($"Performed by: {rollbackResult.PerformedBy} at {rollbackResult.PerformedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Reason: {rollbackResult.Reason}");
+```
+
+### Public Members
+
+- `ConfigurationId` - The identifier of the configuration that was rolled back
+- `NewVersion` - The newly created version produced by the rollback operation
+- `RestoredFromVersion` - The version that was restored during the rollback
+- `Reason` - The reason provided for performing the rollback
+- `PerformedBy` - The user who executed the rollback
+- `PerformedAt` - When the rollback was executed
+- `KeysRestored` - The number of keys restored into the new version
+
 ### Example 7: Validation Rules
 
 ```csharp
