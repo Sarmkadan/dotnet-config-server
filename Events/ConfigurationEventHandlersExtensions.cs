@@ -3,7 +3,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =====================================================================
+// ====================================================================
 
 using System.Globalization;
 using DotnetConfigServer.Caching;
@@ -18,6 +18,8 @@ namespace DotnetConfigServer.Events;
 /// </summary>
 public static class ConfigurationEventHandlersExtensions
 {
+    private const string NullMetadataMessage = "Metadata cannot be null.";
+
     /// <summary>
     /// Handles configuration created event with additional metadata.
     /// </summary>
@@ -72,7 +74,7 @@ public static class ConfigurationEventHandlersExtensions
     public static async Task HandleConfigurationUpdatedAsync(
         this ConfigurationEventHandlers handlers,
         ConfigurationUpdatedEvent @event,
-        IEnumerable<string>? changedKeys = null,
+        IEnumerable<string>? changedKeys,
         IReadOnlyDictionary<string, string>? metadata = null)
     {
         ArgumentNullException.ThrowIfNull(handlers);
@@ -164,7 +166,7 @@ public static class ConfigurationEventHandlersExtensions
     public static async Task HandleConfigurationDeletedAsync(
         this ConfigurationEventHandlers handlers,
         ConfigurationDeletedEvent @event,
-        IEnumerable<string>? deletedKeys = null,
+        IEnumerable<string>? deletedKeys,
         IReadOnlyDictionary<string, string>? metadata = null)
     {
         ArgumentNullException.ThrowIfNull(handlers);
