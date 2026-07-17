@@ -529,6 +529,121 @@ var history = await client.GetFromJsonAsync<List<RollbackRecord>>(
     $"/api/v1/configurations/{configId}/rollback/history");
 ```
 
+## ConfigurationVersion
+
+The `ConfigurationVersion` class represents a version of a configuration with associated keys. It manages the complete lifecycle of configuration versions including creation, publishing, archiving, and deprecation. Configuration versions track metadata such as version numbers, release notes, timestamps, user actions, and key statistics to support versioning, rollback, and audit operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a new configuration version for a production service
+var productionVersion = new ConfigurationVersion
+{
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    VersionNumber = "2.0.0",
+    Status = ConfigurationVersionStatus.Draft,
+    ReleaseNotes = "Q3 2026 release with new features and performance improvements",
+    KeyCount = 42,
+    HasEncryptedKeys = true,
+    PreviousVersionId = Guid.Parse("456e4567-e89b-12d3-a456-426614174001").ToString(),
+    ChangesSummary = "Added payment gateway integration, updated timeout settings, removed deprecated features",
+    CreatedBy = "backend-team@example.com",
+    Keys = new List<ConfigurationKey>
+    {
+        new ConfigurationKey { Key = "Database:ConnectionString", Value = "Server=prod-db.example.com;...", IsEncrypted = true },
+        new ConfigurationKey { Key = "Api:TimeoutSeconds", Value = "30" },
+        new ConfigurationKey { Key = "Feature:EnableNewCheckout", Value = "true" }
+    }
+};
+
+// Validate the configuration version
+try
+{
+    productionVersion.Validate();
+    Console.WriteLine("Configuration version is valid!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+}
+
+// Publish the version to make it active
+productionVersion.Publish("backend-team@example.com");
+Console.WriteLine($"Version published at: {productionVersion.PublishedAt}");
+Console.WriteLine($"Status: {productionVersion.Status}");
+
+// Archive an old version
+var oldVersion = new ConfigurationVersion
+{
+    Id = Guid.Parse("789e4567-e89b-12d3-a456-426614174002"),
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    VersionNumber = "1.5.0",
+    Status = ConfigurationVersionStatus.Active,
+    KeyCount = 38,
+    CreatedBy = "backend-team@example.com"
+};
+
+oldVersion.Archive("admin@example.com");
+Console.WriteLine($"Version archived at: {oldVersion.ArchivedAt}");
+
+// Deprecate a version
+var deprecatedVersion = new ConfigurationVersion
+{
+    Id = Guid.Parse("abc-e4567-e89b-12d3-a456-426614174003"),
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    VersionNumber = "1.0.0",
+    Status = ConfigurationVersionStatus.Active,
+    KeyCount = 25,
+    CreatedBy = "backend-team@example.com"
+};
+
+deprecatedVersion.Deprecate();
+Console.WriteLine($"Version deprecated: {deprecatedVersion.Status}");
+
+// Increment version numbers
+var nextMajorVersion = ConfigurationVersion.IncrementVersion("2.5.3", VersionIncrementType.Major);
+Console.WriteLine($"Next major version: {nextMajorVersion}"); // "3.0.0"
+
+var nextMinorVersion = ConfigurationVersion.IncrementVersion("2.5.3", VersionIncrementType.Minor);
+Console.WriteLine($"Next minor version: {nextMinorVersion}"); // "2.6.0"
+
+var nextPatchVersion = ConfigurationVersion.IncrementVersion("2.5.3", VersionIncrementType.Patch);
+Console.WriteLine($"Next patch version: {nextPatchVersion}"); // "2.5.4"
+
+// Get a summary view
+var summary = productionVersion.GetSummary();
+Console.WriteLine($"Version summary - v{summary.VersionNumber} ({summary.Status}): {summary.KeyCount} keys");
+```
+
+### Public Members
+
+- `Id` - Unique identifier for the configuration version
+- `ConfigurationId` - The configuration this version belongs to
+- `VersionNumber` - Version identifier in format major.minor.patch
+- `Status` - Current status (Draft, Active, Archived, Deprecated)
+- `ReleaseNotes` - Optional release notes describing changes in this version
+- `CreatedAt` - When the version was created
+- `PublishedAt` - When the version was published (null if not published)
+- `ArchivedAt` - When the version was archived (null if not archived)
+- `CreatedBy` - Who created the version
+- `PublishedBy` - Who published the version (null if not published)
+- `ArchivedBy` - Who archived the version (null if not archived)
+- `KeyCount` - Number of configuration keys in this version
+- `HasEncryptedKeys` - Whether this version contains encrypted keys
+- `PreviousVersionId` - ID of the previous version (null if first version)
+- `ChangesSummary` - Summary of changes from previous version
+- `Keys` - List of configuration keys in this version
+- `Publish(publishedBy)` - Publishes the version, making it active
+- `Archive(archivedBy)` - Archives the version
+- `Deprecate()` - Marks version as deprecated
+- `IncrementVersion(currentVersion, incrementType)` - Static method to increment version numbers
+- `Validate()` - Validates the configuration version
+- `GetSummary()` - Returns a summary view of the version
+
+
 ## RollbackResult
 
 The `RollbackResult` class represents the outcome of an executed rollback operation. It contains comprehensive information about the rollback including the configuration involved, the new version created, the version that was restored from, the reason for the rollback, who performed it, when it occurred, and how many keys were restored.
