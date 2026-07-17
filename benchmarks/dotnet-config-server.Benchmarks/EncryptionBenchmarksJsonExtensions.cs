@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace DotnetConfigServer.Benchmarks;
 
@@ -21,17 +20,15 @@ public static class EncryptionBenchmarksJsonExtensions
     /// <param name="value">The <see cref="EncryptionBenchmarks"/> instance to serialize.</param>
     /// <param name="indented">If <c>true</c>, the output JSON will be formatted with indentation; otherwise it will be compact.</param>
     /// <returns>A JSON string representing the provided <see cref="EncryptionBenchmarks"/> instance.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <c>null</c>.</exception>
     public static string ToJson(this EncryptionBenchmarks value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-        if (indented)
+        return indented switch
         {
-            return JsonSerializer.Serialize(value, _jsonSerializerOptions);
-        }
-        else
-        {
-            return JsonSerializer.Serialize(value);
-        }
+            true => JsonSerializer.Serialize(value, _jsonSerializerOptions),
+            false => JsonSerializer.Serialize(value)
+        };
     }
 
     /// <summary>
@@ -41,6 +38,7 @@ public static class EncryptionBenchmarksJsonExtensions
     /// <returns>
     /// An <see cref="EncryptionBenchmarks"/> instance if deserialization succeeds; otherwise <c>null</c>.
     /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <c>null</c>.</exception>
     public static EncryptionBenchmarks? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -64,6 +62,7 @@ public static class EncryptionBenchmarksJsonExtensions
     /// <returns>
     /// <c>true</c> if the JSON string was successfully deserialized; otherwise <c>false</c>.
     /// </returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <c>null</c>.</exception>
     public static bool TryFromJson(string json, out EncryptionBenchmarks? value)
     {
         ArgumentNullException.ThrowIfNull(json);
