@@ -2013,6 +2013,72 @@ Console.WriteLine($"Applied at: {changeRequest.AppliedAt}");
 // changeRequest.Cancel();
 ```
 
+## WebhookSubscription
+
+The `WebhookSubscription` class represents a webhook subscription for configuration change notifications. It manages webhook endpoints that receive real-time notifications when configuration changes occur, supporting event filtering, retry policies, HMAC signature verification, and comprehensive delivery tracking. Webhook subscriptions enable services to react to configuration updates without polling, ensuring immediate response to changes.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+using System.Collections.Generic;
+
+// Create a new webhook subscription for configuration change notifications
+var webhookSubscription = new WebhookSubscription
+{
+    Name = "OrderService Configuration Webhook",
+    Url = "https://order-service.example.com/api/config/webhook",
+    Description = "Receive notifications for configuration changes in the OrderService",
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    Status = WebhookStatus.Active,
+    IsActive = true,
+    MaxRetries = 5,
+    VerifySignature = true,
+    Secret = "your-webhook-secret-key-here",
+    CreatedBy = "backend-team@example.com",
+    CustomHeaders = new Dictionary<string, string>
+    {
+        { "X-Custom-Header", "CustomValue" },
+        { "User-Agent", "OrderService-Config-Client/1.0" }
+    },
+    TriggerEvents = new List<string> { "ConfigurationUpdated", "VersionPublished" }
+};
+
+// Validate the webhook subscription
+try
+{
+    webhookSubscription.Validate();
+    Console.WriteLine("Webhook subscription is valid!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($" {error.Key}: {string.Join(", ", error.Value)}");
+    }
+}
+
+// Generate HMAC signature for webhook payload verification
+var payload = "{\"configurationId\":\"123e4567-e89b-12d3-a456-426614174000\",\"event\":\"ConfigurationUpdated\"}";
+var signature = webhookSubscription.GenerateSignature(payload);
+Console.WriteLine($"Generated signature: {signature}");
+
+// Simulate successful delivery
+webhookSubscription.ResetRetryCount(200);
+Console.WriteLine($"Last delivery at: {webhookSubscription.LastDeliveryAt}");
+Console.WriteLine($"Retry count: {webhookSubscription.RetryCount}");
+Console.WriteLine($"Status: {webhookSubscription.Status}");
+
+// Deactivate webhook when no longer needed
+// webhookSubscription.Deactivate();
+
+// Get summary view (without sensitive data)
+var summary = webhookSubscription.GetSummary();
+Console.WriteLine($"Webhook summary - {summary.Name} ({summary.Id}): {summary.Status}");
+```
+
 ## ConfigurationSnapshot
 
 The `ConfigurationSnapshot` class represents a point-in-time capture of a configuration's state, including the serialized configuration data and associated keys. Snapshots are automatically created whenever a configuration is modified, providing a complete audit trail for rollback operations and compliance reporting.
