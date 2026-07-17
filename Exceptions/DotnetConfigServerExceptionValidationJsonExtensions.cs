@@ -24,6 +24,14 @@ public static class DotnetConfigServerExceptionValidationJsonExtensions
         PropertyNameCaseInsensitive = true,
     };
 
+    private static readonly JsonSerializerOptions _jsonSerializerOptionsIndented = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNameCaseInsensitive = true,
+    };
+
     /// <summary>
     /// Serializes a <see cref="DotnetConfigServerException"/> to a JSON string.
     /// </summary>
@@ -35,20 +43,16 @@ public static class DotnetConfigServerExceptionValidationJsonExtensions
     {
         ArgumentNullException.ThrowIfNull(value);
 
-        var options = indented
-            ? new JsonSerializerOptions(_jsonSerializerOptions) { WriteIndented = true }
-            : _jsonSerializerOptions;
-
-        return JsonSerializer.Serialize(value, options);
+        return JsonSerializer.Serialize(value, indented ? _jsonSerializerOptionsIndented : _jsonSerializerOptions);
     }
 
     /// <summary>
     /// Deserializes a JSON string to a <see cref="DotnetConfigServerException"/> instance.
     /// </summary>
-    /// <param name="json">The JSON string to deserialize</param>
-    /// <returns>The deserialized exception, or null if JSON is empty or whitespace</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null</exception>
-    public static DotnetConfigServerException? FromJson(string json)
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <returns>The deserialized exception, or null if JSON is null, empty, or whitespace.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
+    public static DotnetConfigServerException? FromJson(string? json)
     {
         ArgumentNullException.ThrowIfNull(json);
 
@@ -63,11 +67,14 @@ public static class DotnetConfigServerExceptionValidationJsonExtensions
     /// <summary>
     /// Attempts to deserialize a JSON string to a <see cref="DotnetConfigServerException"/> instance.
     /// </summary>
-    /// <param name="json">The JSON string to deserialize</param>
-    /// <param name="value">Receives the deserialized exception if successful</param>
-    /// <returns>True if deserialization succeeded; otherwise false</returns>
-    public static bool TryFromJson(string json, out DotnetConfigServerException? value)
+    /// <param name="json">The JSON string to deserialize.</param>
+    /// <param name="value">Receives the deserialized exception if successful.</param>
+    /// <returns>True if deserialization succeeded; otherwise false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
+    public static bool TryFromJson(string? json, out DotnetConfigServerException? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         value = null;
 
         if (string.IsNullOrWhiteSpace(json))
