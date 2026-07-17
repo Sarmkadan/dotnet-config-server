@@ -18,8 +18,8 @@ using Xunit;
 namespace DotnetConfigServer.Tests;
 
 /// <summary>
-/// Unit tests for <see cref="EncryptionService"/> encryption/decryption functionality.
-/// Tests cover symmetric encryption, key validation, key rotation, and error scenarios.
+/// Contains unit tests for <see cref="EncryptionService"/> covering encryption,
+/// decryption, key validation, key generation, and key rotation scenarios.
 /// </summary>
 public sealed class EncryptionServiceTests
 {
@@ -38,6 +38,9 @@ public sealed class EncryptionServiceTests
     /// </summary>
     private readonly EncryptionService _sut;
 
+    /// <summary>
+    /// Initializes the mocks and the <see cref="EncryptionService"/> instance used in the tests.
+    /// </summary>
     public EncryptionServiceTests()
     {
         _keyRepositoryMock = new Mock<IEncryptionKeyRepository>();
@@ -64,7 +67,7 @@ public sealed class EncryptionServiceTests
 
     /// <summary>
     /// Tests that encryption followed by decryption returns the original plain text.
-    /// Verifies the basic symmetric encryption/decryption round-trip functionality.
+    /// Verifies the basic symmetric encryption/decryption round‑trip functionality.
     /// </summary>
     [Fact]
     public void Encrypt_ThenDecrypt_ReturnsOriginalPlainText()
@@ -109,6 +112,10 @@ public sealed class EncryptionServiceTests
         act.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Tests that validating an inactive key throws <see cref="EncryptionException"/>
+    /// and that the exception message contains the key identifier.
+    /// </summary>
     [Fact]
     public void ValidateKey_InactiveKey_ThrowsEncryptionExceptionMentioningKeyId()
     {
@@ -121,6 +128,9 @@ public sealed class EncryptionServiceTests
            .WithMessage($"*{key.KeyId}*");
     }
 
+    /// <summary>
+    /// Tests that validating an expired key throws <see cref="EncryptionException"/>.
+    /// </summary>
     [Fact]
     public void ValidateKey_ExpiredKey_ThrowsEncryptionException()
     {
@@ -132,6 +142,9 @@ public sealed class EncryptionServiceTests
         act.Should().Throw<EncryptionException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="EncryptionService.GenerateNewKey"/> returns a key with all required cryptographic material populated.
+    /// </summary>
     [Fact]
     public void GenerateNewKey_ReturnsKeyWithPopulatedCryptographicMaterial()
     {
@@ -146,6 +159,11 @@ public sealed class EncryptionServiceTests
         key.CreatedBy.Should().Be("system");
     }
 
+    /// <summary>
+    /// Tests that attempting to encrypt asynchronously when no primary key exists for the given configuration
+    /// throws a <see cref="ConfigurationException"/> indicating the missing primary key.
+    /// </summary>
+    /// <returns>A task representing the asynchronous assertion.</returns>
     [Fact]
     public async Task EncryptAsync_WhenNoPrimaryKeyExistsForConfiguration_ThrowsConfigurationException()
     {
@@ -160,6 +178,11 @@ public sealed class EncryptionServiceTests
                  .WithMessage("*primary encryption key*");
     }
 
+    /// <summary>
+    /// Tests that rotating a key that cannot be found results in a <see cref="ConfigurationNotFoundException"/>
+    /// with a message containing the missing key identifier.
+    /// </summary>
+    /// <returns>A task representing the asynchronous assertion.</returns>
     [Fact]
     public async Task RotateKeyAsync_WhenKeyNotFound_ThrowsConfigurationNotFoundException()
     {
@@ -174,6 +197,11 @@ public sealed class EncryptionServiceTests
                  .WithMessage($"*{keyId}*");
     }
 
+    /// <summary>
+    /// Tests that rotating an existing primary key marks it as non‑primary, records rotation metadata,
+    /// and persists the changes via the repository.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     [Fact]
     public async Task RotateKeyAsync_WhenKeyExists_MarksItRotatedAndPersistsChange()
     {
