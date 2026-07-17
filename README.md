@@ -2496,61 +2496,69 @@ Currently no authentication is enforced. For production use, integrate with:
 
 Recommended: Use API Gateway (Azure API Management, AWS API Gateway) for authentication.
 
-## IApiResponseTransformer
+## IConfigurationSnapshotService
 
-The `IApiResponseTransformer` interface provides methods for transforming and processing JSON API responses. It handles deserialization into typed objects, field mapping, field extraction, and flattening of nested JSON structures.
+The `IConfigurationSnapshotService` interface provides methods for creating, retrieving, and restoring configuration snapshots. Snapshots capture the complete state of a configuration (including all configuration keys and their values) at a specific point in time, enabling configuration versioning, rollback capabilities, and audit trails for configuration changes.
 
 ### Usage Example
 
 ```csharp
-using DotnetConfigServer.Integration;
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
 
-// Create transformer instance (typically via dependency injection)
-var transformer = new ApiResponseTransformer(logger);
+// Setup dependency injection (typically in Program.cs or Startup.cs)
+var services = new ServiceCollection();
+services.AddConfigurationSnapshotServices(); // Registers IConfigurationSnapshotService
 
-// Example 1: Basic transformation
-string jsonResponse = "{\"name\":\"OrderService\",\"status\":\"active\",\"version\":1}";
-var serviceConfig = transformer.Transform<ServiceConfiguration>(jsonResponse);
-Console.WriteLine(serviceConfig.Name); // "OrderService"
+var serviceProvider = services.BuildServiceProvider();
+var snapshotService = serviceProvider.GetRequiredService<IConfigurationSnapshotService>();
 
-// Example 2: Transform with field mapping
-string apiResponse = "{\"serviceName\":\"PaymentGateway\",\"serviceStatus\":\"running\"}";
-var mappedConfig = transformer.TransformWithMapping<ServiceStatus>(
-    apiResponse,
-    new Dictionary<string, string> { ["Name"] = "serviceName", ["Status"] = "serviceStatus" }
+// Example 1: Create a snapshot of a configuration
+var snapshot = await snapshotService.CreateSnapshotAsync(
+    configurationId: Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6"),
+    userId: "admin@example.com",
+    reason: "Configuration backup before deployment"
 );
-Console.WriteLine(mappedConfig.Name); // "PaymentGateway"
-Console.WriteLine(mappedConfig.Status); // "running"
+Console.WriteLine($"Created snapshot {snapshot.Id} for configuration {snapshot.ConfigurationId}");
 
-// Example 3: Extract specific fields
-string complexResponse = "{\"database\":{\"host\":\"db.example.com\",\"port\":5432},\"cache\":{\"enabled\":true}}";
-var extracted = transformer.ExtractFields(
-    complexResponse,
-    "database.host",
-    "cache.enabled"
+// Example 2: Get a specific snapshot by ID
+var retrievedSnapshot = await snapshotService.GetSnapshotAsync(
+    Guid.Parse("c5a9f2e8-1b3d-4f7e-9c2a-1b4d5e6f7a8b")
 );
-Console.WriteLine(extracted["database.host"]); // "db.example.com"
-Console.WriteLine(extracted["cache.enabled"]); // true
-
-// Example 4: Flatten nested JSON
-string nestedJson = "{\"service\":{\"name\":\"ConfigServer\",\"endpoints\":{\"health\":\"/health\",\"config\":\"/api/config\"}}}";
-var flattened = transformer.Flatten(nestedJson);
-foreach (var kvp in flattened)
+if (retrievedSnapshot != null)
 {
-    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+    Console.WriteLine($"Snapshot created at: {retrievedSnapshot.CreatedAt}");
+    Console.WriteLine($"Created by: {retrievedSnapshot.CreatedBy}");
 }
-// Output:
-// service.name: ConfigServer
-// service.endpoints.health: /health
-// service.endpoints.config: /api/config
+
+// Example 3: Get all snapshots for a configuration
+var configurationSnapshots = await snapshotService.GetConfigurationSnapshotsAsync(
+    Guid.Parse("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+);
+Console.WriteLine($"Found {configurationSnapshots.Count} snapshots for this configuration");
+
+// Example 4: Restore a configuration to a previous snapshot state
+await snapshotService.RestoreFromSnapshotAsync(
+    snapshotId: Guid.Parse("c5a9f2e8-1b3d-4f7e-9c2a-1b4d5e6f7a8b"),
+    userId: "admin@example.com",
+    reason: "Rollback to stable configuration after deployment failure"
+);
+Console.WriteLine("Configuration restored from snapshot successfully");
 ```
 
 ### Public Members
 
-- `T Transform<T>(string json)` - Deserializes JSON into a strongly-typed object
-- `T TransformWithMapping<T>(string json, Dictionary<string, string> fieldMapping)` - Transforms JSON with custom field name mapping
-- `Dictionary<string, object?> ExtractFields(string json, params string[] fields)` - Extracts specific fields from JSON
-- `Dictionary<string, object?> Flatten(string json, string separator = ".")` - Flattens nested JSON structure into a flat dictionary
+- `Task<ConfigurationSnapshot> CreateSnapshotAsync(Guid configurationId, string userId, string? reason = null)` - Creates a snapshot of the current configuration state
+- `Task<ConfigurationSnapshot?> GetSnapshotAsync(Guid snapshotId)` - Gets a snapshot by ID
+- `Task<List<ConfigurationSnapshot>> GetConfigurationSnapshotsAsync(Guid configurationId)` - Gets all snapshots for a configuration
+- `Task RestoreFromSnapshotAsync(Guid snapshotId, string userId, string reason)` - Restores a configuration to a specific snapshot
+
+### Base URL
+
+```
+https://localhost:5001/api/v1
+```
 
 ### Base URL
 ```
