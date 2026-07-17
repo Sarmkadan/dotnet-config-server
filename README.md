@@ -1317,6 +1317,42 @@ Benchmarks measured on a single instance (4 vCPUs, 8 GB RAM, SQL Server on the s
 
 To baseline your own deployment run `GET /metrics` for live request-duration histograms collected by `PerformanceMonitoringMiddleware`.
 
+## ServiceExtensionsConfiguration
+
+The `ServiceExtensionsConfiguration` class is a data transfer object used for serializing and deserializing service extension configurations. It provides a structured way to define which services should be registered in the dependency injection container, including data services, business services, webhook clients, Swagger configurations, and database initialization methods.
+
+This configuration is typically used when bootstrapping the application to register services dynamically based on configuration rather than hard-coding them in the startup sequence.
+
+### Usage Example
+
+```csharp
+// Define service extensions configuration
+var serviceExtensionsConfig = new ServiceExtensionsConfiguration
+{
+    DataServices = new[] { "DotnetConfigServer.Data.SqlServerConfigurationRepository" },
+    BusinessServices = new[] { 
+        "DotnetConfigServer.Services.ConfigurationService",
+        "DotnetConfigServer.Services.VersioningService",
+        "DotnetConfigServer.Services.DiffService"
+    },
+    WebhookClient = new[] { "DotnetConfigServer.Services.WebhookService" },
+    SwaggerConfiguration = new[] { "DotnetConfigServer.Infrastructure.SwaggerExtensions" },
+    DatabaseInitialization = new[] { "DotnetConfigServer.Infrastructure.DatabaseInitializer" }
+};
+
+// Serialize to JSON for storage or transmission
+var json = serviceExtensionsConfig.ToJson(indented: true);
+
+// Later, deserialize from JSON
+var loadedConfig = ServiceExtensionsJsonExtensions.FromJson(json);
+
+// Or use the safe TryFromJson method
+if (ServiceExtensionsJsonExtensions.TryFromJson(json, out var safeConfig))
+{
+    Console.WriteLine($"Successfully loaded configuration with {safeConfig?.DataServices?.Length ?? 0} data services");
+}
+```
+
 ## Related Projects
 
 - [redis-cache-patterns](https://github.com/sarmkadan/redis-cache-patterns) - Production-ready Redis caching patterns for .NET — cache-aside, write-through, distributed lock
