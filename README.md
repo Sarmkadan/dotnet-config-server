@@ -1374,6 +1374,163 @@ public async Task<IActionResult> GetConfiguration(int id)
 
     return Ok(config);
 }
+## BatchOperationsController
+
+The `BatchOperationsController` enables efficient bulk operations on configuration keys through asynchronous batch processing. It allows clients to update or delete multiple configuration keys in a single request, returning an operation ID that can be used to check status or cancel the operation. This is particularly useful for configuration migrations, bulk updates during deployments, or cleanup operations where multiple keys need to be modified simultaneously.
+
+**Key Features:**
+- Batch update multiple configuration keys with a single API call
+- Batch delete multiple configuration keys with a single API call  
+- Asynchronous operation processing with status tracking
+- Operation cancellation support for long-running batch jobs
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+- Rate limiting to prevent abuse (1000 keys maximum per request)
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using BatchOperationsController in a service
+public class BatchConfigurationService
+{
+    private readonly BatchOperationsController _controller;
+    private readonly ILogger<BatchConfigurationService> _logger;
+
+    public BatchConfigurationService(
+        BatchOperationsController controller,
+        ILogger<BatchConfigurationService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<BatchOperationResult> BatchUpdateConfigurationKeysAsync(
+        Guid configurationId,
+        List<ConfigurationKeyUpdate> keyUpdates)
+    {
+        // Create batch update request
+        var updates = keyUpdates.Select(update => new KeyUpdateRequest
+        {
+            ConfigurationId = configurationId,
+            KeyName = update.KeyName,
+            NewValue = update.NewValue,
+            Description = update.Description ?? $"Bulk update at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}"
+        }).ToList();
+
+        // Initiate batch operation
+        var result = await _controller.UpdateKeys(updates);
+
+        if (result is AcceptedAtActionResult acceptedResult && acceptedResult.Value is BatchOperationResult operationResult)
+        {
+            _logger.LogInformation("Batch update operation {OperationId} initiated with {Count} updates",
+                operationResult.OperationId, updates.Count);
+            return operationResult;
+        }
+
+        throw new Exception("Failed to initiate batch update operation");
+    }
+
+    public async Task<BatchOperationStatus> CheckBatchOperationStatusAsync(Guid operationId)
+    {
+        var result = await _controller.GetOperationStatus(operationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is BatchOperationStatus status)
+        {
+            _logger.LogDebug("Operation {OperationId} status: {Status}", operationId, status.Status);
+            return status;
+        }
+
+        throw new Exception("Failed to retrieve batch operation status");
+    }
+
+    public async Task CancelBatchOperationAsync(Guid operationId)
+    {
+        var result = await _controller.CancelOperation(operationId);
+
+        if (result is NoContentResult)
+        {
+            _logger.LogInformation("Successfully cancelled batch operation {OperationId}", operationId);
+        }
+        else
+        {
+            throw new Exception("Failed to cancel batch operation");
+        }
+    }
+
+    public async Task<BatchOperationResult> BatchDeleteConfigurationKeysAsync(
+        Guid configurationId,
+        List<Guid> keyIdsToDelete)
+    {
+        var result = await _controller.DeleteKeys(keyIdsToDelete);
+
+        if (result is AcceptedAtActionResult acceptedResult && acceptedResult.Value is BatchOperationResult operationResult)
+        {
+            _logger.LogInformation("Batch delete operation {OperationId} initiated for {Count} keys",
+                operationResult.OperationId, keyIdsToDelete.Count);
+            return operationResult;
+        }
+
+        throw new Exception("Failed to initiate batch delete operation");
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class BatchOperationsClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/batch";
+
+    public BatchOperationsClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<BatchOperationResult> UpdateKeysAsync(
+        List<KeyUpdateRequest> updates)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/keys/update", updates);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<BatchOperationResult>();
+    }
+
+    public async Task<BatchOperationResult> DeleteKeysAsync(List<Guid> keyIds)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/keys/delete", keyIds);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<BatchOperationResult>();
+    }
+
+    public async Task<BatchOperationStatus> GetOperationStatusAsync(Guid operationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/operations/{operationId}/status");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<BatchOperationStatus>();
+    }
+
+    public async Task CancelOperationAsync(Guid operationId)
+    {
+        var response = await _httpClient.PostAsync($"{_baseUrl}/operations/{operationId}/cancel", null);
+        response.EnsureSuccessStatusCode();
+    }
+}
+
+// Supporting model classes
+public class ConfigurationKeyUpdate
+{
+    public string KeyName { get; set; }
+    public string NewValue { get; set; }
+    public string Description { get; set; }
+}
+```
+
 ## ApplicationsController
 
 The `ApplicationsController` provides RESTful API endpoints for managing applications in the Dotnet Config Server. Applications serve as the top-level containers for configurations, allowing microservices to organize their configuration data hierarchically. The controller handles CRUD operations for applications and provides endpoints to retrieve all configurations associated with a specific application.
