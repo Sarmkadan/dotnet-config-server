@@ -1410,6 +1410,97 @@ var groups = consecutiveNumbers.GroupConsecutive(x => x).ToList();
 // groups = [[1, 1], [2, 2, 2], [1]]
 ```
 
+## EncryptionServiceTests
+
+The `EncryptionServiceTests` class provides comprehensive unit tests for the `EncryptionService` functionality. It validates encryption and decryption operations, key validation, key generation, and key rotation scenarios. The tests cover both synchronous and asynchronous encryption operations, ensuring proper error handling and edge cases are covered.
+
+### What It Tests
+
+- **Encryption Roundtrip**: Verifies that plain text values can be encrypted and decrypted back to their original form
+- **Random IV Generation**: Ensures that identical plaintext values produce different ciphertexts due to random initialization vectors
+- **Key Validation**: Tests validation of encryption keys including inactive and expired key scenarios
+- **Key Generation**: Validates that newly generated keys have all required cryptographic material populated
+- **Asynchronous Encryption**: Tests async encryption operations with proper error handling for missing primary keys
+- **Key Rotation**: Validates key rotation functionality including marking keys as non-primary and persisting changes
+
+### Public Members
+
+- `Encrypt_ThenDecrypt_ReturnsOriginalPlainText` - Tests basic encryption/decryption roundtrip
+- `Encrypt_SamePlainText_ProducesDistinctCipherTextDueToRandomIv` - Tests random IV generation
+- `Encrypt_OutputIsValidBase64` - Tests that encryption output is valid Base64
+- `ValidateKey_InactiveKey_ThrowsEncryptionExceptionMentioningKeyId` - Tests validation of inactive keys
+- `ValidateKey_ExpiredKey_ThrowsEncryptionException` - Tests validation of expired keys
+- `GenerateNewKey_ReturnsKeyWithPopulatedCryptographicMaterial` - Tests key generation
+- `EncryptAsync_WhenNoPrimaryKeyExistsForConfiguration_ThrowsConfigurationException` - Tests async encryption with missing primary key
+- `RotateKeyAsync_WhenKeyNotFound_ThrowsConfigurationNotFoundException` - Tests key rotation with missing key
+- `RotateKeyAsync_WhenKeyExists_MarksItRotatedAndPersistsChange` - Tests successful key rotation
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var keyRepositoryMock = new Mock<IEncryptionKeyRepository>();
+var loggerMock = new Mock<ILogger<EncryptionService>>();
+
+// Create the encryption service
+var encryptionService = new EncryptionService(keyRepositoryMock.Object, loggerMock.Object);
+
+// Test 1: Basic encryption roundtrip
+var key = encryptionService.GenerateNewKey("test-key");
+const string sensitiveValue = "Server=prod;Database=orders;";
+var cipherText = encryptionService.Encrypt(sensitiveValue, key);
+var decrypted = encryptionService.Decrypt(cipherText, key);
+Console.WriteLine($"Roundtrip successful: {decrypted == sensitiveValue}"); // true
+
+// Test 2: Random IV generation - same plaintext produces different ciphertexts
+var cipher1 = encryptionService.Encrypt("static-value", key);
+var cipher2 = encryptionService.Encrypt("static-value", key);
+Console.WriteLine($"Different ciphertexts: {cipher1 != cipher2}"); // true
+
+// Test 3: Validate key scenarios
+try
+{
+var inactiveKey = new EncryptionKey { IsActive = false };
+encryptionService.ValidateKey(inactiveKey);
+}
+catch (EncryptionException ex)
+{
+Console.WriteLine($"Inactive key validation failed: {ex.Message.Contains(key.KeyId)}"); // true
+}
+
+// Test 4: Generate new key with populated cryptographic material
+var newKey = encryptionService.GenerateNewKey("service-key");
+Console.WriteLine($"Key has material: {newKey.Salt != null && newKey.EncryptedKey != null}"); // true
+
+// Test 5: Async encryption with missing primary key
+var configId = Guid.NewGuid();
+keyRepositoryMock.Setup(r => r.GetPrimaryKeyByConfigurationAsync(configId))
+.ReturnsAsync((EncryptionKey?)null);
+try
+{
+await encryptionService.EncryptAsync("secret", configId);
+}
+catch (ConfigurationException ex)
+{
+Console.WriteLine($"Async encryption failed as expected: {ex.Message.Contains("primary")}"); // true
+}
+
+// Test 6: Key rotation
+keyRepositoryMock.Setup(r => r.GetByKeyIdAsync("key-123"))
+.ReturnsAsync(newKey);
+keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<EncryptionKey>()))
+.Returns(Task.CompletedTask);
+
+var rotatedKey = await encryptionService.RotateKeyAsync("key-123", "admin");
+Console.WriteLine($"Key rotated: {rotatedKey.IsPrimary == false}"); // true
+Console.WriteLine($"Rotation metadata set: {rotatedKey.RotatedBy == "admin"}"); // true
+```
+
 ## Testing
 
 Run the full test suite:
