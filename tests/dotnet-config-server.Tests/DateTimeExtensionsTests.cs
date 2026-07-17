@@ -10,10 +10,17 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Provides unit tests for the <see cref="DotnetConfigServer.Utilities.DateTimeExtensions"/> class.
+/// Tests the relative time formatting, ISO 8601 conversion, and various date manipulation methods.
+/// </summary>
 public sealed class DateTimeExtensionsTests
 {
     // ── ToRelativeTime ───────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a date time within 5 seconds returns "just now".
+    /// </summary>
     [Fact]
     public void ToRelativeTime_JustNow_ReturnsJustNow()
     {
@@ -22,6 +29,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("just now");
     }
 
+    /// <summary>
+    /// Tests that a date time one minute in the past returns the singular "1 minute ago" format.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_OneMinuteAgo_ReturnsSingularForm()
     {
@@ -30,6 +40,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("1 minute ago");
     }
 
+    /// <summary>
+    /// Tests that a date time two minutes in the past returns the plural "2 minutes ago" format.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_TwoMinutesAgo_ReturnsPluralForm()
     {
@@ -38,6 +51,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("2 minutes ago");
     }
 
+    /// <summary>
+    /// Tests that a date time one hour in the past returns the singular "1 hour ago" format.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_OneHourAgo_ReturnsSingularForm()
     {
@@ -46,6 +62,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("1 hour ago");
     }
 
+    /// <summary>
+    /// Tests that a date time three hours in the past returns the plural "3 hours ago" format.
+    /// </summary>
     [Fact]
     public void ToRelativeTime_ThreeHoursAgo_ReturnsPluralForm()
     {
@@ -54,6 +73,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("3 hours ago");
     }
 
+    /// <summary>
+    /// Tests that a date time one day in the past returns "1 day ago".
+    /// </summary>
     [Fact]
     public void ToRelativeTime_OneDayAgo_ReturnsDayAgo()
     {
@@ -62,6 +84,9 @@ public sealed class DateTimeExtensionsTests
         dt.ToRelativeTime().Should().Be("1 day ago");
     }
 
+    /// <summary>
+    /// Tests that a date time one week in the past returns "1 week ago".
+    /// </summary>
     [Fact]
     public void ToRelativeTime_OneWeekAgo_ReturnsWeekAgo()
     {
@@ -72,6 +97,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── ToIso8601 ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a known date converts to ISO 8601 format with round-trip characteristics.
+    /// </summary>
     [Fact]
     public void ToIso8601_KnownDate_ReturnsRoundTripFormat()
     {
@@ -82,6 +110,9 @@ public sealed class DateTimeExtensionsTests
         iso.Should().StartWith("2024-06-15T10:30:00");
     }
 
+    /// <summary>
+    /// Tests that an ISO 8601 formatted date can be parsed back to the original DateTime.
+    /// </summary>
     [Fact]
     public void ToIso8601_ParsedBack_MatchesOriginal()
     {
@@ -95,6 +126,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── StartOfDay / EndOfDay ────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that StartOfDay returns a DateTime at midnight (00:00:00) for any input time.
+    /// </summary>
     [Fact]
     public void StartOfDay_AnyTime_ReturnsDateAtMidnight()
     {
@@ -103,6 +137,9 @@ public sealed class DateTimeExtensionsTests
         dt.StartOfDay().Should().Be(new DateTime(2024, 3, 15, 0, 0, 0));
     }
 
+    /// <summary>
+    /// Tests that EndOfDay returns the last tick of the day (23:59:59.9999999).
+    /// </summary>
     [Fact]
     public void EndOfDay_AnyTime_ReturnsLastTickOfDay()
     {
@@ -115,6 +152,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── StartOfWeek ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that StartOfWeek with Wednesday input returns the preceding Monday.
+    /// </summary>
     [Fact]
     public void StartOfWeek_Wednesday_ReturnsMonday()
     {
@@ -126,6 +166,9 @@ public sealed class DateTimeExtensionsTests
         startOfWeek.Date.Should().Be(new DateTime(2024, 3, 18));
     }
 
+    /// <summary>
+    /// Tests that StartOfWeek with Sunday input returns the start of the previous week.
+    /// </summary>
     [Fact]
     public void StartOfWeek_Sunday_ReturnsStartOfPreviousWeek()
     {
@@ -139,6 +182,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── StartOfMonth / EndOfMonth ────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that StartOfMonth returns the first day of the month.
+    /// </summary>
     [Fact]
     public void StartOfMonth_MidMonth_ReturnsFirstDayOfMonth()
     {
@@ -147,6 +193,9 @@ public sealed class DateTimeExtensionsTests
         dt.StartOfMonth().Should().Be(new DateTime(2024, 7, 1));
     }
 
+    /// <summary>
+    /// Tests that EndOfMonth returns the last day of February in a leap year.
+    /// </summary>
     [Fact]
     public void EndOfMonth_February2024_ReturnsLastDayOfFebruaryLeapYear()
     {
@@ -159,12 +208,18 @@ public sealed class DateTimeExtensionsTests
 
     // ── StartOfYear / EndOfYear ──────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that StartOfYear returns January 1st of the same year.
+    /// </summary>
     [Fact]
     public void StartOfYear_MidYear_ReturnsJanuaryFirst()
     {
         new DateTime(2023, 8, 20).StartOfYear().Should().Be(new DateTime(2023, 1, 1));
     }
 
+    /// <summary>
+    /// Tests that EndOfYear returns December 31st of the same year.
+    /// </summary>
     [Fact]
     public void EndOfYear_MidYear_ReturnsDecemberThirtyFirst()
     {
@@ -175,6 +230,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── IsBetween ────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a date within a range returns true.
+    /// </summary>
     [Fact]
     public void IsBetween_DateWithinRange_ReturnsTrue()
     {
@@ -185,6 +243,9 @@ public sealed class DateTimeExtensionsTests
         mid.IsBetween(start, end).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that dates at the boundary of a range return true.
+    /// </summary>
     [Fact]
     public void IsBetween_DateAtBoundary_ReturnsTrue()
     {
@@ -195,6 +256,9 @@ public sealed class DateTimeExtensionsTests
         end.IsBetween(start, end).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that dates outside a range return false.
+    /// </summary>
     [Fact]
     public void IsBetween_DateOutsideRange_ReturnsFalse()
     {
@@ -207,6 +271,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── GetBusinessDaysBetween ───────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a weekday span excludes weekends and returns the correct business day count.
+    /// </summary>
     [Fact]
     public void GetBusinessDaysBetween_WeekdaySpan_ExcludesWeekends()
     {
@@ -218,6 +285,9 @@ public sealed class DateTimeExtensionsTests
         days.Should().Be(5);
     }
 
+    /// <summary>
+    /// Tests that a single day returns 1 business day.
+    /// </summary>
     [Fact]
     public void GetBusinessDaysBetween_SingleDay_ReturnsOne()
     {
@@ -228,6 +298,9 @@ public sealed class DateTimeExtensionsTests
         days.Should().Be(1);
     }
 
+    /// <summary>
+    /// Tests that a weekend-only span returns 0 business days.
+    /// </summary>
     [Fact]
     public void GetBusinessDaysBetween_WeekendOnly_ReturnsZero()
     {
@@ -239,12 +312,18 @@ public sealed class DateTimeExtensionsTests
 
     // ── IsLeapYear ───────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a leap year returns true.
+    /// </summary>
     [Fact]
     public void IsLeapYear_LeapYear_ReturnsTrue()
     {
         new DateTime(2024, 1, 1).IsLeapYear().Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that a non-leap year returns false.
+    /// </summary>
     [Fact]
     public void IsLeapYear_NonLeapYear_ReturnsFalse()
     {
@@ -253,6 +332,9 @@ public sealed class DateTimeExtensionsTests
 
     // ── GetAge ───────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Tests that a birth date in the past returns the correct age calculation.
+    /// </summary>
     [Fact]
     public void GetAge_BirthDateInPast_ReturnsCorrectAge()
     {
