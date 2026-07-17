@@ -822,6 +822,102 @@ if (result.FailureCount > 0)
 }
 ```
 
+## BatchConfigurationImporter
+
+The `BatchConfigurationImporter` class provides utilities for bulk importing, exporting, cloning, and merging configuration keys across different environments. It simplifies common batch operations like migrating configurations from JSON files, setting up new environments, and synchronizing configurations between development, staging, and production environments.
+
+
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Examples;
+using System;
+using System.Threading.Tasks;
+
+// Initialize the importer with your server URL
+var importer = new BatchConfigurationImporter("https://localhost:5001");
+
+// Example 1: Import configurations from a JSON file
+var importResult = await importer.ImportFromJsonAsync("configurations.json");
+Console.WriteLine($"Import completed: {importResult.SuccessCount} succeeded, {importResult.FailureCount} failed");
+
+// Example 2: Export configuration to JSON file for backup
+await importer.ExportToJsonAsync(
+    "550e8400-e29b-41d4-a716-446655440001",
+    "backup-configuration.json");
+
+// Example 3: Clone configuration from one environment to another
+var cloneResult = await importer.CloneConfigurationAsync(
+    "dev-config-id",
+    "prod-config-id");
+Console.WriteLine($"Clone completed: {cloneResult}");
+
+// Example 4: Merge configurations with overwrite enabled
+var mergeResult = await importer.MergeConfigurationsAsync(
+    "source-config-id",
+    "target-config-id",
+    overwrite: true);
+Console.WriteLine($"Merge completed: {mergeResult}");
+```
+
+### File Format for JSON Import
+
+The JSON file should follow this structure:
+
+```json
+{
+  "configurationId": "550e8400-e29b-41d4-a716-446655440001",
+  "keys": [
+    {
+      "key": "Database:Host",
+      "value": "prod-db.example.com",
+      "isEncrypted": false,
+      "description": "Database server hostname"
+    },
+    {
+      "key": "Database:Password",
+      "value": "SecurePassword123!",
+      "isEncrypted": true,
+      "description": "Database password"
+    },
+    {
+      "key": "Features:EnableNewCheckout",
+      "value": "true",
+      "isEncrypted": false,
+      "description": "Enable new checkout flow"
+    }
+  ]
+}
+```
+
+### Public Members
+
+- `BatchConfigurationImporter(string baseUrl)` - Constructor that initializes the importer with server URL
+- `ImportFromJsonAsync(string jsonFilePath)` - Import configurations from a JSON file
+- `ImportAsync(BatchImportRequest request)` - Import configurations from an object
+- `ExportToJsonAsync(string configurationId, string outputPath)` - Export configuration to JSON file for backup
+- `CloneConfigurationAsync(string sourceConfigId, string targetConfigId)` - Clone configuration from one environment to another
+- `MergeConfigurationsAsync(string sourceConfigId, string targetConfigId, bool overwrite = true)` - Merge configurations with optional overwrite
+
+### Result Classes
+
+- `BatchImportResult` - Contains import statistics:
+  - `SuccessCount` - Number of successfully imported keys
+  - `FailureCount` - Number of failed imports
+  - `Errors` - List of error messages for failed imports
+  - `ToString()` - Returns formatted summary string
+
+- `BatchImportRequest` - Request object for batch import:
+  - `ConfigurationId` - Target configuration ID
+  - `Keys` - List of configuration keys to import
+
+- `ConfigurationKeyImport` - Individual configuration key:
+  - `Key` - Configuration key name
+  - `Value` - Configuration value
+  - `IsEncrypted` - Whether the value should be encrypted
+  - `Description` - Optional description
+
 ### Example 9: Audit Log Retrieval
 
 ```csharp
