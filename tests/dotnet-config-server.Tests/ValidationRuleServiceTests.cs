@@ -15,6 +15,10 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Contains unit tests for <see cref="ValidationRuleService"/> that verify
+/// validation rule processing, rule creation, and overall validation behavior.
+/// </summary>
 public sealed class ValidationRuleServiceTests
 {
     private readonly Mock<IValidationRuleRepository> _validationRuleRepositoryMock;
@@ -23,6 +27,11 @@ public sealed class ValidationRuleServiceTests
     private readonly Mock<ILogger<ValidationRuleService>> _loggerMock;
     private readonly ValidationRuleService _sut;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="ValidationRuleServiceTests"/> and
+    /// sets up the required mock dependencies for the <see cref="ValidationRuleService"/>
+    /// under test.
+    /// </summary>
     public ValidationRuleServiceTests()
     {
         _validationRuleRepositoryMock = new Mock<IValidationRuleRepository>();
@@ -37,6 +46,12 @@ public sealed class ValidationRuleServiceTests
             _loggerMock.Object);
     }
 
+    /// <summary>
+    /// Verifies that when a configuration contains a key that violates a
+    /// regular‑expression validation rule, <see cref="ValidationRuleService.ValidateConfigurationAsync"/>
+    /// returns a result indicating the configuration is invalid and includes the expected violation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task ValidateConfigurationAsync_WithRegexRule_DetectsViolation()
     {
@@ -87,6 +102,12 @@ public sealed class ValidationRuleServiceTests
         result.Violations[0].KeyName.Should().Be("ApiKey");
     }
 
+    /// <summary>
+    /// Ensures that when all configuration keys satisfy the applicable validation rules,
+    /// <see cref="ValidationRuleService.ValidateConfigurationAsync"/> reports the configuration as valid
+    /// and returns an empty collection of violations.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task ValidateConfigurationAsync_AllKeysValid_ReturnsNoViolations()
     {
@@ -126,6 +147,12 @@ public sealed class ValidationRuleServiceTests
         result.Violations.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Confirms that creating a new <see cref="ValidationRule"/> via
+    /// <see cref="ValidationRuleService.CreateRuleAsync"/> populates audit fields,
+    /// persists the rule using the repository, and returns the created rule instance.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
     [Fact]
     public async Task CreateRuleAsync_ValidRule_ReturnsCreatedRule()
     {
