@@ -18,6 +18,10 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Contains unit tests for <see cref="WebhookService"/> functionality.
+/// Tests cover subscription management, delivery retry logic, and signature generation.
+/// </summary>
 public sealed class WebhookServiceTests
 {
     private readonly Mock<IWebhookSubscriptionRepository> _subscriptionRepositoryMock;
@@ -26,6 +30,10 @@ public sealed class WebhookServiceTests
     private readonly Mock<HttpMessageHandler> _httpHandlerMock;
     private readonly WebhookService _sut;
 
+        /// <summary>
+    /// Initializes a new instance of the <see cref="WebhookServiceTests"/> class.
+    /// Sets up mock dependencies for testing <see cref="WebhookService"/> functionality.
+    /// </summary>
     public WebhookServiceTests()
     {
         _subscriptionRepositoryMock = new Mock<IWebhookSubscriptionRepository>();
@@ -42,6 +50,10 @@ public sealed class WebhookServiceTests
             httpClient);
     }
 
+        /// <summary>
+    /// Creates a valid webhook subscription for testing purposes.
+    /// </summary>
+    /// <returns>A configured <see cref="WebhookSubscription"/> instance with default values.</returns>
     private static WebhookSubscription CreateValidSubscription() => new()
     {
         Name = "config-watcher",
@@ -51,6 +63,10 @@ public sealed class WebhookServiceTests
         VerifySignature = false
     };
 
+    /// <summary>
+    /// Tests that creating a subscription with valid data saves it and returns the created subscription.
+    /// Verifies that the subscription is persisted and contains the correct creator information.
+    /// </summary>
     [Fact]
     public async Task CreateSubscriptionAsync_WithValidSubscription_SavesAndReturns()
     {
@@ -68,6 +84,10 @@ public sealed class WebhookServiceTests
         _subscriptionRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that when creating a subscription with signature verification enabled but no secret,
+    /// a secret is automatically generated.
+    /// </summary>
     [Fact]
     public async Task CreateSubscriptionAsync_WithVerifySignatureAndNoSecret_GeneratesSecret()
     {
@@ -83,6 +103,9 @@ public sealed class WebhookServiceTests
         subscription.Secret.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating a subscription with an invalid URL throws a validation exception.
+    /// </summary>
     [Fact]
     public async Task CreateSubscriptionAsync_WithInvalidUrl_ThrowsValidationException()
     {
@@ -94,6 +117,9 @@ public sealed class WebhookServiceTests
         await act.Should().ThrowAsync<ValidationException>();
     }
 
+    /// <summary>
+    /// Tests that retrieving an existing subscription by ID returns the subscription.
+    /// </summary>
     [Fact]
     public async Task GetSubscriptionAsync_ExistingId_ReturnsSubscription()
     {
@@ -109,6 +135,9 @@ public sealed class WebhookServiceTests
         result!.Id.Should().Be(id);
     }
 
+    /// <summary>
+    /// Tests that retrieving a non-existent subscription by ID returns null.
+    /// </summary>
     [Fact]
     public async Task GetSubscriptionAsync_NonExistentId_ReturnsNull()
     {
@@ -120,6 +149,9 @@ public sealed class WebhookServiceTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that updating a non-existent subscription throws a configuration not found exception.
+    /// </summary>
     [Fact]
     public async Task UpdateSubscriptionAsync_WithNonExistentId_ThrowsConfigurationNotFoundException()
     {
@@ -131,6 +163,10 @@ public sealed class WebhookServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that updating an existing subscription with valid data updates the appropriate fields.
+    /// Verifies that name, URL, and updatedBy fields are correctly updated.
+    /// </summary>
     [Fact]
     public async Task UpdateSubscriptionAsync_WithValidData_UpdatesFields()
     {
@@ -155,6 +191,9 @@ public sealed class WebhookServiceTests
         result.UpdatedBy.Should().Be("editor");
     }
 
+    /// <summary>
+    /// Tests that deleting a non-existent subscription throws a configuration not found exception.
+    /// </summary>
     [Fact]
     public async Task DeleteSubscriptionAsync_WithNonExistentId_ThrowsConfigurationNotFoundException()
     {
@@ -166,6 +205,10 @@ public sealed class WebhookServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that deleting a valid subscription sets IsActive to false.
+    /// Verifies that the subscription is updated in the repository.
+    /// </summary>
     [Fact]
     public async Task DeleteSubscriptionAsync_WithValidId_SetsIsActiveFalse()
     {
@@ -183,6 +226,9 @@ public sealed class WebhookServiceTests
         _subscriptionRepositoryMock.Verify(r => r.UpdateAsync(subscription), Times.Once);
     }
 
+    /// <summary>
+    /// Tests that activating a non-existent subscription throws a configuration not found exception.
+    /// </summary>
     [Fact]
     public async Task ActivateAsync_WithNonExistentId_ThrowsConfigurationNotFoundException()
     {
@@ -194,6 +240,9 @@ public sealed class WebhookServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Tests that activating a deactivated subscription sets IsActive to true and status to Active.
+    /// </summary>
     [Fact]
     public async Task ActivateAsync_WithDeactivatedSubscription_SetsIsActiveTrue()
     {
@@ -213,6 +262,9 @@ public sealed class WebhookServiceTests
         result.Status.Should().Be(WebhookStatus.Active);
     }
 
+    /// <summary>
+    /// Tests that deactivating an active subscription sets IsActive to false and status to Failed.
+    /// </summary>
     [Fact]
     public async Task DeactivateAsync_WithActiveSubscription_SetsIsActiveFalse()
     {
@@ -231,6 +283,9 @@ public sealed class WebhookServiceTests
         result.Status.Should().Be(WebhookStatus.Failed);
     }
 
+    /// <summary>
+    /// Tests that retrieving deliveries for a subscription returns all deliveries associated with that subscription.
+    /// </summary>
     [Fact]
     public async Task GetDeliveriesAsync_ReturnsDeliveriesForSubscription()
     {
@@ -248,6 +303,9 @@ public sealed class WebhookServiceTests
         result.Should().HaveCount(2);
     }
 
+    /// <summary>
+    /// Tests that retrying failed deliveries skips delivery when the subscription is not active.
+    /// </summary>
     [Fact]
     public async Task RetryFailedDeliveriesAsync_SubscriptionNotActive_SkipsDelivery()
     {
@@ -269,6 +327,9 @@ public sealed class WebhookServiceTests
         count.Should().Be(0);
     }
 
+    /// <summary>
+    /// Tests that retrying failed deliveries skips delivery when the attempt count exceeds max retries.
+    /// </summary>
     [Fact]
     public async Task RetryFailedDeliveriesAsync_DeliveryExceedsMaxRetries_IsSkipped()
     {
@@ -293,6 +354,9 @@ public sealed class WebhookServiceTests
         count.Should().Be(0);
     }
 
+    /// <summary>
+    /// Tests that generating a signature without a secret throws a configuration exception.
+    /// </summary>
     [Fact]
     public void WebhookSubscription_GenerateSignature_WithNoSecret_ThrowsConfigurationException()
     {
@@ -304,6 +368,9 @@ public sealed class WebhookServiceTests
         act.Should().Throw<ConfigurationException>();
     }
 
+    /// <summary>
+    /// Tests that generating a signature with a secret returns a valid hexadecimal string.
+    /// </summary>
     [Fact]
     public void WebhookSubscription_GenerateSignature_WithSecret_ReturnsHexString()
     {
@@ -316,6 +383,10 @@ public sealed class WebhookServiceTests
         signature.Should().MatchRegex("^[0-9A-F]+$");
     }
 
+    /// <summary>
+    /// Tests that incrementing the retry count to the maximum value deactivates the subscription.
+    /// Verifies that RetryCount reaches the limit, IsActive becomes false, and Status becomes Failed.
+    /// </summary>
     [Fact]
     public void WebhookSubscription_IncrementRetryCount_ReachingMaxRetries_DeactivatesSubscription()
     {
@@ -331,6 +402,10 @@ public sealed class WebhookServiceTests
         subscription.Status.Should().Be(WebhookStatus.Failed);
     }
 
+    /// <summary>
+    /// Tests that resetting the retry count clears the counter and restores the subscription to active state.
+    /// Verifies that RetryCount is reset to 0, Status becomes Active, and LastDeliveryStatusCode is set.
+    /// </summary>
     [Fact]
     public void WebhookSubscription_ResetRetryCount_ClearsCounterAndRestoresActive()
     {
