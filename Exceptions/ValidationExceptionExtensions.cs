@@ -21,20 +21,22 @@ public static class ValidationExceptionExtensions
     /// </summary>
     /// <param name="exceptions">The validation exceptions to combine</param>
     /// <returns>A new ValidationException containing all errors from the input exceptions</returns>
-    /// <exception cref="ArgumentNullException">Thrown when exceptions is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="exceptions"/> is null</exception>
     public static ValidationException Combine(this IEnumerable<ValidationException> exceptions)
     {
         ArgumentNullException.ThrowIfNull(exceptions);
 
         var allErrors = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var hasErrors = false;
 
         foreach (var exception in exceptions.Where(ex => ex != null))
         {
+            hasErrors = true;
             foreach (var (fieldName, fieldErrors) in exception.Errors)
             {
                 if (!allErrors.TryGetValue(fieldName, out var existingErrors))
                 {
-                    existingErrors = new List<string>();
+                    existingErrors = [];
                     allErrors[fieldName] = existingErrors;
                 }
 
@@ -42,11 +44,17 @@ public static class ValidationExceptionExtensions
             }
         }
 
-        return new ValidationException(
-            "Multiple validation errors occurred",
-            allErrors,
-            "VALIDATION_FAILED_MULTIPLE"
-        );
+        return hasErrors
+            ? new ValidationException(
+                "Multiple validation errors occurred",
+                allErrors,
+                "VALIDATION_FAILED_MULTIPLE"
+            )
+            : new ValidationException(
+                "No validation errors to combine",
+                new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase),
+                "VALIDATION_NO_ERRORS"
+            );
     }
 
     /// <summary>
@@ -70,18 +78,16 @@ public static class ValidationExceptionExtensions
     /// <param name="exception">The validation exception</param>
     /// <param name="fieldName">The field name to get errors for</param>
     /// <returns>An enumerable of error messages for the field, or empty if field has no errors</returns>
-    /// <exception cref="ArgumentNullException">Thrown when exception is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is null or empty</exception>
     public static IEnumerable<string> GetFieldErrors(this ValidationException exception, string fieldName)
     {
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentException.ThrowIfNullOrEmpty(fieldName);
 
-        if (exception.Errors.TryGetValue(fieldName, out var errors))
-        {
-            return errors.AsReadOnly();
-        }
-
-        return Enumerable.Empty<string>();
+        return exception.Errors.TryGetValue(fieldName, out var errors)
+            ? errors.AsReadOnly()
+            : Enumerable.Empty<string>();
     }
 
     /// <summary>
@@ -90,14 +96,10 @@ public static class ValidationExceptionExtensions
     /// <param name="exception">The validation exception</param>
     /// <param name="fieldName">The field name to get the first error for</param>
     /// <returns>The first error message for the field, or null if field has no errors</returns>
-    /// <exception cref="ArgumentNullException">Thrown when exception is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="exception"/> is null</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="fieldName"/> is null or empty</exception>
     public static string? GetFirstFieldError(this ValidationException exception, string fieldName)
-    {
-        ArgumentNullException.ThrowIfNull(exception);
-        ArgumentException.ThrowIfNullOrEmpty(fieldName);
-
-        return exception.Errors.TryGetValue(fieldName, out var errors) && errors.Count > 0
+        => exception.Errors.TryGetValue(fieldName, out var errors) && errors.Count > 0
             ? errors[0]
             : null;
-    }
 }
