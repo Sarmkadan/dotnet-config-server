@@ -22,32 +22,32 @@ namespace DotnetConfigServer.Benchmarks;
 public class VersioningBenchmarks
 {
     /// <summary>
-/// Service for managing configuration versions.
-/// </summary>
-internal IVersioningService _versioningService;
+    /// Service for managing configuration versions.
+    /// </summary>
+    internal IVersioningService _versioningService;
     /// <summary>
-/// Service for managing configuration operations.
-/// </summary>
-internal IConfigurationService _configurationService;
+    /// Service for managing configuration operations.
+    /// </summary>
+    internal IConfigurationService _configurationService;
     /// <summary>
-/// Unique identifier for the test configuration used in benchmarks.
-/// </summary>
-internal Guid _testConfigurationId;
+    /// Unique identifier for the test configuration used in benchmarks.
+    /// </summary>
+    internal Guid _testConfigurationId;
     /// <summary>
-/// Collection of version identifiers created during benchmark setup.
-/// </summary>
-internal List<Guid> _createdVersions;
+    /// Collection of version identifiers created during benchmark setup.
+    /// </summary>
+    internal List<Guid> _createdVersions;
     /// <summary>
-/// Service provider for dependency injection used in benchmark setup.
-/// </summary>
-internal ServiceProvider _serviceProvider;
+    /// Service provider for dependency injection used in benchmark setup.
+    /// </summary>
+    internal ServiceProvider _serviceProvider;
 
 
-/// <summary>
-/// Global setup for all benchmarks. Initializes dependency injection container,
-/// creates test database, and sets up test configuration with sample data.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Global setup for all benchmarks. Initializes dependency injection container,
+    /// creates test database, and sets up test configuration with sample data.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -122,11 +122,11 @@ internal ServiceProvider _serviceProvider;
     }
 
 
-/// <summary>
-/// Global cleanup after all benchmarks. Removes test database and disposes
-/// of the service provider to clean up resources.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Global cleanup after all benchmarks. Removes test database and disposes
+    /// of the service provider to clean up resources.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -136,50 +136,50 @@ internal ServiceProvider _serviceProvider;
         _serviceProvider.Dispose();
     }
 
-/// <summary>
-/// Benchmark for measuring the time to create a new configuration version.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to create a new configuration version.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task CreateVersion()
     {
         await _versioningService.CreateVersionAsync(_testConfigurationId, "Benchmark version", "benchmark-user");
     }
 
-/// <summary>
-/// Benchmark for measuring the time to retrieve a specific configuration version by its identifier.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to retrieve a specific configuration version by its identifier.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetVersion()
     {
         await _versioningService.GetVersionAsync(_createdVersions[0]);
     }
 
-/// <summary>
-/// Benchmark for measuring the time to retrieve all versions for a specific configuration.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to retrieve all versions for a specific configuration.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetVersions()
     {
         await _versioningService.GetVersionsAsync(_testConfigurationId);
     }
 
-/// <summary>
-/// Benchmark for measuring the time to retrieve the currently active configuration version.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to retrieve the currently active configuration version.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetActiveVersion()
     {
         await _versioningService.GetActiveVersionAsync(_testConfigurationId);
     }
 
-/// <summary>
-/// Benchmark for measuring the time to create a version and publish it as active.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to create a version and publish it as active.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task PublishVersion()
     {
@@ -187,40 +187,60 @@ internal ServiceProvider _serviceProvider;
         await _versioningService.PublishVersionAsync(version.Id, "benchmark-user");
     }
 
-/// <summary>
-/// Benchmark for measuring the time to archive an existing configuration version.
-/// </summary>
-/// <returns>A task that represents the asynchronous operation.</returns>
+    /// <summary>
+    /// Benchmark for measuring the time to archive an existing configuration version.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task ArchiveVersion()
     {
         await _versioningService.ArchiveVersionAsync(_createdVersions[0], "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for measuring the time to deprecate an existing configuration version.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task DeprecateVersion()
     {
         await _versioningService.DeprecateVersionAsync(_createdVersions[1], "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for measuring the time to rollback to a previous configuration version.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task Rollback()
     {
         await _versioningService.RollbackAsync(_testConfigurationId, _createdVersions[0], "benchmark-user");
     }
 
+    /// <summary>
+    /// Benchmark for measuring the time to retrieve the version history for a configuration.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task GetVersionHistory()
     {
         await _versioningService.GetVersionHistoryAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmark for measuring the time to clean up old configuration versions.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task CleanupOldVersions()
     {
         await _versioningService.CleanupOldVersionsAsync(_testConfigurationId, 3);
     }
 
+    /// <summary>
+    /// Benchmark for measuring the time to create a version with many configuration keys.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     [Benchmark]
     public async Task CreateVersionWithManyKeys()
     {
