@@ -1374,3 +1374,127 @@ public async Task<IActionResult> GetConfiguration(int id)
 
     return Ok(config);
 }
+## AuditLogsController
+
+The `AuditLogsController` provides API endpoints for retrieving and analyzing audit logs within the Dotnet Config Server. It serves as a compliance and debugging interface, allowing users to query audit trails by entity ID, user ID, date ranges, or action types. The controller returns paginated results for efficient data retrieval and includes a summary endpoint that provides aggregated statistics about recent changes.
+
+**Key Features:**
+- Retrieve audit logs filtered by entity ID, user ID, date range, or action type
+- Paginated results for efficient data retrieval
+- Summary endpoint with aggregated statistics (total changes, create/update/delete counts, unique users)
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+
+// Example: Using AuditLogsController in a service
+public class AuditService
+{
+    private readonly AuditLogsController _controller;
+    private readonly ILogger<AuditService> _logger;
+
+    public AuditService(ILogger<AuditService> logger, IAuditLogRepository repository)
+    {
+        _logger = logger;
+        _controller = new AuditLogsController(repository, logger);
+    }
+
+    public async Task LogAuditSummaryAsync()
+    {
+        // Get summary of changes in the last 7 days
+        var summaryResult = await _controller.GetSummary(days: 7);
+        
+        if (summaryResult is OkObjectResult okResult)
+        {
+            var summary = okResult.Value as AuditLogsController.AuditSummary;
+            
+            _logger.LogInformation("Audit Summary - Total: {Total}, Creates: {Creates}, Updates: {Updates}, Deletes: {Deletes}, Users: {Users}",
+                summary?.TotalChanges, summary?.CreateCount, summary?.UpdateCount, summary?.DeleteCount, summary?.UniqueUsers);
+            
+            if (summary?.LastChange.HasValue == true)
+            {
+                _logger.LogInformation("Last change occurred at: {LastChange}", summary.LastChange.Value);
+            }
+        }
+    }
+
+    public async Task QueryAuditLogsAsync()
+    {
+        // Get audit logs for a specific entity
+        var entityLogsResult = await _controller.GetByEntity("config-12345", page: 1, pageSize: 50);
+        
+        // Get audit logs for a specific user
+        var userLogsResult = await _controller.GetByUser("user@example.com", page: 1, pageSize: 50);
+        
+        // Get all audit logs with date filtering
+        var allLogsResult = await _controller.GetAll(
+            from: DateTime.UtcNow.AddDays(-30),
+            to: DateTime.UtcNow,
+            action: "Created",
+            page: 1,
+            pageSize: 100
+        );
+        
+        // Get a specific audit log by ID
+        var logId = Guid.NewGuid();
+        var singleLogResult = await _controller.GetById(logId);
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class AuditLogClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/auditlogs";
+
+    public AuditLogClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task GetEntityAuditLogsAsync(string entityId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/entity/{entityId}?page=1&pageSize=50");
+        response.EnsureSuccessStatusCode();
+        var logs = await response.Content.ReadFromJsonAsync<PaginatedResult<AuditLog>>();
+    }
+
+    public async Task GetUserAuditLogsAsync(string userId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/user/{userId}?page=1&pageSize=50");
+        response.EnsureSuccessStatusCode();
+        var logs = await response.Content.ReadFromJsonAsync<PaginatedResult<AuditLog>>();
+    }
+
+    public async Task GetAllAuditLogsAsync(DateTime? from = null, DateTime? to = null, string? action = null)
+    {
+        var url = $"{_baseUrl}?page=1&pageSize=50";
+        if (from.HasValue) url += $"&from={from.Value:yyyy-MM-dd}";
+        if (to.HasValue) url += $"&to={to.Value:yyyy-MM-dd}";
+        if (!string.IsNullOrEmpty(action)) url += $"&action={Uri.EscapeDataString(action)}";
+        
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var logs = await response.Content.ReadFromJsonAsync<PaginatedResult<AuditLog>>();
+    }
+
+    public async Task<AuditSummary> GetAuditSummaryAsync(int days = 7)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/summary?days={days}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<AuditSummary>();
+    }
+
+    public async Task<AuditLog> GetAuditLogByIdAsync(Guid logId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{logId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<AuditLog>();
+    }
+}
+```
