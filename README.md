@@ -1523,6 +1523,102 @@ var decryptedLargeAsync = await benchmarks.DecryptLargeTextAsync();
 await benchmarks.GlobalCleanup();
 ```
 
+## EncryptionWorkflowIntegrationTests
+
+The `EncryptionWorkflowIntegrationTests` class provides integration tests that cover the complete encryption lifecycle within the Dotnet Config Server system. These tests validate end-to-end scenarios including key generation, encryption/decryption operations, key rotation with fallback support, and automatic re-encryption of configuration values.
+
+### What It Tests
+
+- **Encryption Roundtrip**: Verifies that plain text values can be encrypted and decrypted back to their original form
+- **Random IV Generation**: Ensures that identical plaintext values produce different ciphertexts due to random initialization vectors
+- **Key Rotation**: Tests that old ciphertexts remain decryptable after key rotation via fallback to previous keys
+- **Auto-Encryption**: Validates that configuration keys are automatically encrypted when added to encrypted configurations
+- **Bulk Re-encryption**: Confirms that all encrypted keys in a configuration are re-encrypted with the new primary key
+- **Error Handling**: Ensures proper exceptions are thrown when encryption keys are unavailable
+- **Concurrency Safety**: Verifies that concurrent encryption operations on different configurations produce independent results
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Tests;
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Repositories;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup dependencies
+var keyRepositoryMock = new Mock<IEncryptionKeyRepository>();
+var configRepoMock = new Mock<IConfigurationRepository>();
+var configKeyRepoMock = new Mock<IConfigurationKeyRepository>();
+var auditRepoMock = new Mock<IAuditLogRepository>();
+var eventBusMock = new Mock<IEventBus>();
+var loggerMock = new Mock<ILogger<EncryptionService>>();
+
+// Create the encryption service
+var encryptionService = new EncryptionService(
+    keyRepositoryMock.Object,
+    loggerMock.Object
+);
+
+// Create the configuration service
+var configurationService = new ConfigurationService(
+    configRepoMock.Object,
+    configKeyRepoMock.Object,
+    encryptionService,
+    auditRepoMock.Object,
+    eventBusMock.Object,
+    new Mock<ILogger<ConfigurationService>>().Object
+);
+
+// Test 1: Basic encryption roundtrip
+var key = encryptionService.GenerateNewKey("test-key");
+const string sensitiveValue = "Server=prod;Database=orders;";
+var cipherText = encryptionService.Encrypt(sensitiveValue, key);
+var decrypted = encryptionService.Decrypt(cipherText, key);
+
+// Test 2: Key rotation with fallback
+var oldKey = CreateRealKey("old-key");
+var newKey = CreateRealKey("new-key");
+var cipherWithOldKey = encryptionService.Encrypt("secret", oldKey);
+
+// Simulate repository behavior
+keyRepositoryMock
+    .Setup(r => r.GetPrimaryKeyByConfigurationAsync(configId))
+    .ReturnsAsync(newKey);
+keyRepositoryMock
+    .Setup(r => r.GetActiveKeysByConfigurationAsync(configId))
+    .ReturnsAsync(new List<EncryptionKey> { newKey, oldKey });
+
+// Decrypt using fallback to old key
+var decryptedValue = await encryptionService.DecryptAsync(cipherWithOldKey, configId);
+
+// Test 3: Auto-encryption when adding keys
+var configId = Guid.NewGuid();
+var config = new Configuration { Id = configId, IsEncrypted = true };
+configRepoMock.Setup(r => r.GetByIdAsync(configId)).ReturnsAsync(config);
+
+var keyToAdd = new ConfigurationKey
+{
+    Key = "api.secret",
+    Value = "plain-api-key",
+    IsEncrypted = false,
+    ConfigurationId = configId
+};
+
+var result = await configurationService.AddKeyAsync(configId, keyToAdd, "admin");
+// result.Value is now encrypted automatically
+
+// Test 4: Bulk re-encryption
+var keys = new List<ConfigurationKey>
+{
+    new() { Key = "db.conn", Value = "old-encrypted-value", IsEncrypted = true, ConfigurationId = configId },
+    new() { Key = "api.token", Value = "another-encrypted-value", IsEncrypted = true, ConfigurationId = configId }
+};
+
+await encryptionService.ReEncryptConfigurationAsync(configId, keys, "ops");
+// All encrypted keys now use the new primary key
+```
+
 ## DiffBenchmarks
 
 The `DiffBenchmarks` class provides a comprehensive suite of benchmarks to measure the performance of diff and diff-viewer services across a variety of realistic scenarios. It evaluates operations such as comparing configuration versions, retrieving enriched diffs with detailed change information, generating rollback previews, and analyzing version timelines.
