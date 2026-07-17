@@ -2114,6 +2114,90 @@ if (DateTime.Now.IsLeapYear())
 }
 ```
 
+## ConfigurationModelTests
+
+The `ConfigurationModelTests` class provides comprehensive unit tests for the `Configuration` model validation and behavior. It covers validation rules for required fields, length limits, versioning operations, encryption state management, deletion tracking, and summary generation.
+
+### Public Members
+
+- `Validate_EmptyName_ThrowsValidationExceptionWithNameError` - Validates that an empty Name throws a ValidationException with a Name error
+- `Validate_WhitespaceName_ThrowsValidationException` - Validates that a whitespace Name throws a ValidationException
+- `Validate_EmptyApplicationId_ThrowsValidationExceptionWithApplicationIdError` - Validates that an empty ApplicationId throws a ValidationException with an ApplicationId error
+- `Validate_NameExceedsMaxLength_ThrowsValidationException` - Validates that a Name exceeding the maximum length throws a ValidationException
+- `Validate_ValidConfiguration_DoesNotThrow` - Validates that a valid configuration does not throw any exception
+- `CreateNewVersion_IncrementsVersionNumberAndPreservesIdentity` - Validates that creating a new version increments the version number and preserves identity
+- `Delete_SetsIsActiveFalseAndRecordsDeletedBy` - Validates that deleting a configuration sets IsActive to false and records the deleter
+- `SetEncryption_WithAes256_SetsIsEncryptedTrueAndStoresKeyId` - Validates that setting encryption with AES256 sets the encryption flag and stores the key ID
+- `SetEncryption_WithNone_ClearsEncryptionFlag` - Validates that setting encryption to None clears the encryption flag
+- `GetSummary_ReturnsSnapshotMatchingCurrentState` - Validates that GetSummary returns a snapshot matching the current state
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Exceptions;
+using FluentAssertions;
+
+// Create a valid configuration
+var config = new Configuration
+{
+    Name = "production-settings",
+    ApplicationId = Guid.NewGuid(),
+    CreatedBy = "admin"
+};
+
+// Test 1: Validate configuration with empty name throws exception
+config.Name = string.Empty;
+try
+{
+    config.Validate();
+    throw new Exception("Should have thrown ValidationException");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed as expected: {ex.Message}");
+    Console.WriteLine($"Errors: {string.Join(", ", ex.Errors.Keys)}");
+}
+
+// Test 2: Validate configuration with valid name passes
+config.Name = "production-settings";
+config.Validate(); // No exception thrown
+Console.WriteLine("Valid configuration passed validation");
+
+// Test 3: Create a new version from existing configuration
+var originalId = config.Id;
+var originalAppId = config.ApplicationId;
+var originalVersion = config.VersionNumber;
+
+var newVersion = config.CreateNewVersion();
+Console.WriteLine($"New version number: {newVersion.VersionNumber} (expected: {originalVersion + 1})");
+Console.WriteLine($"New version ID different from original: {newVersion.Id != originalId}");
+Console.WriteLine($"Application ID preserved: {newVersion.ApplicationId == originalAppId}");
+
+// Test 4: Delete configuration (soft delete)
+config.Delete("system-admin");
+Console.WriteLine($"IsActive after delete: {config.IsActive}"); // false
+Console.WriteLine($"Deleted by: {config.DeletedBy}"); // "system-admin"
+Console.WriteLine($"Deleted at: {config.DeletedAt}");
+
+// Test 5: Set encryption with AES256
+config.SetEncryption(EncryptionAlgorithm.AES256, "key-12345");
+Console.WriteLine($"IsEncrypted: {config.IsEncrypted}"); // true
+Console.WriteLine($"EncryptionAlgorithm: {config.EncryptionAlgorithm}"); // AES256
+Console.WriteLine($"EncryptionKeyId: {config.EncryptionKeyId}"); // "key-12345"
+
+// Test 6: Set encryption to None (disable encryption)
+config.SetEncryption(EncryptionAlgorithm.None, null);
+Console.WriteLine($"IsEncrypted after None: {config.IsEncrypted}"); // false
+Console.WriteLine($"EncryptionKeyId after None: {config.EncryptionKeyId}"); // null
+
+// Test 7: Get configuration summary
+var summary = config.GetSummary();
+Console.WriteLine($"Summary ID matches: {summary.Id == config.Id}");
+Console.WriteLine($"Summary name: {summary.Name}");
+Console.WriteLine($"Summary version: {summary.VersionNumber}");
+```
+
 ## DictionaryExtensionsTests
 
 The `DictionaryExtensionsTests` class provides comprehensive unit tests for the `DictionaryExtensions` class extension methods. It validates dictionary operations including value retrieval with fallbacks, conditional addition and updates, filtering, merging, inversion, projection, flattening, and nested value manipulation through dot-separated paths.
