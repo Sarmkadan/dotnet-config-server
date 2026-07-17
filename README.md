@@ -223,6 +223,67 @@ await encryptionService.RotateKeyAsync(encryptionKey.KeyId, "admin@example.com")
 // await encryptionService.ReEncryptConfigurationAsync(configurationId, configurationKeys, "admin@example.com");
 ```
 
+## IComparisonService
+
+The `IComparisonService` provides functionality to compare configuration objects and detect changes between versions. It generates detailed reports showing exactly what properties have changed, their original and modified values, and a summary of all changes including the percentage of modified fields.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IComparisonService, ComparisonService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var comparisonService = serviceProvider.GetRequiredService<IComparisonService>();
+
+// Define two configuration objects to compare
+var originalConfig = new
+{
+    DatabaseConnection = "Server=localhost;Database=OrdersDev",
+    MaxConnections = 10,
+    Timeout = 30,
+    EnableLogging = true
+};
+
+var modifiedConfig = new
+{
+    DatabaseConnection = "Server=prod-db;Database=OrdersProd",
+    MaxConnections = 20,
+    Timeout = 60,
+    EnableLogging = false
+};
+
+// Compare configurations to get detailed changes
+var comparisonResult = comparisonService.Compare(originalConfig, modifiedConfig);
+Console.WriteLine($"Comparing {comparisonResult.ItemType}:");
+Console.WriteLine($"Total changes: {comparisonResult.Changes.Count}");
+
+foreach (var change in comparisonResult.Changes)
+{
+    Console.WriteLine($"\nProperty: {change.PropertyName}");
+    Console.WriteLine($"Type: {change.PropertyType}");
+    Console.WriteLine($"Original: {change.OriginalValue}");
+    Console.WriteLine($"Modified: {change.ModifiedValue}");
+}
+
+// Check if there are any differences
+bool hasDifferences = comparisonService.HasDifferences(originalConfig, modifiedConfig);
+Console.WriteLine($"\nHas differences: {hasDifferences}");
+
+// Get a summary of changes
+var summary = comparisonService.GetSummary(originalConfig, modifiedConfig);
+Console.WriteLine($"\nSummary:");
+Console.WriteLine($"Total changes: {summary.TotalChanges}");
+Console.WriteLine($"Changed fields: {string.Join(", ", summary.ChangedFields)}");
+Console.WriteLine($"Change percentage: {summary.ChangePercentage:F2}%");
+```
+
 ## ConfigurationService
 
 The `ConfigurationService` is the core service for managing configurations, configuration keys, and their relationships. It provides methods for creating, reading, updating, and deleting configurations and keys, as well as searching and inheritance resolution. The service handles encryption/decryption of sensitive values, audit logging, and event notifications for real-time configuration updates.
