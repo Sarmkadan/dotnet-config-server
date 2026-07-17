@@ -25,9 +25,19 @@ public static class EventBusValidation
 
         var problems = new List<string>();
 
-        // The EventBus has no public properties to validate beyond its constructor dependencies
-        // The logger is injected via constructor and validated there
-        // All other members are methods that operate on the internal state
+        // Validate internal state consistency
+        try
+        {
+            var subscriberCount = value.GetSubscriberCount<DomainEvent>();
+            if (subscriberCount < 0)
+            {
+                problems.Add("Subscriber count cannot be negative");
+            }
+        }
+        catch (Exception ex)
+        {
+            problems.Add($"Internal state validation failed: {ex.Message}");
+        }
 
         return problems.AsReadOnly();
     }
@@ -37,18 +47,8 @@ public static class EventBusValidation
     /// </summary>
     /// <param name="value">The event bus instance to check.</param>
     /// <returns><see langword="true"/> if the instance is valid; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValid(this EventBus? value)
-    {
-        try
-        {
-            _ = value?.Validate() ?? throw new ArgumentNullException(nameof(value));
-            return true;
-        }
-        catch (ArgumentNullException)
-        {
-            return false;
-        }
-    }
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+    public static bool IsValid(this EventBus? value) => value?.Validate()?.Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="EventBus"/> instance is valid.
