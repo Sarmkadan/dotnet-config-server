@@ -404,6 +404,61 @@ public async Task<TimeSpan> GetServiceTimeoutAsync(string serviceName)
 }
 ```
 
+## CacheKeyGenerator
+
+The `CacheKeyGenerator` static class provides a centralized way to generate consistent and predictable cache keys for various entities and scenarios within the Dotnet Config Server. It ensures cache keys follow a standardized naming convention using colon-separated segments, making cache management more maintainable and reducing the risk of key collisions. The generator provides methods for creating keys for configurations, applications, versions, webhook subscriptions, and search operations, along with helper methods to generate invalidation patterns for cache cleanup.
+
+**Key Features:**
+- Static utility class with consistent naming conventions
+- Generates keys for all major entity types (configurations, applications, versions, keys, webhooks)
+- Provides invalidation patterns for cache cleanup when entities change
+- Supports search operations with query-based keys
+- Thread-safe and deterministic key generation
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Caching;
+
+// Generate cache keys for configuration operations
+var configId = Guid.NewGuid();
+var applicationId = Guid.NewGuid();
+var keyId = Guid.NewGuid();
+var versionId = Guid.NewGuid();
+
+// Single entity keys
+var configKey = CacheKeyGenerator.GetConfigurationKey(configId);
+var appKey = CacheKeyGenerator.GetApplicationKey(applicationId);
+var keyKey = CacheKeyGenerator.GetConfigurationKeyKey(keyId);
+var versionKey = CacheKeyGenerator.GetConfigurationVersionKey(versionId);
+
+// Collection/list keys
+var appConfigsKey = CacheKeyGenerator.GetApplicationConfigurationsKey(applicationId);
+var configKeysKey = CacheKeyGenerator.GetConfigurationKeysKey(configId);
+var configVersionsKey = CacheKeyGenerator.GetConfigurationVersionsKey(configId);
+
+// Relationship-based keys
+var diffKey = CacheKeyGenerator.GetConfigurationDiffKey(versionId, Guid.NewGuid());
+var webhookSubsKey = CacheKeyGenerator.GetWebhookSubscriptionsKey(applicationId);
+var allAppsKey = CacheKeyGenerator.GetAllApplicationsKey();
+
+// Search key with optional application filter
+var searchKey = CacheKeyGenerator.GetSearchKey("timeout settings", applicationId);
+
+// Get invalidation patterns when entities change
+var configPatterns = CacheKeyGenerator.GetInvalidationPatternsForConfiguration(configId, applicationId);
+foreach (var pattern in configPatterns)
+{
+    Console.WriteLine($"Invalidate: {pattern}");
+}
+
+var appPatterns = CacheKeyGenerator.GetInvalidationPatternsForApplication(applicationId);
+foreach (var pattern in appPatterns)
+{
+    Console.WriteLine($"Invalidate: {pattern}");
+}
+```
+
 ## ConfigurationRepository
 
 The `ConfigurationRepository` class provides specialized data access operations for `Configuration` entities, enabling efficient querying and management of configurations within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configurations by application ID, configuration name, and advanced search capabilities that support filtering by application and text queries across configuration names and descriptions. The repository also includes methods for counting configurations by application and retrieving deleted configurations before a specific cutoff date.
