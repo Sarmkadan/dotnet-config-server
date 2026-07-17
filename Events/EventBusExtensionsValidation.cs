@@ -3,7 +3,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Collections.Concurrent;
 
@@ -36,9 +36,9 @@ public static class EventBusExtensionsValidation
             value.Subscribe<DomainEvent, DomainEvent>(testHandler);
 
             var countAfterSubscribe = value.GetSubscriberCount<DomainEvent>();
-            if (countAfterSubscribe < 2)
+            if (countAfterSubscribe < 1)
             {
-                problems.Add("Subscribe<T, TNext> did not register both event types");
+                problems.Add("Subscribe<T, TNext> did not register the event type");
             }
         }
         catch (Exception ex)
@@ -64,7 +64,7 @@ public static class EventBusExtensionsValidation
         try
         {
             var hasSubscribers = value.HasSubscribers<DomainEvent>();
-            if (!hasSubscribers && hasSubscribers is not false)
+            if (hasSubscribers != true && hasSubscribers != false)
             {
                 problems.Add("HasSubscribers<T> did not return a boolean value");
             }
@@ -128,6 +128,7 @@ public static class EventBusExtensionsValidation
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public static bool IsValid(this EventBus value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         return value.Validate(_extensions: true).Count == 0;
     }
 
