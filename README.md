@@ -1344,6 +1344,40 @@ Benchmarks measured on a single instance (4 vCPUs, 8 GB RAM, SQL Server on the s
 
 To baseline your own deployment run `GET /metrics` for live request-duration histograms collected by `PerformanceMonitoringMiddleware`.
 
+## CachingBenchmarks
+
+The `CachingBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance and behavior of caching strategies in the configuration server. It includes scenarios for cache hits, cache misses, cache-aside implementation efficiency, cache eviction, and cache size management.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new CachingBenchmarks();
+
+// Initialize dependencies and test data (required before running benchmarks)
+await benchmarks.GlobalSetup();
+
+// Execute specific benchmarks
+await benchmarks.GetConfiguration_CacheMiss();
+await benchmarks.GetConfiguration_CacheHit();
+await benchmarks.GetConfiguration_WithCacheAside();
+await benchmarks.GetKeys_CacheMiss();
+await benchmarks.GetKeys_CacheHit();
+await benchmarks.GetKeys_WithCacheAside();
+await benchmarks.SearchConfigurations_CacheMiss();
+await benchmarks.SearchConfigurations_CacheHit();
+await benchmarks.GetConfigurationCount_CacheMiss();
+await benchmarks.GetConfigurationCount_CacheHit();
+await benchmarks.CacheEviction();
+await benchmarks.CacheSizeTracking();
+await benchmarks.CacheWithEncryptedData();
+
+// Cleanup test data and resources
+await benchmarks.GlobalCleanup();
+```
+
 ## ServiceExtensionsConfiguration
 
 The `ServiceExtensionsConfiguration` class is a data transfer object used for serializing and deserializing service extension configurations. It provides a structured way to define which services should be registered in the dependency injection container, including data services, business services, webhook clients, Swagger configurations, and database initialization methods.
