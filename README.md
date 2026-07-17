@@ -1719,6 +1719,249 @@ public class ApplicationClient
     }
 }
 
+## ChangeRequestsController
+
+The `ChangeRequestsController` provides RESTful API endpoints for managing configuration change requests through an approval workflow. Configuration changes submitted via this controller are held as pending until an authorized reviewer approves or rejects them. Approved changes are applied atomically, ensuring consistency across the configuration server.
+
+**Key Features:**
+- Submit new configuration change requests for approval
+- Retrieve single change requests by ID
+- List all pending change requests awaiting review
+- Filter change requests by configuration ID and status
+- Approve pending change requests with optional immediate application
+- Reject pending change requests with optional comment
+- Cancel pending change requests
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+- Integration with change request service for workflow management
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using ChangeRequestsController in a service
+public class ChangeRequestManagementService
+{
+    private readonly ChangeRequestsController _controller;
+    private readonly ILogger<ChangeRequestManagementService> _logger;
+
+    public ChangeRequestManagementService(
+        ChangeRequestsController controller,
+        ILogger<ChangeRequestManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<ChangeRequest> SubmitChangeRequestAsync(
+        Guid configurationId,
+        List<ConfigurationKey> changes,
+        string requestedBy = null)
+    {
+        var changeRequest = new ChangeRequest
+        {
+            ConfigurationId = configurationId,
+            Changes = changes,
+            Description = "Database timeout configuration update",
+            RequestedBy = requestedBy ?? "system",
+            Status = ChangeRequestStatus.Pending,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var result = await _controller.Submit(changeRequest);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is ChangeRequest createdRequest)
+        {
+            _logger.LogInformation("Submitted change request {RequestId} for configuration {ConfigId}", 
+                createdRequest.Id, configurationId);
+            return createdRequest;
+        }
+
+        throw new Exception("Failed to submit change request");
+    }
+
+    public async Task<ChangeRequest> GetChangeRequestAsync(Guid requestId)
+    {
+        var result = await _controller.GetById(requestId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ChangeRequest request)
+        {
+            return request;
+        }
+
+        throw new Exception("Change request not found");
+    }
+
+    public async Task<List<ChangeRequest>> GetPendingChangeRequestsAsync()
+    {
+        var result = await _controller.GetPending();
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ChangeRequest> requests)
+        {
+            return requests;
+        }
+
+        return new List<ChangeRequest>();
+    }
+
+    public async Task<List<ChangeRequest>> GetChangeRequestsByConfigurationAsync(
+        Guid configurationId,
+        ChangeRequestStatus? status = null)
+    {
+        var result = await _controller.GetByConfiguration(configurationId, status);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ChangeRequest> requests)
+        {
+            return requests;
+        }
+
+        return new List<ChangeRequest>();
+    }
+
+    public async Task<ChangeRequest> ApproveChangeRequestAsync(
+        Guid requestId,
+        string reviewerId,
+        string comment = null,
+        bool applyImmediately = true)
+    {
+        var decision = new ReviewDecisionRequest
+        {
+            Comment = comment,
+            ApplyImmediately = applyImmediately
+        };
+
+        var result = await _controller.Approve(requestId, decision);
+
+        if (result is OkObjectResult okResult && okResult.Value is ChangeRequest approvedRequest)
+        {
+            _logger.LogInformation("Approved change request {RequestId} by {ReviewerId}", 
+                requestId, reviewerId);
+            return approvedRequest;
+        }
+
+        throw new Exception("Failed to approve change request");
+    }
+
+    public async Task<ChangeRequest> RejectChangeRequestAsync(
+        Guid requestId,
+        string reviewerId,
+        string comment = null)
+    {
+        var decision = new ReviewDecisionRequest
+        {
+            Comment = comment
+        };
+
+        var result = await _controller.Reject(requestId, decision);
+
+        if (result is OkObjectResult okResult && okResult.Value is ChangeRequest rejectedRequest)
+        {
+            _logger.LogInformation("Rejected change request {RequestId} by {ReviewerId}: {Comment}", 
+                requestId, reviewerId, comment ?? "No comment");
+            return rejectedRequest;
+        }
+
+        throw new Exception("Failed to reject change request");
+    }
+
+    public async Task<ChangeRequest> CancelChangeRequestAsync(Guid requestId, string userId)
+    {
+        var result = await _controller.Cancel(requestId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ChangeRequest cancelledRequest)
+        {
+            _logger.LogInformation("Cancelled change request {RequestId} by {UserId}", 
+                requestId, userId);
+            return cancelledRequest;
+        }
+
+        throw new Exception("Failed to cancel change request");
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class ChangeRequestClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/change-requests";
+
+    public ChangeRequestClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<ChangeRequest> SubmitChangeRequestAsync(ChangeRequest request)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}", request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChangeRequest>();
+    }
+
+    public async Task<ChangeRequest> GetChangeRequestAsync(Guid requestId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{requestId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChangeRequest>();
+    }
+
+    public async Task<List<ChangeRequest>> GetPendingChangeRequestsAsync()
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/pending");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<ChangeRequest>>();
+    }
+
+    public async Task<List<ChangeRequest>> GetChangeRequestsByConfigurationAsync(
+        Guid configurationId,
+        ChangeRequestStatus? status = null)
+    {
+        var url = $"{_baseUrl}/configuration/{configurationId}";
+        if (status.HasValue)
+        {
+            url += $"?status={(int)status.Value}";
+        }
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<ChangeRequest>>();
+    }
+
+    public async Task<ChangeRequest> ApproveChangeRequestAsync(
+        Guid requestId,
+        ReviewDecisionRequest decision)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}/{requestId}/approve", decision);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChangeRequest>();
+    }
+
+    public async Task<ChangeRequest> RejectChangeRequestAsync(
+        Guid requestId,
+        ReviewDecisionRequest decision)
+    {
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}/{requestId}/reject", decision);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChangeRequest>();
+    }
+
+    public async Task<ChangeRequest> CancelChangeRequestAsync(Guid requestId)
+    {
+        var response = await _httpClient.PostAsync(
+            $"{_baseUrl}/{requestId}/cancel", null);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ChangeRequest>();
+    }
+}
+
 ## VersionsController
 
 The `VersionsController` provides RESTful API endpoints for managing configuration versions in the Dotnet Config Server. It enables version control for configuration changes, allowing users to track history, compare versions, roll back to previous states, and manage version lifecycle. The controller supports creating new versions, publishing active versions, archiving old versions, and cleanup operations.
