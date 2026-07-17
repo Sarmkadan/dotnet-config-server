@@ -33,6 +33,10 @@ public sealed class ConfigurationEventHandlers
         _logger = logger;
     }
 
+    internal ICacheService GetCacheService() => _cache;
+    internal IWebhookService GetWebhookService() => _webhookService;
+    internal INotificationService GetNotificationService() => _notificationService;
+
     /// <summary>
     /// Handles configuration created event.
     /// </summary>
