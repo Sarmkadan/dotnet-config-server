@@ -1500,6 +1500,107 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ConfigurationKey
+
+The `ConfigurationKey` class represents a single key-value pair within a configuration. It provides comprehensive validation, type conversion, and metadata tracking capabilities. Configuration keys support encryption, validation rules, and soft deletion while maintaining a complete audit trail through timestamps and user tracking.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a new configuration key for a database connection string
+var databaseKey = new ConfigurationKey
+{
+    Key = "Database:ConnectionString",
+    Value = "Server=prod-db.example.com;Database=Orders;User=admin;Password=Secure123!",
+    DefaultValue = "Server=localhost;Database=Orders",
+    Description = "Production database connection string for order processing service",
+    ValueType = ConfigurationValueType.String,
+    IsEncrypted = true,  // Will be automatically encrypted when stored
+    IsRequired = true,
+    IsSensitive = true,
+    IsActive = true,
+    CreatedBy = "backend-team@example.com",
+    UpdatedBy = "backend-team@example.com",
+    MinLength = 10,
+    MaxLength = 500,
+    ValidationRegex = @"^Server=[^;]+;Database=[^;]+"
+};
+
+// Validate the configuration key
+try
+{
+    databaseKey.Validate();
+    Console.WriteLine("Configuration key is valid!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($"  {error.Key}: {error.Value}");
+    }
+}
+
+// Add additional validation rules
+var timeoutKey = new ConfigurationKey
+{
+    Key = "Api:TimeoutSeconds",
+    Value = "30",
+    ValueType = ConfigurationValueType.Integer,
+    Description = "API request timeout in seconds",
+    IsRequired = true,
+    MinValue = 5,
+    MaxValue = 300,
+    CreatedBy = "backend-team@example.com"
+};
+
+// Parse typed values from configuration keys
+int timeoutValue = (int)timeoutKey.GetTypedValue();
+Console.WriteLine($"Timeout value: {timeoutValue} seconds");
+
+bool isValid = bool.Parse(new ConfigurationKey
+{
+    Key = "Feature:EnableNewCheckout",
+    Value = "true",
+    ValueType = ConfigurationValueType.Boolean,
+    CreatedBy = "product-team@example.com"
+}.GetTypedValue()?.ToString() ?? "false");
+
+Console.WriteLine($"New checkout feature enabled: {isValid}");
+
+// Update key metadata
+var featureKey = new ConfigurationKey
+{
+    Key = "Feature:EnableAnalytics",
+    Value = "true",
+    Description = "Enable user analytics tracking",
+    CreatedBy = "product-team@example.com"
+};
+
+featureKey.Update("false", "Disable analytics for privacy compliance", "compliance-team@example.com");
+Console.WriteLine($"Updated at: {featureKey.UpdatedAt}");
+Console.WriteLine($"Updated by: {featureKey.UpdatedBy}");
+
+// Soft delete a configuration key
+var deprecatedKey = new ConfigurationKey
+{
+    Key = "Legacy:OldFeature",
+    Value = "true",
+    CreatedBy = "legacy-team@example.com"
+};
+
+deprecatedKey.Delete();
+Console.WriteLine($"Key deleted at: {deprecatedKey.DeletedAt}");
+Console.WriteLine($"Is active: {deprecatedKey.IsActive}");
+
+// Get summary representation
+var summary = databaseKey.GetSummary();
+Console.WriteLine($"Key summary - Id: {summary.Id}, Key: {summary.Key}, Type: {summary.ValueType}");
+```
+
 ## ChangeRequest
 
 The `ChangeRequest` class represents a pending configuration change that requires approval before being applied. It implements a controlled change management workflow with status tracking, reviewer assignment, and audit trails. Change requests support four operations: creating, updating, or deleting configuration keys, or performing configuration-level operations. Once approved, the change can be automatically applied or scheduled for later deployment.
