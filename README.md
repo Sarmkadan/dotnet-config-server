@@ -1704,6 +1704,94 @@ RateLimit__RequestsPerMinute=500
 4. Scale horizontally with multiple instances
 5. Use connection pooling optimization
 
+## ConfigurationDiff
+
+The `ConfigurationDiff` class represents the difference between two configuration versions, tracking all changes including additions, modifications, and deletions. It provides a comprehensive audit trail of configuration changes with detailed metrics and methods for analyzing and summarizing the differences.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+
+// Create a configuration diff between two versions
+var configurationDiff = new ConfigurationDiff
+{
+    ConfigurationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    FromVersionId = Guid.Parse("456e4567-e89b-12d3-a456-426614174001"),
+    ToVersionId = Guid.Parse("789e4567-e89b-12d3-a456-426614174002"),
+    CreatedBy = "admin@example.com"
+};
+
+// Add changes to the diff
+configurationDiff.AddChange("Database:ConnectionString", ChangeType.Modified,
+    "Server=old-db.example.com;Database=Orders",
+    "Server=prod-db.example.com;Database=Orders;User=admin;");
+
+configurationDiff.AddChange("Feature:EnableNewCheckout", ChangeType.Added,
+    null, "true");
+
+configurationDiff.AddChange("Legacy:OldFeature", ChangeType.Deleted,
+    "true", null);
+
+// Get summary statistics
+Console.WriteLine($"Total changes: {configurationDiff.TotalChanges}");
+Console.WriteLine($"Added: {configurationDiff.AddedCount}");
+Console.WriteLine($"Modified: {configurationDiff.ModifiedCount}");
+Console.WriteLine($"Deleted: {configurationDiff.DeletedCount}");
+
+// Get detailed changes
+var addedChanges = configurationDiff.GetChangesByType(ChangeType.Added);
+var modifiedChanges = configurationDiff.GetChangesByType(ChangeType.Modified);
+var deletedChanges = configurationDiff.GetChangesByType(ChangeType.Deleted);
+
+Console.WriteLine($"\nAdded keys:");
+foreach (var change in addedChanges)
+{
+    Console.WriteLine($"  - {change.Key} = {change.NewValue}");
+}
+
+Console.WriteLine($"\nModified keys:");
+foreach (var change in modifiedChanges)
+{
+    Console.WriteLine($"  - {change.Key}: '{change.OldValue}' → '{change.NewValue}'");
+}
+
+Console.WriteLine($"\nDeleted keys:");
+foreach (var change in deletedChanges)
+{
+    Console.WriteLine($"  - {change.Key}");
+}
+
+// Get a structured summary
+var summary = configurationDiff.GetSummary();
+Console.WriteLine($"\nDiff summary - ID: {summary.Id}");
+Console.WriteLine($"Created at: {summary.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+Console.WriteLine($"Created by: {summary.CreatedBy}");
+
+// Get human-readable summary
+var changesSummary = configurationDiff.GetChangesSummary();
+Console.WriteLine($"\n{changesSummary}");
+```
+
+### Public Members
+
+- `Id` - Unique identifier for the diff
+- `ConfigurationId` - The configuration being compared
+- `FromVersionId` - The source version ID
+- `ToVersionId` - The target version ID
+- `CreatedAt` - When the diff was created
+- `CreatedBy` - Who created the diff
+- `TotalChanges` - Total number of changes (Added + Modified + Deleted)
+- `AddedCount` - Number of added configuration keys
+- `ModifiedCount` - Number of modified configuration keys
+- `DeletedCount` - Number of deleted configuration keys
+- `Changes` - List of all change entries
+- `AddChange(key, changeType, oldValue, newValue)` - Add a new change entry
+- `GetChangesByType(changeType)` - Filter changes by type
+- `GetSummary()` - Get structured summary
+- `GetChangesSummary()` - Get human-readable summary
+
 ## EncryptionKey
 
 The `EncryptionKey` class represents an encryption key used for securing sensitive configuration values in the Dotnet Config Server. It manages key lifecycle including creation, activation, deactivation, rotation, and expiration tracking. Each encryption key stores the encrypted key material, salt, algorithm specification, and usage statistics to support secure configuration encryption operations.
