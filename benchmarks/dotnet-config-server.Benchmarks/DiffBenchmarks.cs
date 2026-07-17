@@ -11,6 +11,13 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetConfigServer.Benchmarks;
 
+/// <summary>
+/// Benchmark class that measures the performance of diff and diff‑viewer services
+/// across a variety of realistic scenarios, such as comparing small and large
+/// configuration versions, retrieving enriched diffs, and generating rollback
+/// previews. The benchmarks use an in‑memory SQL Server database that is created
+/// and torn down for each run.
+/// </summary>
 [MemoryDiagnoser]
 [Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
@@ -24,6 +31,19 @@ public class DiffBenchmarks
     private ConfigurationVersion _version3;
     private ServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Performs one‑time global setup for the benchmarks.
+    /// <para>
+    /// This method configures a <see cref="ServiceCollection"/> with logging,
+    /// a SQL Server <see cref="ApplicationDbContext"/>, and all required
+    /// repository and service registrations. It then creates a test database,
+    /// inserts a test configuration together with three configuration versions
+    /// (each containing a set of <see cref="ConfigurationKey"/> records), and
+    /// resolves the <see cref="IDiffService"/> and <see cref="IDiffViewerService"/>
+    /// instances that will be used by the benchmark methods.
+    /// </para>
+    /// </summary>
+    /// <returns>A <see cref="Task"/> that completes when the setup is finished.</returns>
     [GlobalSetup]
     public async Task GlobalSetup()
     {
@@ -208,6 +228,14 @@ public class DiffBenchmarks
         _diffViewerService = scope.ServiceProvider.GetRequiredService<IDiffViewerService>();
     }
 
+    /// <summary>
+    /// Performs global cleanup after all benchmarks have run.
+    /// <para>
+    /// The method deletes the temporary benchmark database and disposes the
+    /// <see cref="ServiceProvider"/> that was built during <see cref="GlobalSetup"/>.
+    /// </para>
+    /// </summary>
+    /// <returns>A <see cref="Task"/> that completes when cleanup is finished.</returns>
     [GlobalCleanup]
     public async Task GlobalCleanup()
     {
@@ -217,42 +245,70 @@ public class DiffBenchmarks
         _serviceProvider.Dispose();
     }
 
+    /// <summary>
+    /// Benchmarks the comparison of two configuration versions using <see cref="IDiffService.ComparVersionsAsync"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous comparison operation.</returns>
     [Benchmark]
     public async Task CompareConfigurations()
     {
         await _diffService.ComparVersionsAsync(_version1.Id, _version2.Id);
     }
 
+    /// <summary>
+    /// Benchmarks retrieving an enriched diff between two versions via <see cref="IDiffViewerService.GetEnrichedDiffAsync"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous diff retrieval.</returns>
     [Benchmark]
     public async Task GetDiff()
     {
         await _diffViewerService.GetEnrichedDiffAsync(_version1.Id, _version2.Id);
     }
 
+    /// <summary>
+    /// Benchmarks retrieving an enriched diff with details (currently the same call as <see cref="GetDiff"/>).
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous diff retrieval.</returns>
     [Benchmark]
     public async Task GetDiffWithDetails()
     {
         await _diffViewerService.GetEnrichedDiffAsync(_version1.Id, _version2.Id);
     }
 
+    /// <summary>
+    /// Benchmarks generating a rollback preview for a specific configuration version using <see cref="IDiffViewerService.GetRollbackPreviewAsync"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous preview generation.</returns>
     [Benchmark]
     public async Task GetRollbackPreview()
     {
         await _diffViewerService.GetRollbackPreviewAsync(_testConfigurationId, _version1.Id);
     }
 
+    /// <summary>
+    /// Benchmarks the comparison of a small configuration version with a larger one.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous comparison operation.</returns>
     [Benchmark]
     public async Task CompareLargeConfigurations()
     {
         await _diffService.ComparVersionsAsync(_version1.Id, _version3.Id);
     }
 
+    /// <summary>
+    /// Benchmarks retrieving the version timeline for a configuration via <see cref="IDiffViewerService.GetVersionTimelineAsync"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous timeline retrieval.</returns>
     [Benchmark]
     public async Task GetDiffTimeline()
     {
         await _diffViewerService.GetVersionTimelineAsync(_testConfigurationId);
     }
 
+    /// <summary>
+    /// Benchmarks retrieving an enriched diff between the second and third versions.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous diff retrieval.</returns>
     [Benchmark]
     public async Task GetEnrichedDiff()
     {
