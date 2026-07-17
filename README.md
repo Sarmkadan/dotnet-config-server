@@ -2101,6 +2101,115 @@ Console.WriteLine($"Applied at: {changeRequest.AppliedAt}");
 // changeRequest.Cancel();
 ```
 
+## WebhookDelivery
+
+The `WebhookDelivery` class represents a webhook delivery attempt that tracks the status and outcome of webhook notifications sent to subscribers when configuration changes occur. It manages retry logic, error tracking, response handling, and provides methods for marking deliveries as successful or failed.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+// Create a webhook delivery for a configuration change event
+var webhookDelivery = new WebhookDelivery
+{
+    WebhookSubscriptionId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    ConfigurationVersionId = Guid.Parse("456e4567-e89b-12d3-a456-426614174001"),
+    EventId = Guid.Parse("789e4567-e89b-12d3-a456-426614174002"),
+    Payload = "{\"configurationId\":\"123e4567-e89b-12d3-a456-426614174000\",\"eventType\":\"ConfigurationUpdated\",\"versionId\":\"456e4567-e89b-12d3-a456-426614174001\"}",
+    EventType = "ConfigurationUpdated",
+    Url = "https://order-service.example.com/config/webhook",
+    AttemptNumber = 1,
+    Status = WebhookDeliveryStatus.Pending
+};
+
+// Simulate sending the webhook to the subscriber
+try
+{
+    using var httpClient = new HttpClient();
+    var response = await httpClient.PostAsJsonAsync(webhookDelivery.Url, webhookDelivery.Payload);
+    
+    if (response.IsSuccessStatusCode)
+    {
+        // Mark as successful with response details
+        webhookDelivery.MarkSuccess(
+            statusCode: (int)response.StatusCode,
+            responseTimeMs: 150,
+            responseBody: await response.Content.ReadAsStringAsync()
+        );
+        
+        Console.WriteLine($"Webhook delivered successfully to {webhookDelivery.Url}");
+        Console.WriteLine($"Status code: {webhookDelivery.StatusCode}");
+        Console.WriteLine($"Response time: {webhookDelivery.ResponseTimeMs}ms");
+    }
+    else
+    {
+        // Mark as failed and schedule retry
+        webhookDelivery.MarkFailed(
+            errorMessage: $"Webhook endpoint returned {response.StatusCode}",
+            statusCode: (int)response.StatusCode,
+            responseTimeMs: 200
+        );
+        
+        if (webhookDelivery.ShouldRetry(maxRetries: 5))
+        {
+            webhookDelivery.ScheduleRetry(delaySeconds: 300);
+            Console.WriteLine($"Webhook failed, scheduled retry at {webhookDelivery.NextRetryAt}");
+        }
+        else
+        {
+            Console.WriteLine("Max retries reached, delivery marked as failed");
+        }
+    }
+}
+catch (Exception ex)
+{
+    // Handle network errors or other exceptions
+    webhookDelivery.MarkFailed(
+        errorMessage: $"Network error: {ex.Message}",
+        statusCode: 0
+    );
+    
+    if (webhookDelivery.ShouldRetry())
+    {
+        webhookDelivery.ScheduleRetry();
+        Console.WriteLine($"Error occurred, scheduled retry at {webhookDelivery.NextRetryAt}");
+    }
+}
+
+// Get delivery summary
+var summary = webhookDelivery.GetSummary();
+Console.WriteLine($"Delivery {summary.Id}: Status={summary.Status}, Attempts={summary.AttemptNumber}");
+```
+
+### Public Members
+
+- `Id` - Unique identifier for the delivery
+- `WebhookSubscriptionId` - The webhook subscription that triggered this delivery
+- `ConfigurationVersionId` - The configuration version being delivered
+- `Status` - Current delivery status (Pending, Success, Failed, Retry)
+- `EventId` - The original domain event ID
+- `CreatedAt` - When the delivery was created
+- `SentAt` - When the delivery was sent (null if not sent yet)
+- `AttemptNumber` - Number of delivery attempts made
+- `StatusCode` - HTTP status code from the webhook endpoint
+- `ResponseTimeMs` - Response time in milliseconds
+- `ResponseBody` - Response body from the webhook endpoint
+- `ErrorMessage` - Error message if delivery failed
+- `Payload` - The webhook payload content
+- `EventType` - Type of event being delivered
+- `Url` - The webhook endpoint URL
+- `NextRetryAt` - When the next retry is scheduled
+- `MarkSuccess(statusCode, responseTimeMs, responseBody)` - Mark delivery as successful
+- `MarkFailed(errorMessage, statusCode, responseTimeMs)` - Mark delivery as failed
+- `ScheduleRetry(delaySeconds)` - Schedule a retry attempt
+- `ShouldRetry(maxRetries)` - Check if delivery should be retried
+- `GetSummary()` - Get a summary view of the delivery
+- `Validate()` - Validate the delivery
+
 ## WebhookSubscription
 
 The `WebhookSubscription` class represents a webhook subscription for configuration change notifications. It manages webhook endpoints that receive real-time notifications when configuration changes occur, supporting event filtering, retry policies, HMAC signature verification, and comprehensive delivery tracking. Webhook subscriptions enable services to react to configuration updates without polling, ensuring immediate response to changes.
