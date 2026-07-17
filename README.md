@@ -1966,6 +1966,184 @@ public class ChangeRequestClient
 
 The `VersionsController` provides RESTful API endpoints for managing configuration versions in the Dotnet Config Server. It enables version control for configuration changes, allowing users to track history, compare versions, roll back to previous states, and manage version lifecycle. The controller supports creating new versions, publishing active versions, archiving old versions, and cleanup operations.
 
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using VersionsController in a service
+public class VersionManagementService
+{
+    private readonly VersionsController _controller;
+    private readonly ILogger<VersionManagementService> _logger;
+
+    public VersionManagementService(
+        VersionsController controller,
+        ILogger<VersionManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)
+    {
+        var result = await _controller.GetVersions(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ConfigurationVersionSummary> versions)
+        {
+            return versions;
+        }
+
+        return new List<ConfigurationVersionSummary>();
+    }
+
+    public async Task<ConfigurationVersion> GetActiveVersionAsync(Guid configurationId)
+    {
+        var result = await _controller.GetActiveVersion(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is ConfigurationVersion version)
+        {
+            return version;
+        }
+
+        throw new Exception("No active version found");
+    }
+
+    public async Task<ConfigurationVersion> CreateVersionAsync(
+        Guid configurationId,
+        string releaseNotes = null)
+    {
+        var request = new VersionsController.CreateVersionRequest
+        {
+            ReleaseNotes = releaseNotes
+        };
+
+        var result = await _controller.CreateVersion(configurationId, request);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is ConfigurationVersion version)
+        {
+            _logger.LogInformation("Created version {VersionId} for configuration {ConfigId}",
+                version.Id, configurationId);
+            return version;
+        }
+
+        throw new Exception("Failed to create version");
+    }
+}
+```
+
+## ConfigurationExporter
+
+The `ConfigurationExporter` class provides utilities for exporting configuration data to multiple formats including JSON, CSV, XML, and environment variable format. It handles serialization with proper escaping and structure preservation, making it ideal for configuration migration, backup, or integration with external systems.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Formatters;
+using DotnetConfigServer.Models;
+using System;
+using System.Collections.Generic;
+
+// Create sample configuration data
+var configurations = new List<Configuration>
+{
+    new Configuration
+    {
+        Id = Guid.NewGuid(),
+        Name = "DatabaseConfig",
+        Description = "Database connection settings",
+        Environment = "Production",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = "admin@example.com"
+    },
+    new Configuration
+    {
+        Id = Guid.NewGuid(),
+        Name = "CacheConfig",
+        Description = "Cache settings",
+        Environment = "Production",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = "admin@example.com"
+    }
+};
+
+var configurationKeys = new List<ConfigurationKey>
+{
+    new ConfigurationKey
+    {
+        Id = Guid.NewGuid(),
+        Key = "Database:ConnectionString",
+        Value = "Server=prod-db;Database=ConfigDb;User=admin;Password=secret",
+        Description = "Database connection string",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    },
+    new ConfigurationKey
+    {
+        Id = Guid.NewGuid(),
+        Key = "Cache:Enabled",
+        Value = "true",
+        Description = "Enable caching",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    },
+    new ConfigurationKey
+    {
+        Id = Guid.NewGuid(),
+        Key = "Cache:Size",
+        Value = "100",
+        Description = "Cache size in MB",
+        IsActive = true,
+        CreatedAt = DateTime.UtcNow
+    }
+};
+
+// Export configurations as JSON (pretty-printed)
+var jsonExport = ConfigurationExporter.ExportAsJson(configurations);
+Console.WriteLine("JSON Export:");
+Console.WriteLine(jsonExport);
+
+// Export configuration keys as JSON (compact)
+var keysJsonExport = ConfigurationExporter.ExportKeysAsJson(configurationKeys, pretty: false);
+Console.WriteLine("\nKeys JSON Export:");
+Console.WriteLine(keysJsonExport);
+
+// Export configurations as CSV
+var csvExport = ConfigurationExporter.ExportAsCsv(configurations);
+Console.WriteLine("\nCSV Export:");
+Console.WriteLine(csvExport);
+
+// Export configuration keys as CSV
+var keysCsvExport = ConfigurationExporter.ExportKeysAsCsv(configurationKeys);
+Console.WriteLine("\nKeys CSV Export:");
+Console.WriteLine(keysCsvExport);
+
+// Export configurations as XML
+var xmlExport = ConfigurationExporter.ExportAsXml(configurations);
+Console.WriteLine("\nXML Export:");
+Console.WriteLine(xmlExport);
+
+// Export configuration keys as XML
+var keysXmlExport = ConfigurationExporter.ExportKeysAsXml(configurationKeys);
+Console.WriteLine("\nKeys XML Export:");
+Console.WriteLine(keysXmlExport);
+
+// Export configuration keys as environment variables format
+var envExport = ConfigurationExporter.ExportAsEnvFormat(configurationKeys);
+Console.WriteLine("\nEnvironment Variables Format:");
+Console.WriteLine(envExport);
+```
+
+## VersionsController
+
 **Key Features:**
 - Retrieve all versions for a configuration
 - Get the currently active version
