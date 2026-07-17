@@ -843,6 +843,71 @@ Response: 200 OK
 
 ### Validation Rules
 
+## ValidationRule
+
+The `ValidationRule` class represents a reusable configuration validation rule that can be applied to configuration keys matching a specific pattern. It supports various rule types including regex matching, length constraints, allowed values, numeric ranges, URL validation, JSON validation, and cross-key validation. Rules can be scoped to specific configurations or defined globally, and are automatically enforced during configuration validation operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+
+// Create a URL validation rule for service endpoints
+var urlRule = new ValidationRule
+{
+    Name = "Service URL Validation",
+    Description = "All service URL keys must contain valid absolute URLs",
+    ConfigurationId = configurationId, // Optional: null for global rules
+    RuleType = ValidationRuleType.Url,
+    TargetKeyPattern = ".*ServiceUrl$", // Matches keys ending with "ServiceUrl"
+    Parameters = null, // Optional parameters for specific rule types
+    IsActive = true,
+    CreatedBy = "admin@example.com"
+};
+
+// Create a regex validation rule for database connection strings
+var regexRule = new ValidationRule
+{
+    Name = "Database Connection Regex",
+    Description = "Database connection strings must match required format",
+    RuleType = ValidationRuleType.Regex,
+    TargetKeyPattern = "Database:ConnectionString",
+    Parameters = @"^Server=[^;]+;Database=[^;]+;.*$",
+    IsActive = true,
+    CreatedBy = "admin@example.com"
+};
+
+// Create a numeric range validation rule for timeout values
+var rangeRule = new ValidationRule
+{
+    Name = "Timeout Range Validation",
+    Description = "Timeout values must be between 10 and 300 seconds",
+    RuleType = ValidationRuleType.NumericRange,
+    TargetKeyPattern = ".*Timeout$",
+    Parameters = "10,300", // min,max format
+    IsActive = true,
+    CreatedBy = "admin@example.com"
+};
+
+// Add the rule via API
+var ruleResponse = await client.PostAsJsonAsync(
+    $"/api/v1/configurations/{configurationId}/validation-rules",
+    urlRule);
+
+// Validate the configuration against all active rules
+var validationResult = await client.PostAsJsonAsync(
+    $"/api/v1/configurations/{configurationId}/validation-rules/validate",
+    new { });
+
+if (!validationResult.IsValid)
+{
+    foreach (var violation in validationResult.Violations)
+    {
+        Console.WriteLine($"{violation.KeyName}: {violation.Message}");
+    }
+}
+```
+
 #### List Rules
 ```http
 GET /configurations/{configurationId}/validation-rules
