@@ -1353,6 +1353,73 @@ if (ServiceExtensionsJsonExtensions.TryFromJson(json, out var safeConfig))
 }
 ```
 
+## ServiceExtensionsConfigurationExtensions
+
+The `ServiceExtensionsConfigurationExtensions` class provides extension methods for `ServiceExtensionsConfiguration` that enable fluent configuration patterns and common operations on service extension configurations. These methods allow you to check for the presence of specific service types, get counts, and build new configurations with additional services while preserving existing ones.
+
+This extension class is particularly useful when bootstrapping the application or dynamically configuring services based on runtime conditions, allowing for clean, readable code when working with service extension configurations.
+
+### Usage Example
+
+```csharp
+// Create a base configuration with some services
+var baseConfig = new ServiceExtensionsConfiguration
+{
+    DataServices = new[] { "DotnetConfigServer.Data.SqlServerConfigurationRepository" },
+    BusinessServices = new[]
+    {
+        "DotnetConfigServer.Services.ConfigurationService",
+        "DotnetConfigServer.Services.VersioningService"
+    }
+};
+
+// Check if configuration has data services
+bool hasDataServices = baseConfig.HasDataServices();
+Console.WriteLine($"Has data services: {hasDataServices}"); // true
+
+// Check if configuration has business services
+bool hasBusinessServices = baseConfig.HasBusinessServices();
+Console.WriteLine($"Has business services: {hasBusinessServices}"); // true
+
+// Get all service types
+var allServices = baseConfig.GetAllServiceTypes();
+Console.WriteLine($"Total services: {allServices.Count}");
+
+// Check if configuration has Swagger configuration
+bool hasSwagger = baseConfig.HasSwaggerConfiguration();
+Console.WriteLine($"Has Swagger config: {hasSwagger}"); // false
+
+// Check if configuration has database initialization
+bool hasDbInit = baseConfig.HasDatabaseInitialization();
+Console.WriteLine($"Has DB initialization: {hasDbInit}"); // false
+
+// Get service count
+int serviceCount = baseConfig.GetServiceCount();
+Console.WriteLine($"Service count: {serviceCount}"); // 3
+
+// Check if any services are configured
+bool hasAnyServices = baseConfig.HasAnyServices();
+Console.WriteLine($"Has any services: {hasAnyServices}"); // true
+
+// Add more data services using fluent extension
+var extendedConfig = baseConfig.WithAddedDataServices(new[]
+{
+    "DotnetConfigServer.Data.RedisCacheRepository",
+    "DotnetConfigServer.Data.SqlServerConfigurationRepository" // duplicate will be removed
+});
+
+Console.WriteLine($"Extended data services count: {extendedConfig.DataServices?.Length}"); // 2
+
+// Add more business services
+var extendedConfig2 = extendedConfig.WithAddedBusinessServices(new[]
+{
+    "DotnetConfigServer.Services.DiffService",
+    "DotnetConfigServer.Services.RollbackService"
+});
+
+Console.WriteLine($"Extended business services count: {extendedConfig2.BusinessServices?.Length}"); // 4
+```
+
 ## Related Projects
 
 - [redis-cache-patterns](https://github.com/sarmkadan/redis-cache-patterns) - Production-ready Redis caching patterns for .NET — cache-aside, write-through, distributed lock
