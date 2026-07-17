@@ -16,6 +16,9 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Contains unit tests for the <see cref="RollbackService"/> class.
+/// </summary>
 public sealed class RollbackServiceTests
 {
     private readonly Mock<IVersioningService> _versioningServiceMock;
@@ -23,6 +26,10 @@ public sealed class RollbackServiceTests
     private readonly Mock<ILogger<RollbackService>> _loggerMock;
     private readonly RollbackService _sut;
 
+    /// <summary>
+    /// Initializes the mock dependencies and creates an instance of <see cref="RollbackService"/>
+    /// to be used in the tests.
+    /// </summary>
     public RollbackServiceTests()
     {
         _versioningServiceMock = new Mock<IVersioningService>();
@@ -35,6 +42,11 @@ public sealed class RollbackServiceTests
             _loggerMock.Object);
     }
 
+    /// <summary>
+    /// Verifies that when the target version cannot be found,
+    /// <see cref="RollbackService.ExecuteRollbackAsync"/> throws a <see cref="ConfigurationNotFoundException"/>.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
     [Fact]
     public async Task ExecuteRollbackAsync_VersionNotFound_ThrowsConfigurationNotFoundException()
     {
@@ -50,6 +62,12 @@ public sealed class RollbackServiceTests
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
     }
 
+    /// <summary>
+    /// Verifies that a valid rollback creates a new draft version, publishes it,
+    /// and returns a <see cref="RollbackResult"/> containing the expected data.
+    /// The test also checks that an audit log entry is added with the correct details.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
     [Fact]
     public async Task ExecuteRollbackAsync_ValidRollback_ReturnsRollbackResult()
     {
