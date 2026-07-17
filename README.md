@@ -268,6 +268,142 @@ public class ApplicationService
 builder.Services.AddScoped<ApplicationRepository>();
 ```
 
+## MemoryCacheService
+
+The `MemoryCacheService` provides an in-memory caching implementation using `ConcurrentDictionary` for thread-safe operations. It's designed for single-instance deployments and includes automatic expiration cleanup, cache statistics tracking, and async/await support for all operations. The service implements `ICacheService` interface and provides methods for getting, setting, removing, checking existence, and bulk operations.
+
+**Key Features:**
+- Thread-safe concurrent dictionary-based implementation
+- Automatic cleanup of expired entries via background timer
+- Comprehensive cache statistics (hits, misses, sets, deletes, size)
+- Async/await pattern for all operations
+- Support for custom expiration times on cache entries
+- Pattern-based key retrieval with `GetKeysAsync`
+- Bulk operations for removing multiple keys
+- Memory-efficient implementation with proper disposal
+
+### Usage Example
+
+```csharp
+// Register in DI container (Program.cs)
+builder.Services.AddSingleton<MemoryCacheService>();
+
+// Usage in a service
+public class ConfigurationService
+{
+    private readonly MemoryCacheService _cache;
+    private readonly ConfigurationRepository _repository;
+
+    public ConfigurationService(MemoryCacheService cache, ConfigurationRepository repository)
+    {
+        _cache = cache;
+        _repository = repository;
+    }
+
+    public async Task<Configuration> GetConfigurationWithCachingAsync(Guid configurationId, string environment)
+    {
+        // Create a cache key based on configuration ID and environment
+        var cacheKey = $"config:{configurationId}:{environment}";
+        
+        // Try to get from cache first
+        var cachedConfig = await _cache.GetAsync<Configuration>(cacheKey);
+        if (cachedConfig != null)
+        {
+            return cachedConfig;
+        }
+
+        // Cache miss - fetch from database
+        var configuration = await _repository.GetByIdAsync(configurationId);
+        if (configuration != null)
+        {
+            // Cache for 5 minutes
+            await _cache.SetAsync(cacheKey, configuration, TimeSpan.FromMinutes(5));
+        }
+
+        return configuration;
+    }
+
+    public async Task UpdateConfigurationWithCacheInvalidationAsync(Guid configurationId, string environment, Configuration updatedConfig)
+    {
+        // Update in database
+        await _repository.UpdateAsync(updatedConfig);
+        await _repository.SaveChangesAsync();
+
+        // Invalidate cache for this configuration
+        var cacheKey = $"config:{configurationId}:{environment}";
+        await _cache.RemoveAsync(cacheKey);
+    }
+
+    public async Task<List<Configuration>> GetConfigurationsBatchAsync(IEnumerable<Guid> configurationIds, string environment)
+    {
+        var results = new List<Configuration>();
+        var missingIds = new List<Guid>();
+        
+        // Try to get from cache first
+        foreach (var id in configurationIds)
+        {
+            var cacheKey = $"config:{id}:{environment}";
+            var cachedConfig = await _cache.GetAsync<Configuration>(cacheKey);
+            if (cachedConfig != null)
+            {
+                results.Add(cachedConfig);
+            }
+            else
+            {
+                missingIds.Add(id);
+            }
+        }
+
+        // Fetch missing configurations from database
+        if (missingIds.Any())
+        {
+            var missingConfigs = await _repository.GetByIdsAsync(missingIds);
+            foreach (var config in missingConfigs)
+            {
+                var cacheKey = $"config:{config.Id}:{environment}";
+                await _cache.SetAsync(cacheKey, config, TimeSpan.FromMinutes(5));
+                results.Add(config);
+            }
+        }
+
+        return results;
+    }
+
+    public async Task CheckCacheStatisticsAsync()
+    {
+        var stats = await _cache.GetStatsAsync();
+        Console.WriteLine($"Cache Stats - Hits: {stats.Hits}, Misses: {stats.Misses}, Sets: {stats.Sets}, Deletes: {stats.Deletes}, Size: {stats.Size}");
+    }
+
+    public async Task ClearConfigurationCacheAsync(Guid configurationId)
+    {
+        // Remove all cache entries related to this configuration
+        var pattern = $"config:{configurationId}:*";
+        var keys = await _cache.GetKeysAsync(pattern);
+        await _cache.RemoveAsync(keys);
+    }
+}
+
+// Example with GetOrCreateAsync for computed values
+public async Task<TimeSpan> GetServiceTimeoutAsync(string serviceName)
+{
+    var cacheKey = $"service-timeout:{serviceName}";
+    
+    return await _cache.GetOrCreateAsync(
+        cacheKey,
+        async () => 
+        {
+            // Simulate expensive computation or database lookup
+            var timeoutConfig = await _repository.GetByNameAsync("Timeouts", serviceName);
+            return timeoutConfig != null && TimeSpan.TryParse(timeoutConfig.Value, out var timeout)
+                ? timeout
+                : TimeSpan.FromSeconds(30);
+        },
+        TimeSpan.FromHours(1) // Cache for 1 hour
+    );
+}
+```
+
 ## ConfigurationRepository
 
 The `ConfigurationRepository` class provides specialized data access operations for `Configuration` entities, enabling efficient querying and management of configurations within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configurations by application ID, configuration name, and advanced search capabilities that support filtering by application and text queries across configuration names and descriptions. The repository also includes methods for counting configurations by application and retrieving deleted configurations before a specific cutoff date.
