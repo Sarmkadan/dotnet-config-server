@@ -2211,6 +2211,216 @@ public class VersionClient
 }
 ```
 
+## ValidationRulesController
+
+The `ValidationRulesController` provides RESTful API endpoints for managing configuration validation rules. Validation rules define constraints that configurations must satisfy, enabling automated validation of configuration data before deployment. This controller supports CRUD operations for validation rules and provides endpoints to validate configurations against defined rules.
+
+**Key Features:**
+- List all validation rules for a configuration
+- Create new validation rules with custom constraints
+- Retrieve, update, and delete individual validation rules
+- Validate configurations or specific versions against active rules
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using ValidationRulesController in a service
+public class ValidationRuleManagementService
+{
+ private readonly ValidationRulesController _controller;
+ private readonly ILogger<ValidationRuleManagementService> _logger;
+
+ public ValidationRuleManagementService(
+ ValidationRulesController controller,
+ ILogger<ValidationRuleManagementService> logger)
+ {
+ _controller = controller;
+ _logger = logger;
+ }
+
+ public async Task<List<ValidationRule>> GetValidationRulesAsync(Guid configurationId)
+ {
+ var result = await _controller.GetRules(configurationId);
+
+ if (result is OkObjectResult okResult && okResult.Value is List<ValidationRule> rules)
+ {
+ return rules;
+ }
+
+ return new List<ValidationRule>();
+ }
+
+ public async Task<ValidationRule> CreateValidationRuleAsync(
+ Guid configurationId,
+ string ruleName,
+ string ruleType,
+ string ruleValue,
+ string description = null)
+ {
+ var validationRule = new ValidationRule
+ {
+ ConfigurationId = configurationId,
+ Name = ruleName,
+ Type = ruleType,
+ Value = ruleValue,
+ Description = description ?? "Automated validation rule",
+ IsActive = true,
+ CreatedAt = DateTime.UtcNow,
+ CreatedBy = "system"
+ };
+
+ var result = await _controller.CreateRule(configurationId, validationRule);
+
+ if (result is CreatedAtActionResult createdResult && createdResult.Value is ValidationRule createdRule)
+ {
+ _logger.LogInformation("Created validation rule {RuleId} for configuration {ConfigId}",
+ createdRule.Id, configurationId);
+ return createdRule;
+ }
+
+ throw new Exception("Failed to create validation rule");
+ }
+
+ public async Task<ValidationRule> GetValidationRuleAsync(Guid configurationId, Guid ruleId)
+ {
+ var result = await _controller.GetRule(configurationId, ruleId);
+
+ if (result is OkObjectResult okResult && okResult.Value is ValidationRule rule)
+ {
+ return rule;
+ }
+
+ throw new Exception("Validation rule not found");
+ }
+
+ public async Task<ValidationRule> UpdateValidationRuleAsync(
+ Guid configurationId,
+ Guid ruleId,
+ string newValue,
+ string updatedBy)
+ {
+ var existingRule = await GetValidationRuleAsync(configurationId, ruleId);
+
+ existingRule.Value = newValue;
+ existingRule.UpdatedAt = DateTime.UtcNow;
+ existingRule.UpdatedBy = updatedBy;
+
+ var result = await _controller.UpdateRule(configurationId, ruleId, existingRule);
+
+ if (result is OkObjectResult okResult && okResult.Value is ValidationRule updatedRule)
+ {
+ _logger.LogInformation("Updated validation rule {RuleId}", ruleId);
+ return updatedRule;
+ }
+
+ throw new Exception("Failed to update validation rule");
+ }
+
+ public async Task DeleteValidationRuleAsync(Guid configurationId, Guid ruleId)
+ {
+ var result = await _controller.DeleteRule(configurationId, ruleId);
+
+ if (result is NoContentResult)
+ {
+ _logger.LogInformation("Deleted validation rule {RuleId}", ruleId);
+ }
+ else
+ {
+ throw new Exception("Failed to delete validation rule");
+ }
+ }
+
+ public async Task<ValidationRuleResult> ValidateConfigurationAsync(
+ Guid configurationId,
+ Guid? versionId = null)
+ {
+ var request = new ValidationRulesController.ValidationRequest
+ {
+ VersionId = versionId
+ };
+
+ var result = await _controller.ValidateConfiguration(configurationId, request);
+
+ if (result is OkObjectResult okResult && okResult.Value is ValidationRuleResult validationResult)
+ {
+ return validationResult;
+ }
+
+ throw new Exception("Failed to validate configuration");
+ }
+}
+
+// Example: Calling endpoints via HTTP client
+public class ValidationRuleClient
+{
+ private readonly HttpClient _httpClient;
+ private readonly string _baseUrl = "https://localhost:5001/api/v1/configurations";
+
+ public ValidationRuleClient(HttpClient httpClient)
+ {
+ _httpClient = httpClient;
+ }
+
+ public async Task<List<ValidationRule>> GetValidationRulesAsync(Guid configurationId)
+ {
+ var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/validation-rules");
+ response.EnsureSuccessStatusCode();
+ return await response.Content.ReadFromJsonAsync<List<ValidationRule>>();
+ }
+
+ public async Task<ValidationRule> CreateValidationRuleAsync(
+ Guid configurationId,
+ ValidationRule rule)
+ {
+ var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{configurationId}/validation-rules", rule);
+ response.EnsureSuccessStatusCode();
+ return await response.Content.ReadFromJsonAsync<ValidationRule>();
+ }
+
+ public async Task<ValidationRule> GetValidationRuleAsync(Guid configurationId, Guid ruleId)
+ {
+ var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/validation-rules/{ruleId}");
+ response.EnsureSuccessStatusCode();
+ return await response.Content.ReadFromJsonAsync<ValidationRule>();
+ }
+
+ public async Task<ValidationRule> UpdateValidationRuleAsync(
+ Guid configurationId,
+ Guid ruleId,
+ ValidationRule rule)
+ {
+ var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/{configurationId}/validation-rules/{ruleId}", rule);
+ response.EnsureSuccessStatusCode();
+ return await response.Content.ReadFromJsonAsync<ValidationRule>();
+ }
+
+ public async Task DeleteValidationRuleAsync(Guid configurationId, Guid ruleId)
+ {
+ var response = await _httpClient.DeleteAsync($"{_baseUrl}/{configurationId}/validation-rules/{ruleId}");
+ response.EnsureSuccessStatusCode();
+ }
+
+ public async Task<ValidationRuleResult> ValidateConfigurationAsync(
+ Guid configurationId,
+ Guid? versionId = null)
+ {
+ var request = new { versionId };
+ var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{configurationId}/validation-rules/validate", request);
+ response.EnsureSuccessStatusCode();
+ return await response.Content.ReadFromJsonAsync<ValidationRuleResult>();
+ }
+}
+
 ## ConfigurationsController
 
 **Key Features:**
