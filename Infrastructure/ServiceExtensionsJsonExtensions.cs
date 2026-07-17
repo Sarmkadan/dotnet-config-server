@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Text.Json;
 
@@ -73,21 +73,14 @@ public static class ServiceExtensionsJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
     /// <returns>The deserialized ServiceExtensionsConfiguration instance, or null if JSON is empty or invalid</returns>
+    /// <exception cref="ArgumentNullException">Thrown when json is null</exception>
     public static ServiceExtensionsConfiguration? FromJson(string json)
     {
-        if (string.IsNullOrEmpty(json))
-        {
-            return null;
-        }
+        ArgumentNullException.ThrowIfNull(json);
 
-        try
-        {
-            return JsonSerializer.Deserialize<ServiceExtensionsConfiguration>(json, _jsonOptions);
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return string.IsNullOrEmpty(json)
+            ? null
+            : JsonSerializer.Deserialize<ServiceExtensionsConfiguration>(json, _jsonOptions);
     }
 
     /// <summary>
@@ -96,11 +89,15 @@ public static class ServiceExtensionsJsonExtensions
     /// <param name="json">The JSON string to deserialize</param>
     /// <param name="value">The deserialized ServiceExtensionsConfiguration instance, or null if deserialization fails</param>
     /// <returns>True if deserialization succeeds; otherwise, false</returns>
+    /// <exception cref="ArgumentNullException">Thrown when json is null</exception>
     public static bool TryFromJson(string json, out ServiceExtensionsConfiguration? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
+        value = null;
+
         if (string.IsNullOrEmpty(json))
         {
-            value = null;
             return false;
         }
 
@@ -111,7 +108,6 @@ public static class ServiceExtensionsJsonExtensions
         }
         catch (JsonException)
         {
-            value = null;
             return false;
         }
     }
