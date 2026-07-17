@@ -1378,6 +1378,40 @@ await benchmarks.CacheWithEncryptedData();
 await benchmarks.GlobalCleanup();
 ```
 
+## CachingBenchmarksExtensions
+
+The `CachingBenchmarksExtensions` class provides a set of extension methods for `CachingBenchmarks` to facilitate testing of advanced caching scenarios, including batch operations, concurrent access patterns, and specific eviction policy testing. These extensions allow for more complex and realistic benchmarking by simulating high-load scenarios and varied caching conditions.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new CachingBenchmarks();
+await benchmarks.GlobalSetup();
+
+// Initialize test data
+var configIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+
+// Execute batch and concurrent benchmarks
+await benchmarks.GetConfigurations_CacheHitBatch(configIds);
+await benchmarks.ConcurrentCacheAccess(Guid.NewGuid(), concurrencyLevel: 20);
+
+// Run combined scenario benchmarks
+await benchmarks.AllCacheHitScenarios();
+
+// Retrieve and analyze cache operation statistics
+var stats = benchmarks.GetCacheOperationStats();
+foreach (var stat in stats)
+{
+    Console.WriteLine($"{stat.Name}: {stat.Description}");
+}
+
+// Cleanup resources
+await benchmarks.GlobalCleanup();
+```
+
 ## EncryptionBenchmarks
 
 The `EncryptionBenchmarks` class provides a comprehensive suite of benchmarks to evaluate the performance of the `IEncryptionService` implementation. It covers various encryption and decryption scenarios including synchronous and asynchronous operations, key validation, key generation, key rotation, and large payload handling.
