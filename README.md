@@ -268,6 +268,110 @@ public class ApplicationService
 builder.Services.AddScoped<ApplicationRepository>();
 ```
 
+## ConfigurationKeyRepository
+
+The `ConfigurationKeyRepository` class provides specialized data access operations for `ConfigurationKey` entities, enabling efficient querying and management of configuration key-value pairs within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configuration keys by configuration ID, version, or key name, as well as advanced search capabilities that support filtering by configuration, key prefix, and text queries across key names, values, and descriptions.
+
+**Key Features:**
+- Retrieve all active configuration keys for a specific configuration
+- Find specific configuration keys by name within a configuration
+- Search configuration keys with flexible filtering options
+- Retrieve all active keys for a specific configuration version
+- Filter by configuration ID, key prefix, or text search across multiple fields
+
+### Usage Example
+
+```csharp
+// Example: Managing configuration keys for a microservice
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
+using Microsoft.Extensions.Logging;
+
+// Create repository instance (typically injected via DI)
+var repository = new ConfigurationKeyRepository(dbContext, logger);
+
+// Get all active configuration keys for a specific configuration
+var keys = await repository.GetByConfigurationAsync(configurationId);
+
+// Find a specific configuration key by name
+var connectionStringKey = await repository.GetByKeyNameAsync(configurationId, "ConnectionStrings:Default");
+
+// Search configuration keys with various filters
+var searchResults = await repository.SearchAsync(
+    query: "timeout",
+    prefix: "ConnectionStrings:",
+    configurationId: configurationId
+);
+
+// Get all active keys for a specific version
+var versionKeys = await repository.GetByVersionAsync(versionId);
+
+// Example: Using in a configuration management service
+public class ConfigurationKeyService
+{
+    private readonly ConfigurationKeyRepository _repository;
+    private readonly ConfigurationVersionRepository _versionRepository;
+
+    public ConfigurationKeyService(
+        ConfigurationKeyRepository repository,
+        ConfigurationVersionRepository versionRepository)
+    {
+        _repository = repository;
+        _versionRepository = versionRepository;
+    }
+
+    public async Task UpdateConfigurationKeyAsync(
+        Guid configurationId,
+        string keyName,
+        string newValue,
+        string updatedBy)
+    {
+        // Find the existing key
+        var existingKey = await _repository.GetByKeyNameAsync(configurationId, keyName);
+        
+        if (existingKey == null)
+        {
+            throw new KeyNotFoundException($"Configuration key '{keyName}' not found.");
+        }
+        
+        // Create new version
+        var newVersion = new ConfigurationVersion
+        {
+            ConfigurationId = configurationId,
+            VersionNumber = Guid.NewGuid().ToString(),
+            Status = ConfigurationVersionStatus.Active,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = updatedBy,
+            Changes = $"Updated key: {keyName}"
+        };
+        
+        // Update key value
+        existingKey.Value = newValue;
+        existingKey.UpdatedAt = DateTime.UtcNow;
+        existingKey.UpdatedBy = updatedBy;
+        
+        // Save changes
+        await _versionRepository.AddAsync(newVersion);
+        await _repository.UpdateAsync(existingKey);
+        await _repository.SaveChangesAsync();
+    }
+
+    public async Task<List<ConfigurationKey>> SearchConfigurationKeysAsync(
+        string searchTerm,
+        Guid? configurationId = null)
+    {
+        return await _repository.SearchAsync(
+            query: searchTerm,
+            prefix: null,
+            configurationId: configurationId
+        );
+    }
+}
+
+// Register in DI container (Program.cs)
+builder.Services.AddScoped<ConfigurationKeyRepository>();
+```
+
 [HttpGet("{id}")]
 public async Task<IActionResult> GetConfiguration(int id)
 {
