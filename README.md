@@ -1535,6 +1535,81 @@ var encryptionService = app.Services.GetRequiredService<IEncryptionService>();
 - `AddSwaggerConfiguration(IServiceCollection)` - Configures Swagger/OpenAPI documentation
 - `InitializeDatabaseAsync(IServiceProvider)` - Applies pending database migrations asynchronously
 
+## ConcurrencyException
+
+The `ConcurrencyException` class represents exceptions thrown when concurrency conflicts occur in the system, such as optimistic concurrency violations or race conditions. It serves as the base class for more specific concurrency-related exceptions and provides consistent error handling patterns for conflict resolution.
+
+This exception type is commonly thrown when multiple processes attempt to modify the same configuration or entity simultaneously, or when circular dependencies are detected in configuration relationships. It includes constructors for creating exception instances with custom messages, inner exceptions, and error codes.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Exceptions;
+using DotnetConfigServer.Services;
+using System;
+
+// Example 1: Basic ConcurrencyException usage
+try
+{
+    // Attempt to update a configuration that might be modified by another process
+    await configurationService.UpdateConfigurationAsync(configurationId, updatedConfig);
+}
+catch (ConcurrencyException ex)
+{
+    // Log the concurrency error
+    logger.LogError(ex, "Concurrency conflict detected while updating configuration");
+    
+    // Implement retry logic with exponential backoff
+    await RetryUpdateWithBackoffAsync(configurationId, updatedConfig, retryCount: 0);
+}
+
+// Example 2: Handling OptimisticConcurrencyException specifically
+try
+{
+    await versioningService.PublishVersionAsync(versionId);
+}
+catch (OptimisticConcurrencyException ex)
+{
+    // Extract detailed conflict information
+    var entityType = ex.GetEntityType(); // Returns the entity type (e.g., "Configuration")
+    var entityId = ex.GetEntityId();     // Returns the entity ID
+    var expectedVersion = ex.GetExpectedVersion(); // Returns the expected version string
+    var actualVersion = ex.GetActualVersion();     // Returns the actual version string
+    
+    logger.LogWarning("Optimistic concurrency conflict detected for {EntityType} {EntityId}", entityType, entityId);
+    logger.LogDebug("Expected version: {ExpectedVersion}, Actual version: {ActualVersion}", expectedVersion, actualVersion);
+    
+    // Display user-friendly retry message
+    Console.WriteLine(ex.ToRetryMessage(retryCount: 2));
+}
+
+// Example 3: Handling CircularDependencyException
+try
+{
+    await configurationService.CreateConfigurationAsync(configRequest);
+}
+catch (CircularDependencyException ex)
+{
+    logger.LogError(ex, "Circular dependency detected in configuration");
+    throw new InvalidOperationException("Configuration contains circular dependencies. Please review your configuration structure.", ex);
+}
+
+// Example 4: Using ConcurrencyException with inner exception
+try
+{
+    await diffService.CompareConfigurationsAsync(oldVersionId, newVersionId);
+}
+catch (ConcurrencyException ex)
+{
+    // Create a new exception with additional context
+    throw new ConcurrencyException(
+        $"Failed to compare configurations due to concurrency issues: {ex.Message}",
+        ex,
+        ex.ErrorCode
+    );
+}
+```
+
 ## ConcurrencyExceptionExtensions
 
 The `ConcurrencyExceptionExtensions` class provides extension methods for `ConcurrencyException` and its derived types (`OptimisticConcurrencyException`, `CircularDependencyException`) to simplify common concurrency conflict handling scenarios. These methods help identify exception types, extract detailed conflict information, generate user-friendly messages, and determine appropriate retry strategies.
