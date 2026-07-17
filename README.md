@@ -1448,6 +1448,40 @@ var decryptedLargeAsync = await benchmarks.DecryptLargeTextAsync();
 await benchmarks.GlobalCleanup();
 ```
 
+## WebhookBenchmarks
+
+The `WebhookBenchmarks` class provides a set of performance benchmarks for webhook operations, including subscription management (CRUD), event dispatching, and retry queue processing. It helps evaluate the efficiency of the webhook system under different workloads, ensuring reliable delivery and performance for configuration change notifications.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Benchmarks;
+
+// Instantiate the benchmark suite
+var benchmarks = new WebhookBenchmarks();
+
+// Initialize dependencies and test data (required before running benchmarks)
+await benchmarks.GlobalSetup();
+
+// Execute subscription management benchmarks
+await benchmarks.CreateWebhook();
+await benchmarks.GetWebhook();
+await benchmarks.GetWebhooksByConfiguration();
+await benchmarks.UpdateWebhook();
+await benchmarks.DeleteWebhook();
+
+// Execute delivery and processing benchmarks
+await benchmarks.DispatchWebhook();
+await benchmarks.GetFailedDeliveries();
+await benchmarks.ProcessWebhookRetryQueue();
+
+// Execute comprehensive scenario benchmarks
+await benchmarks.CreateWebhookWithManyEvents();
+
+// Cleanup test data and resources
+await benchmarks.GlobalCleanup();
+```
+
 ## ServiceExtensionsConfiguration
 
 The `ServiceExtensionsConfiguration` class is a data transfer object used for serializing and deserializing service extension configurations. It provides a structured way to define which services should be registered in the dependency injection container, including data services, business services, webhook clients, Swagger configurations, and database initialization methods.
