@@ -28,7 +28,7 @@ public static class ConcurrencyExceptionJsonExtensionsJsonExtensions
     /// <param name="value">The exception to serialize.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the exception.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
     public static string ToJson(this ConcurrencyException value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -40,7 +40,8 @@ public static class ConcurrencyExceptionJsonExtensionsJsonExtensions
     /// Deserializes a JSON string into a <see cref="ConcurrencyException"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized <see cref="ConcurrencyException"/> instance, or null if the JSON is null or empty.</returns>
+    /// <returns>The deserialized <see cref="ConcurrencyException"/> instance; <see langword="null"/> if <paramref name="json"/> is <see langword="null"/> or empty.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is <see langword="null"/>.</exception>
     /// <exception cref="JsonException">Thrown if the JSON is invalid or cannot be deserialized.</exception>
     public static ConcurrencyException? FromJson(string json)
     {
@@ -56,8 +57,8 @@ public static class ConcurrencyExceptionJsonExtensionsJsonExtensions
     /// Attempts to deserialize a JSON string into a <see cref="ConcurrencyException"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <param name="value">The resulting <see cref="ConcurrencyException"/> instance if deserialization succeeds; otherwise, null.</param>
-    /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+    /// <param name="value">The deserialized <see cref="ConcurrencyException"/> if successful; otherwise, <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if deserialization succeeds; otherwise, <see langword="false"/>.</returns>
     public static bool TryFromJson(string json, out ConcurrencyException? value)
     {
         try
