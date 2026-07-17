@@ -2211,6 +2211,116 @@ public class VersionClient
 }
 ```
 
+## RollbackController
+
+The `RollbackController` provides RESTful API endpoints for executing rollbacks to previous configuration versions. It allows users to preview changes before applying them, view rollback history, and roll back to any previous version with a reason. This controller is essential for configuration recovery and rollback scenarios.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using RollbackController in a service
+public class RollbackManagementService
+{
+    private readonly RollbackController _controller;
+    private readonly ILogger<RollbackManagementService> _logger;
+
+    public RollbackManagementService(
+        RollbackController controller,
+        ILogger<RollbackManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<List<RollbackRecord>> GetRollbackHistoryAsync(Guid configurationId)
+    {
+        var result = await _controller.GetHistory(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<RollbackRecord> history)
+        {
+            return history;
+        }
+
+        return new List<RollbackRecord>();
+    }
+
+    public async Task<RollbackResult> ExecuteRollbackAsync(
+        Guid configurationId,
+        Guid targetVersionId,
+        string reason)
+    {
+        var request = new RollbackController.RollbackRequest { Reason = reason };
+        var result = await _controller.ExecuteRollback(configurationId, targetVersionId, request);
+
+        if (result is OkObjectResult okResult && okResult.Value is RollbackResult rollbackResult)
+        {
+            _logger.LogInformation("Executed rollback to version {VersionId} for configuration {ConfigId}: {Reason}",
+                targetVersionId, configurationId, reason);
+            return rollbackResult;
+        }
+
+        throw new Exception("Failed to execute rollback");
+    }
+
+    public async Task<RollbackPreview> GetRollbackPreviewAsync(Guid configurationId, Guid targetVersionId)
+    {
+        var result = await _controller.PreviewRollback(configurationId, targetVersionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is RollbackPreview preview)
+        {
+            return preview;
+        }
+
+        throw new Exception("Failed to get rollback preview");
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class RollbackClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/configurations";
+
+    public RollbackClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<RollbackRecord>> GetRollbackHistoryAsync(Guid configurationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/rollback/history");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<RollbackRecord>>();
+    }
+
+    public async Task<RollbackResult> ExecuteRollbackAsync(Guid configurationId, Guid targetVersionId, string reason)
+    {
+        var request = new { reason };
+        var response = await _httpClient.PostAsJsonAsync(
+            $"{_baseUrl}/{configurationId}/rollback/{targetVersionId}",
+            request);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<RollbackResult>();
+    }
+
+    public async Task<RollbackPreview> GetRollbackPreviewAsync(Guid configurationId, Guid targetVersionId)
+    {
+        var response = await _httpClient.GetAsync(
+            $"{_baseUrl}/{configurationId}/rollback/preview/{targetVersionId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<RollbackPreview>();
+    }
+}
+```
+
 ## ValidationRulesController
 
 The `ValidationRulesController` provides RESTful API endpoints for managing configuration validation rules. Validation rules define constraints that configurations must satisfy, enabling automated validation of configuration data before deployment. This controller supports CRUD operations for validation rules and provides endpoints to validate configurations against defined rules.
