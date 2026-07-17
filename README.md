@@ -2176,6 +2176,32 @@ if (!validation.IsValid)
 }
 ```
 
+## DomainEvent
+
+The DomainEvent type represents a change in the application configuration.
+
+Usage example:
+
+```csharp
+public class MyDomainEvent : DomainEvent
+{
+    public Guid Id { get; set; }
+    public DateTime OccurredAt { get; set; }
+    public string? Source { get; set; }
+    public string? UserId { get; set; }
+    public Guid ConfigurationId { get; set; }
+    public Guid ApplicationId { get; set; }
+    public string ConfigurationName { get; set; } = string.Empty;
+    public string Environment { get; set; } = string.Empty;
+    public Dictionary<string, object?> Changes { get; set; } = new();
+    public Guid KeyId { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string? OldValue { get; set; }
+    public string? NewValue { get; set; }
+    public bool IsEncrypted { get; set; }
+}
+```
+
 ## Related Projects
 
 - [redis-cache-patterns](https://github.com/sarmkadan/redis-cache-patterns) - Production-ready Redis caching patterns for .NET — cache-aside, write-through, distributed lock
