@@ -268,6 +268,120 @@ public class ApplicationService
 builder.Services.AddScoped<ApplicationRepository>();
 ```
 
+## ConfigurationRepository
+
+The `ConfigurationRepository` class provides specialized data access operations for `Configuration` entities, enabling efficient querying and management of configurations within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configurations by application ID, configuration name, and advanced search capabilities that support filtering by application and text queries across configuration names and descriptions. The repository also includes methods for counting configurations by application and retrieving deleted configurations before a specific cutoff date.
+
+**Key Features:**
+- Retrieve all active configurations for a specific application
+- Find specific configurations by name within an application
+- Search configurations with flexible filtering options
+- Count configurations by application ID
+- Retrieve deleted configurations before a specific date
+
+### Usage Example
+
+```csharp
+// Example: Managing configurations for microservices
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Repositories;
+using Microsoft.Extensions.Logging;
+
+// Create repository instance (typically injected via DI)
+var repository = new ConfigurationRepository(dbContext, logger);
+
+// Get all active configurations for a specific application
+var appConfigurations = await repository.GetByApplicationIdAsync(applicationId);
+
+// Find a specific configuration by name within an application
+var devConfig = await repository.GetByNameAsync("Development", applicationId);
+
+// Search configurations with various filters
+var searchResults = await repository.SearchAsync(
+    query: "production",
+    applicationId: applicationId
+);
+
+// Get count of configurations for an application
+var configCount = await repository.GetCountByApplicationAsync(applicationId);
+
+// Get deleted configurations before a specific date
+var deletedConfigs = await repository.GetDeletedBeforeAsync(DateTime.UtcNow.AddDays(-30));
+
+// Example: Using in a configuration management service
+public class ConfigurationService
+{
+    private readonly ConfigurationRepository _repository;
+    private readonly ApplicationRepository _appRepository;
+
+    public ConfigurationService(
+        ConfigurationRepository repository,
+        ApplicationRepository appRepository)
+    {
+        _repository = repository;
+        _appRepository = appRepository;
+    }
+
+    public async Task<Configuration> CreateConfigurationAsync(
+        Guid applicationId,
+        string name,
+        string environment,
+        string description,
+        string createdBy)
+    {
+        var application = await _appRepository.GetByIdAsync(applicationId);
+        
+        if (application == null)
+        {
+            throw new ArgumentException("Application not found.");
+        }
+
+        var configuration = new Configuration
+        {
+            ApplicationId = applicationId,
+            Name = name,
+            Environment = environment,
+            Description = description,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = createdBy,
+            IsActive = true
+        };
+
+        await _repository.AddAsync(configuration);
+        await _repository.SaveChangesAsync();
+        
+        return configuration;
+    }
+
+    public async Task<List<Configuration>> GetConfigurationsByApplicationAsync(Guid applicationId)
+    {
+        return await _repository.GetByApplicationIdAsync(applicationId);
+    }
+
+    public async Task<Configuration?> FindConfigurationByNameAsync(
+        Guid applicationId,
+        string configurationName)
+    {
+        return await _repository.GetByNameAsync(configurationName, applicationId);
+    }
+
+    public async Task<List<Configuration>> SearchConfigurationsAsync(
+        string searchTerm,
+        Guid? applicationId = null)
+    {
+        return await _repository.SearchAsync(searchTerm, applicationId);
+    }
+
+    public async Task<int> GetConfigurationCountAsync(Guid applicationId)
+    {
+        return await _repository.GetCountByApplicationAsync(applicationId);
+    }
+}
+
+// Register in DI container (Program.cs)
+builder.Services.AddScoped<ConfigurationRepository>();
+```
+
 ## ConfigurationKeyRepository
 
 The `ConfigurationKeyRepository` class provides specialized data access operations for `ConfigurationKey` entities, enabling efficient querying and management of configuration key-value pairs within the Dotnet Config Server. It extends the base repository functionality with methods for retrieving configuration keys by configuration ID, version, or key name, as well as advanced search capabilities that support filtering by configuration, key prefix, and text queries across key names, values, and descriptions.
