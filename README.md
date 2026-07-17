@@ -1547,6 +1547,129 @@ var app = builder.Build();
 // Typically registered as the first middleware to catch all exceptions
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
+
+## VersioningService
+
+The `VersioningService` class manages the complete lifecycle of configuration versions, enabling teams to track changes, maintain history, and safely roll back to previous states. It handles version creation, publishing, archiving, deprecation, and cleanup operations while maintaining audit trails for compliance and debugging purposes.
+
+The service supports semantic versioning patterns, automatic version incrementing, and maintains relationships between versions through a linked list structure. It ensures version consistency by validating each operation and maintaining referential integrity across configurations, keys, and audit logs.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+// Setup dependency injection (typically in Program.cs)
+var services = new ServiceCollection();
+services.AddLogging();
+services.AddScoped<IVersioningService, VersioningService>();
+services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();
+services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
+services.AddScoped<IConfigurationKeyRepository, ConfigurationKeyRepository>();
+services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve the service
+var versioningService = serviceProvider.GetRequiredService<IVersioningService>();
+
+// Create a new configuration version
+guid configId = Guid.Parse("550e8400-e29b-41d4-a716-446655440001"); // Replace with actual config ID
+var newVersion = await versioningService.CreateVersionAsync(
+    configId,
+    "Initial production release with database encryption enabled",
+    "deployment-bot@example.com"
+);
+
+Console.WriteLine($"Created version {newVersion.VersionNumber} (ID: {newVersion.Id})");
+Console.WriteLine($"Status: {newVersion.Status}");
+Console.WriteLine($"Key Count: {newVersion.KeyCount}");
+
+// Get the active version for a configuration
+var activeVersion = await versioningService.GetActiveVersionAsync(configId);
+if (activeVersion != null)
+{
+    Console.WriteLine($"Active version: {activeVersion.VersionNumber} (Status: {activeVersion.Status})");
+}
+
+// Publish the version to make it active
+var publishedVersion = await versioningService.PublishVersionAsync(
+    newVersion.Id,
+    "deployment-bot@example.com"
+);
+
+Console.WriteLine($"Published version {publishedVersion.VersionNumber}");
+
+// Get all versions for a configuration
+var allVersions = await versioningService.GetVersionsAsync(configId);
+Console.WriteLine($"\nTotal versions: {allVersions.Count}");
+
+foreach (var version in allVersions.OrderByDescending(v => v.CreatedAt))
+{
+    Console.WriteLine($" Version {version.VersionNumber} - {version.Status} - {version.CreatedAt:yyyy-MM-dd}");
+}
+
+// Get version history summary
+var versionHistory = await versioningService.GetVersionHistoryAsync(configId);
+Console.WriteLine($"\nVersion History ({versionHistory.Count} entries):");
+foreach (var entry in versionHistory)
+{
+    Console.WriteLine($" {entry.VersionNumber} - {entry.Status} - {entry.CreatedAt:yyyy-MM-dd}");
+}
+
+// Archive an old version
+var oldVersion = allVersions.FirstOrDefault(v => v.Status == ConfigurationVersionStatus.Draft);
+if (oldVersion != null)
+{
+    var archivedVersion = await versioningService.ArchiveVersionAsync(
+        oldVersion.Id,
+        "deployment-bot@example.com"
+    );
+    Console.WriteLine($"Archived version {archivedVersion.VersionNumber}");
+}
+
+// Rollback to a previous version
+var previousVersion = allVersions.Skip(1).FirstOrDefault();
+if (previousVersion != null)
+{
+    var rollbackVersion = await versioningService.RollbackAsync(
+        configId,
+        previousVersion.Id,
+        "admin@example.com"
+    );
+    Console.WriteLine($"Rolled back to version {rollbackVersion.VersionNumber}");
+}
+
+// Cleanup old versions (keep only 10 most recent)
+var cleanupCount = await versioningService.CleanupOldVersionsAsync(configId, 10);
+Console.WriteLine($"Cleaned up {cleanupCount} old versions");
+```
+
+### Public Members
+
+- `VersioningService(IConfigurationVersionRepository, IConfigurationRepository, IConfigurationKeyRepository, IAuditLogRepository, ILogger<VersioningService>)` - Constructor that accepts repository dependencies and logger
+- `Task<ConfigurationVersion> CreateVersionAsync(Guid configurationId, string releaseNotes, string userId)` - Creates a new draft version of a configuration, copying keys from the previous version
+- `Task<ConfigurationVersion?> GetVersionAsync(Guid versionId)` - Retrieves a specific configuration version by ID
+- `Task<List<ConfigurationVersion>> GetVersionsAsync(Guid configurationId)` - Gets all versions for a configuration
+- `Task<ConfigurationVersion?> GetActiveVersionAsync(Guid configurationId)` - Gets the currently active/published version
+- `Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId)` - Publishes a draft version, making it the active version and deprecating any previously active version
+- `Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId)` - Archives a version (sets status to Archived)
+- `Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId)` - Deprecates a version (sets status to Deprecated)
+- `Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId)` - Creates a new version that rolls back to a previous version's configuration
+- `Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)` - Gets a summary of all versions for a configuration, ordered by creation date (newest first)
+- `Task<int> CleanupOldVersionsAsync(Guid configurationId, int maxVersions)` - Archives old versions beyond the specified maximum, returning the count of archived versions
+
+### Related Classes
+
+- `ConfigurationVersion` - Represents a configuration version with properties: `Id`, `ConfigurationId`, `VersionNumber`, `Status`, `ReleaseNotes`, `CreatedBy`, `CreatedAt`, `PreviousVersionId`, `Keys`, `KeyCount`, `HasEncryptedKeys`
+- `ConfigurationVersionStatus` - Enum with values: `Draft`, `Active`, `Archived`, `Deprecated`
+- `ConfigurationVersionSummary` - Summary view of a version with properties: `VersionNumber`, `Status`, `CreatedAt`, `CreatedBy`
+
 // Register other middleware
 app.UseHttpsRedirection();
 app.UseAuthorization();
