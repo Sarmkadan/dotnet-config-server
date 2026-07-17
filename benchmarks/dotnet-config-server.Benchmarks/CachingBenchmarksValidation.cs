@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Reflection;
 
 namespace DotnetConfigServer.Benchmarks;
@@ -12,13 +11,13 @@ using DotnetConfigServer.Models;
 /// </summary>
 public static class CachingBenchmarksValidation
 {
-    private static readonly FieldInfo _testApplicationIdField = typeof(CachingBenchmarks).GetField("_testApplicationId", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _testConfigurationIdField = typeof(CachingBenchmarks).GetField("_testConfigurationId", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _serviceProviderField = typeof(CachingBenchmarks).GetField("_serviceProvider", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _memoryCacheField = typeof(CachingBenchmarks).GetField("_memoryCache", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _configurationServiceField = typeof(CachingBenchmarks).GetField("_configurationService", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _testKeysField = typeof(CachingBenchmarks).GetField("_testKeys", BindingFlags.NonPublic | BindingFlags.Instance);
-    private static readonly FieldInfo _cachePrefixField = typeof(CachingBenchmarks).GetField("CachePrefix", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static readonly FieldInfo _testApplicationIdField = typeof(CachingBenchmarks).GetField("_testApplicationId", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_testApplicationId' not found in CachingBenchmarks");
+    private static readonly FieldInfo _testConfigurationIdField = typeof(CachingBenchmarks).GetField("_testConfigurationId", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_testConfigurationId' not found in CachingBenchmarks");
+    private static readonly FieldInfo _serviceProviderField = typeof(CachingBenchmarks).GetField("_serviceProvider", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_serviceProvider' not found in CachingBenchmarks");
+    private static readonly FieldInfo _memoryCacheField = typeof(CachingBenchmarks).GetField("_memoryCache", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_memoryCache' not found in CachingBenchmarks");
+    private static readonly FieldInfo _configurationServiceField = typeof(CachingBenchmarks).GetField("_configurationService", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_configurationService' not found in CachingBenchmarks");
+    private static readonly FieldInfo _testKeysField = typeof(CachingBenchmarks).GetField("_testKeys", BindingFlags.NonPublic | BindingFlags.Instance) ?? throw new InvalidOperationException("Field '_testKeys' not found in CachingBenchmarks");
+    private static readonly FieldInfo _cachePrefixField = typeof(CachingBenchmarks).GetField("CachePrefix", BindingFlags.NonPublic | BindingFlags.Static) ?? throw new InvalidOperationException("Field/constant 'CachePrefix' not found in CachingBenchmarks");
 
     /// <summary>
     /// Validates the specified <see cref="CachingBenchmarks"/> instance.
@@ -32,42 +31,42 @@ public static class CachingBenchmarksValidation
 
         var errors = new List<string>();
 
-        // Validate Guid fields
-        var testApplicationId = (Guid?)_testApplicationIdField?.GetValue(value);
+        // Validate Guid fields using pattern matching
+        var testApplicationId = (Guid?)_testApplicationIdField.GetValue(value);
         if (testApplicationId == default)
         {
             errors.Add("Field '_testApplicationId' must not be default (Guid.Empty).");
         }
 
-        var testConfigurationId = (Guid?)_testConfigurationIdField?.GetValue(value);
+        var testConfigurationId = (Guid?)_testConfigurationIdField.GetValue(value);
         if (testConfigurationId == default)
         {
             errors.Add("Field '_testConfigurationId' must not be default (Guid.Empty).");
         }
 
-        // Validate service provider
-        var serviceProvider = _serviceProviderField?.GetValue(value);
+        // Validate service provider using pattern matching
+        var serviceProvider = _serviceProviderField.GetValue(value);
         if (serviceProvider is null)
         {
             errors.Add("Field '_serviceProvider' must not be null.");
         }
 
-        // Validate memory cache
-        var memoryCache = _memoryCacheField?.GetValue(value);
+        // Validate memory cache using pattern matching
+        var memoryCache = _memoryCacheField.GetValue(value);
         if (memoryCache is null)
         {
             errors.Add("Field '_memoryCache' must not be null.");
         }
 
-        // Validate configuration service
-        var configurationService = _configurationServiceField?.GetValue(value);
+        // Validate configuration service using pattern matching
+        var configurationService = _configurationServiceField.GetValue(value);
         if (configurationService is null)
         {
             errors.Add("Field '_configurationService' must not be null.");
         }
 
         // Validate test keys collection
-        var testKeys = _testKeysField?.GetValue(value) as List<ConfigurationKey>;
+        var testKeys = _testKeysField.GetValue(value) as List<ConfigurationKey>;
         if (testKeys is null)
         {
             errors.Add("Field '_testKeys' must not be null.");
@@ -77,8 +76,8 @@ public static class CachingBenchmarksValidation
             errors.Add("Field '_testKeys' must contain at least one item.");
         }
 
-        // Validate cache prefix
-        var cachePrefix = _cachePrefixField?.GetValue(value) as string;
+        // Validate cache prefix using guard clause and pattern matching
+        var cachePrefix = _cachePrefixField.GetValue(null) as string;
         if (string.IsNullOrEmpty(cachePrefix))
         {
             errors.Add("Field 'CachePrefix' must not be null or empty.");
@@ -97,9 +96,7 @@ public static class CachingBenchmarksValidation
     /// <param name="value">The benchmarks instance to check.</param>
     /// <returns>True if the instance is valid; otherwise, false.</returns>
     public static bool IsValid(this CachingBenchmarks value)
-    {
-        return Validate(value).Count == 0;
-    }
+        => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="CachingBenchmarks"/> instance is valid.
