@@ -1319,9 +1319,68 @@ dotnet test --collect:"XPlat Code Coverage"
 | `ConfigurationDiffTests.cs` | Diff engine — added, modified, deleted key detection |
 | `ConfigurationModelTests.cs` | Model validation and JSON serialization round-trips |
 | `EncryptionServiceTests.cs` | AES-256 encrypt/decrypt, key rotation, tamper detection |
+| `MemoryCacheServiceTests.cs` | In-memory caching with expiration, complex types, cache-aside pattern, and statistics |
 | `WebhookServiceTests.cs` | Webhook subscription management, delivery retry logic, and signature generation |
 
 Individual test project path: `tests/dotnet-config-server.Tests/`
+
+## MemoryCacheServiceTests
+
+The `MemoryCacheServiceTests` class provides comprehensive unit tests for the `MemoryCacheService` functionality. It validates in-memory caching operations including setting and retrieving values, expiration handling, cache-aside pattern usage, complex type storage, and cache statistics tracking. The tests cover various scenarios such as cache hits, cache misses, expiration policies, and concurrent operations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Caching;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock logger
+var loggerMock = new Mock<ILogger<MemoryCacheService>>();
+var cacheService = new MemoryCacheService(loggerMock.Object);
+
+// Test 1: Basic set and get operations
+await cacheService.SetAsync("app:config:timeout", 30);
+var timeout = await cacheService.GetAsync<int>("app:config:timeout");
+Console.WriteLine($"Timeout value: {timeout}"); // Output: Timeout value: 30
+
+// Test 2: Cache-aside pattern (get or create)
+var expensiveValue = await cacheService.GetOrCreateAsync("expensive:data", async () =>
+{
+    // This factory only runs if key doesn't exist
+    var result = await FetchFromDatabaseAsync();
+    return result;
+});
+
+// Test 3: Expiration handling
+await cacheService.SetAsync("temp:key", "temporary-value", TimeSpan.FromSeconds(1));
+var beforeExpiry = await cacheService.GetAsync<string>("temp:key"); // Returns "temporary-value"
+await Task.Delay(TimeSpan.FromSeconds(2));
+var afterExpiry = await cacheService.GetAsync<string>("temp:key"); // Returns null (expired)
+
+// Test 4: Complex type storage
+var config = new Dictionary<string, string>
+{
+    ["Database:Host"] = "prod-db.example.com",
+    ["Database:Port"] = "5432",
+    ["Database:Name"] = "orders"
+};
+await cacheService.SetAsync("database:config", config);
+var cachedConfig = await cacheService.GetAsync<Dictionary<string, string>>("database:config");
+
+// Test 5: Cache statistics
+var stats = await cacheService.GetStatsAsync();
+Console.WriteLine($"Cache stats - Sets: {stats.Sets}, Hits: {stats.Hits}, Misses: {stats.Misses}, Deletes: {stats.Deletes}");
+
+// Test 6: Key prefix filtering
+await cacheService.SetAsync("service:api:timeout", 30);
+await cacheService.SetAsync("service:api:retries", 3);
+await cacheService.SetAsync("cache:size", 100);
+var serviceKeys = (await cacheService.GetKeysAsync("service")).ToList(); // Returns ["service:api:timeout", "service:api:retries"]
+
+// Cleanup
+cacheService.Dispose();
+```
 
 ## WebhookServiceTests
 
