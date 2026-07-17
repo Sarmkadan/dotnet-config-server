@@ -1845,6 +1845,75 @@ await encryptionService.ReEncryptConfigurationAsync(configId, keys, "ops");
 // All encrypted keys now use the new primary key
 ```
 
+## DateTimeExtensionsTests
+
+The `DateTimeExtensionsTests` class provides comprehensive unit tests for the `DateTimeExtensions` static class, which offers a suite of useful date and time manipulation methods. It validates relative time formatting, ISO 8601 conversion, date boundary calculations, and business day counting functionality.
+
+### What It Tests
+
+- **Relative Time Formatting**: Converts date differences into human-readable strings like "just now", "5 minutes ago", "2 days ago"
+- **ISO 8601 Conversion**: Ensures dates can be serialized and deserialized while preserving timezone information
+- **Date Boundaries**: Validates methods that return the start/end of day, week, month, and year
+- **Date Range Queries**: Tests inclusive boundary checking for date ranges
+- **Business Day Calculations**: Counts weekdays while excluding weekends
+- **Age Calculation**: Computes age from a birth date
+- **Leap Year Detection**: Identifies leap years correctly
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+
+// Format dates relative to now
+var now = DateTime.UtcNow;
+Console.WriteLine(now.ToRelativeTime()); // "just now"
+Console.WriteLine(now.AddMinutes(-5).ToRelativeTime()); // "5 minutes ago"
+Console.WriteLine(now.AddHours(-2).ToRelativeTime()); // "2 hours ago"
+Console.WriteLine(now.AddDays(-1).ToRelativeTime()); // "1 day ago"
+Console.WriteLine(now.AddDays(-7).ToRelativeTime()); // "1 week ago"
+
+// Convert to ISO 8601 format
+var isoDate = now.ToIso8601();
+Console.WriteLine(isoDate); // "2024-07-19T14:30:45.123Z"
+
+// Date boundaries
+var today = DateTime.UtcNow;
+var startOfDay = today.StartOfDay(); // 2024-07-19 00:00:00
+var endOfDay = today.EndOfDay(); // 2024-07-19 23:59:59.9999999
+
+var startOfWeek = today.StartOfWeek(DayOfWeek.Monday); // Previous Monday
+var startOfMonth = today.StartOfMonth(); // First day of month
+var startOfYear = today.StartOfYear(); // January 1st
+
+var endOfMonth = today.EndOfMonth(); // Last day of month
+var endOfYear = today.EndOfYear(); // December 31st
+
+// Date range queries
+var dateRangeStart = new DateTime(2024, 1, 1);
+var dateRangeEnd = new DateTime(2024, 12, 31);
+var testDate = new DateTime(2024, 6, 15);
+
+if (testDate.IsBetween(dateRangeStart, dateRangeEnd))
+{
+    Console.WriteLine($"{testDate:yyyy-MM-dd} is within 2024");
+}
+
+// Business day calculations
+var businessDays = today.GetBusinessDaysBetween(today.AddDays(10));
+Console.WriteLine($"Next 10 days contain {businessDays} business days");
+
+// Age calculation
+var birthDate = new DateTime(1990, 5, 15);
+var age = birthDate.GetAge();
+Console.WriteLine($"Age: {age}");
+
+// Leap year detection
+if (DateTime.Now.IsLeapYear())
+{
+    Console.WriteLine("This year is a leap year!");
+}
+```
+
 ## DictionaryExtensionsTests
 
 The `DictionaryExtensionsTests` class provides comprehensive unit tests for the `DictionaryExtensions` class extension methods. It validates dictionary operations including value retrieval with fallbacks, conditional addition and updates, filtering, merging, inversion, projection, flattening, and nested value manipulation through dot-separated paths.
