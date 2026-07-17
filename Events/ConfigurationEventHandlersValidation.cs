@@ -50,10 +50,8 @@ public static class ConfigurationEventHandlersValidation
     /// </summary>
     /// <param name="value">The configuration event handlers instance to check.</param>
     /// <returns>True if the instance is valid; otherwise, false.</returns>
-    public static bool IsValid(this ConfigurationEventHandlers value)
-    {
-        return value.Validate().Count == 0;
-    }
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        public static bool IsValid(this ConfigurationEventHandlers? value) => value is not null && value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="ConfigurationEventHandlers"/> instance is valid.
@@ -69,8 +67,7 @@ public static class ConfigurationEventHandlersValidation
         if (errors.Count > 0)
         {
             throw new ArgumentException(
-                "ConfigurationEventHandlers instance is not valid. " +
-                string.Join(" ", errors),
+                "ConfigurationEventHandlers instance is not valid.\n- " + string.Join("\n- ", errors),
                 nameof(value));
         }
     }
