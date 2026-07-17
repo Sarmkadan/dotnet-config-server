@@ -1374,9 +1374,196 @@ public async Task<IActionResult> GetConfiguration(int id)
 
     return Ok(config);
 }
-## ConfigurationsController
+## ApplicationsController
 
-The `ConfigurationsController` provides RESTful API endpoints for managing configurations in the Dotnet Config Server. It handles CRUD operations for configuration entities, key management, and search functionality, enabling microservices to retrieve, update, and manage their configuration data programmatically. The controller supports both configuration-level operations and granular key management with proper versioning and audit trail integration.
+The `ApplicationsController` provides RESTful API endpoints for managing applications in the Dotnet Config Server. Applications serve as the top-level containers for configurations, allowing microservices to organize their configuration data hierarchically. The controller handles CRUD operations for applications and provides endpoints to retrieve all configurations associated with a specific application.
+
+**Key Features:**
+- Create, read, update, and delete applications
+- Retrieve all applications with pagination support
+- Get all configurations for a specific application
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+- Integration with configuration repositories for hierarchical data management
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using ApplicationsController in a service
+public class ApplicationManagementService
+{
+    private readonly ApplicationsController _controller;
+    private readonly ILogger<ApplicationManagementService> _logger;
+
+    public ApplicationManagementService(
+        ApplicationsController controller,
+        ILogger<ApplicationManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<Application> CreateApplicationAsync(
+        string name,
+        string description = null)
+    {
+        var application = new Application
+        {
+            Name = name,
+            Description = description,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "system"
+        };
+
+        var result = await _controller.Create(application);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is Application createdApp)
+        {
+            _logger.LogInformation("Created application: {AppId} - {AppName}", createdApp.Id, createdApp.Name);
+            return createdApp;
+        }
+
+        throw new Exception("Failed to create application");
+    }
+
+    public async Task<Application> GetApplicationByIdAsync(Guid applicationId)
+    {
+        var result = await _controller.GetById(applicationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is Application app)
+        {
+            return app;
+        }
+
+        throw new Exception("Application not found");
+    }
+
+    public async Task<PaginatedResult<Application>> GetAllApplicationsAsync(int page = 1, int pageSize = 10)
+    {
+        var result = await _controller.GetAll(page, pageSize);
+
+        if (result is OkObjectResult okResult && okResult.Value is PaginatedResult<Application> apps)
+        {
+            return apps;
+        }
+
+        return new PaginatedResult<Application>();
+    }
+
+    public async Task<Application> UpdateApplicationAsync(
+        Guid applicationId,
+        string newName,
+        string newDescription = null)
+    {
+        var existingApp = await GetApplicationByIdAsync(applicationId);
+
+        existingApp.Name = newName;
+        existingApp.Description = newDescription;
+        existingApp.UpdatedAt = DateTime.UtcNow;
+        existingApp.UpdatedBy = "system";
+
+        var result = await _controller.Update(applicationId, existingApp);
+
+        if (result is OkObjectResult okResult && okResult.Value is Application updatedApp)
+        {
+            _logger.LogInformation("Updated application: {AppId}", applicationId);
+            return updatedApp;
+        }
+
+        throw new Exception("Failed to update application");
+    }
+
+    public async Task DeleteApplicationAsync(Guid applicationId)
+    {
+        var result = await _controller.Delete(applicationId);
+
+        if (result is NoContentResult)
+        {
+            _logger.LogInformation("Deleted application: {AppId}", applicationId);
+        }
+        else
+        {
+            throw new Exception("Failed to delete application");
+        }
+    }
+
+    public async Task<List<Configuration>> GetApplicationConfigurationsAsync(Guid applicationId)
+    {
+        var result = await _controller.GetConfigurations(applicationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<Configuration> configs)
+        {
+            return configs;
+        }
+
+        return new List<Configuration>();
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class ApplicationClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/applications";
+
+    public ApplicationClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<Application> CreateApplicationAsync(Application application)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}", application);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Application>();
+    }
+
+    public async Task<Application> GetApplicationAsync(Guid applicationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{applicationId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Application>();
+    }
+
+    public async Task<PaginatedResult<Application>> GetAllApplicationsAsync(int page = 1, int pageSize = 10)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}?page={page}&pageSize={pageSize}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<PaginatedResult<Application>>();
+    }
+
+    public async Task<Application> UpdateApplicationAsync(Guid applicationId, Application application)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/{applicationId}", application);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Application>();
+    }
+
+    public async Task DeleteApplicationAsync(Guid applicationId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_baseUrl}/{applicationId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<Configuration>> GetApplicationConfigurationsAsync(Guid applicationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{applicationId}/configurations");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Configuration>>();
+    }
+}
+```
+
+## ConfigurationsController
 
 **Key Features:**
 - Create, read, update, and delete configurations
