@@ -2043,6 +2043,143 @@ Console.WriteLine($"Key rotated: {rotatedKey.IsPrimary == false}"); // true
 Console.WriteLine($"Rotation metadata set: {rotatedKey.RotatedBy == "admin"}"); // true
 ```
 
+## ConfigurationWorkflowIntegrationTests
+
+The `ConfigurationWorkflowIntegrationTests` class provides comprehensive integration tests that demonstrate end-to-end configuration workflows. It validates the complete lifecycle of configurations including creation, versioning, modification, encryption, validation, and concurrent operations across multiple services (ConfigurationService, VersioningService, DiffService).
+
+These tests ensure that the various services work together correctly and handle real-world scenarios like version progression, diff generation between versions, encryption integration, and concurrent version management.
+
+### What It Tests
+
+- **Complete Workflow**: Validates the full configuration lifecycle from creation through versioning to diff generation
+- **Encryption Integration**: Tests encryption/decryption operations within configuration workflows
+- **Version Progression**: Validates multi-version configuration management with proper version numbering
+- **Key Validation**: Tests configuration key validation constraints and error handling
+- **Concurrent Operations**: Validates handling of multiple simultaneous version creation requests
+
+### Public Members
+
+- `FullWorkflow_CreateConfigCreateVersionModifyGenerateDiff` - Demonstrates the complete workflow: create configuration, create versions, modify keys, and generate diff between versions
+- `EncryptedConfigurationWorkflow_ConfigurationAndKeysAreEncrypted` - Tests encryption integration with configuration workflow
+- `MultiVersionConfiguration_CreatesAndManagesVersionProgression` - Tests configuration with multiple versions and rollback scenario
+- `ConfigurationKeyValidation_EnforcesAllConstraints` - Tests configuration key validation in workflow
+- `ConcurrentVersionManagement_HandlesMultipleVersionsSimultaneously` - Tests concurrent version creation and diff generation
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var configRepositoryMock = new Mock<IConfigurationRepository>();
+var keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
+var versionRepositoryMock = new Mock<IConfigurationVersionRepository>();
+var diffRepositoryMock = new Mock<IConfigurationDiffRepository>();
+var encryptionServiceMock = new Mock<IEncryptionService>();
+var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
+var eventBusMock = new Mock<IEventBus>();
+var configLoggerMock = new Mock<ILogger<ConfigurationService>>();
+var versioningLoggerMock = new Mock<ILogger<VersioningService>>();
+var diffLoggerMock = new Mock<ILogger<DiffService>>();
+
+// Create services
+var configService = new ConfigurationService(
+    configRepositoryMock.Object,
+    keyRepositoryMock.Object,
+    encryptionServiceMock.Object,
+    auditLogRepositoryMock.Object,
+    eventBusMock.Object,
+    configLoggerMock.Object
+);
+
+var versioningService = new VersioningService(
+    versionRepositoryMock.Object,
+    configRepositoryMock.Object,
+    keyRepositoryMock.Object,
+    auditLogRepositoryMock.Object,
+    versioningLoggerMock.Object
+);
+
+var diffService = new DiffService(
+    diffRepositoryMock.Object,
+    versionRepositoryMock.Object,
+    keyRepositoryMock.Object,
+    diffLoggerMock.Object
+);
+
+// Test 1: Full workflow - create config, versions, and generate diff
+var appId = Guid.NewGuid();
+var configId = Guid.NewGuid();
+var userId = "integration-test";
+
+// Create configuration
+var config = new Configuration
+{
+    Id = configId,
+    Name = "production-config",
+    ApplicationId = appId,
+    CreatedBy = userId
+};
+
+var createdConfig = await configService.CreateAsync(config, userId);
+
+// Create first version
+var version1 = await versioningService.CreateVersionAsync(configId, "Initial release", userId);
+
+// Create second version with modifications
+var version2 = await versioningService.CreateVersionAsync(configId, "Add caching", userId);
+
+// Generate diff between versions
+var diff = await diffService.GenerateDiffAsync(version1.Id, version2.Id, userId);
+Console.WriteLine($"Diff shows {diff.TotalChanges} changes");
+
+// Test 2: Encrypted configuration workflow
+var encryptedConfig = new Configuration
+{
+    Id = Guid.NewGuid(),
+    Name = "secrets-config",
+    ApplicationId = Guid.NewGuid(),
+    CreatedBy = "security-admin"
+};
+
+var createdEncryptedConfig = await configService.CreateAsync(encryptedConfig, "security-admin");
+createdEncryptedConfig.SetEncryption(EncryptionAlgorithm.AES256, "encryption-key-1");
+Console.WriteLine($"Configuration encrypted: {createdEncryptedConfig.IsEncrypted}");
+
+// Test 3: Multi-version progression
+var multiConfig = new Configuration
+{
+    Id = Guid.NewGuid(),
+    Name = "deployment-config",
+    ApplicationId = Guid.NewGuid(),
+    CreatedBy = "deployer"
+};
+
+var v1 = await versioningService.CreateVersionAsync(multiConfig.Id, "Initial", "deployer");
+var v2 = await versioningService.CreateVersionAsync(multiConfig.Id, "Update 1", "deployer");
+var v3 = await versioningService.CreateVersionAsync(multiConfig.Id, "Update 2", "deployer");
+Console.WriteLine($"Version progression: {v1.VersionNumber} → {v2.VersionNumber} → {v3.VersionNumber}");
+
+// Test 4: Concurrent version management
+var concurrentConfig = new Configuration
+{
+    Id = Guid.NewGuid(),
+    Name = "concurrent-config",
+    ApplicationId = Guid.NewGuid(),
+    CreatedBy = "concurrent-user"
+};
+
+var versions = await Task.WhenAll(
+    versioningService.CreateVersionAsync(concurrentConfig.Id, "Version 1", "concurrent-user"),
+    versioningService.CreateVersionAsync(concurrentConfig.Id, "Version 2", "concurrent-user"),
+    versioningService.CreateVersionAsync(concurrentConfig.Id, "Version 3", "concurrent-user")
+);
+Console.WriteLine($"Created {versions.Length} versions concurrently");
+```
+
 ## Testing
 
 Run the full test suite:
