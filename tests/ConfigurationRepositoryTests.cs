@@ -6,9 +6,16 @@ using System.Collections.Generic;
 
 namespace dotnet_config_server.tests
 {
+/// <summary>
+/// Unit tests for <see cref="ConfigurationRepository"/> class
+/// </summary>
     public class ConfigurationRepositoryTests
     {
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="ConfigurationRepository.GetByApplicationIdAsync(Guid)"/> returns configurations
+        /// when the application ID is valid and configurations exist for that application
+        /// </summary>
         public async Task GetByApplicationIdAsync_ReturnsConfigurations_WhenApplicationIdIsValid()
         {
             // Arrange
@@ -35,6 +42,10 @@ namespace dotnet_config_server.tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="ConfigurationRepository.GetByApplicationIdAsync(Guid)"/> throws
+        /// <see cref="ArgumentNullException"/> when the application ID is null
+        /// </summary>
         public async Task GetByApplicationIdAsync_ThrowsArgumentNullException_WhenApplicationIdIsNull()
         {
             // Arrange
