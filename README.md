@@ -397,6 +397,116 @@ Console.WriteLine($"  Modified: {summary.ModifiedCount}");
 
 The `INotificationService` interface provides a contract for sending notifications to external systems or logging them internally. It supports two notification patterns: structured notifications using a `Notification` object and simple type-payload notifications. The default implementation logs notifications but can be extended to integrate with email, SMS, push notifications, or webhook systems.
 
+## WebhookService
+
+The `WebhookService` manages webhook subscriptions and delivers configuration change notifications to subscribed endpoints. It handles subscription lifecycle (create, read, update, delete), webhook delivery with automatic retries, event-based notifications, and delivery history tracking. The service ensures reliable delivery through idempotency checks, concurrent request guards, and exponential backoff for failed deliveries.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup DI container
+var services = new ServiceCollection();
+services.AddLogging(configure => configure.AddConsole());
+services.AddSingleton<IWebhookSubscriptionRepository, WebhookSubscriptionRepository>();
+services.AddSingleton<IWebhookDeliveryRepository, WebhookDeliveryRepository>();
+services.AddSingleton<WebhookService>();
+services.AddHttpClient();
+
+var serviceProvider = services.BuildServiceProvider();
+var webhookService = serviceProvider.GetRequiredService<WebhookService>();
+
+// Create a new webhook subscription for configuration change notifications
+var subscription = new WebhookSubscription
+{
+    Name = "Production Alerts",
+    Description = "Receive notifications for production configuration changes",
+    Url = "https://webhook.site/12345-abcde",
+    TriggerEvents = new List<string> { "ConfigurationVersionCreatedEvent", "ConfigurationUpdatedEvent" },
+    IsActive = true,
+    VerifySignature = true,
+    CustomHeaders = new Dictionary<string, string>
+    {
+        { "X-Custom-Header", "Production-Webhook" }
+    }
+};
+
+var createdSubscription = await webhookService.CreateSubscriptionAsync(subscription, "admin@example.com");
+Console.WriteLine($"Created subscription: {createdSubscription.Id}");
+
+// Get a specific subscription
+var retrievedSubscription = await webhookService.GetSubscriptionAsync(createdSubscription.Id);
+Console.WriteLine($"Retrieved subscription: {retrievedSubscription?.Name}");
+
+// Get all subscriptions for a configuration
+var configId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+var subscriptions = await webhookService.GetSubscriptionsAsync(configId);
+Console.WriteLine($"Subscriptions for config {configId}: {subscriptions.Count}");
+
+// Update a subscription
+createdSubscription.Description = "Updated: Receive notifications for production configuration changes";
+var updatedSubscription = await webhookService.UpdateSubscriptionAsync(
+    createdSubscription.Id,
+    createdSubscription,
+    "admin@example.com"
+);
+Console.WriteLine($"Updated subscription: {updatedSubscription.Description}");
+
+// Activate or deactivate a subscription
+var activated = await webhookService.ActivateAsync(createdSubscription.Id, "admin@example.com");
+Console.WriteLine($"Activated: {activated.IsActive}");
+
+var deactivated = await webhookService.DeactivateAsync(createdSubscription.Id, "admin@example.com");
+Console.WriteLine($"Deactivated: {!deactivated.IsActive}");
+
+// Notify about a configuration event (automatically triggered by the system)
+// This would typically be called internally when a configuration changes
+var domainEvent = new ConfigurationVersionCreatedEvent
+{
+    Id = Guid.NewGuid(),
+    ConfigurationId = configId,
+    VersionId = Guid.NewGuid(),
+    Environment = "Production",
+    Version = 2,
+    CreatedAt = DateTime.UtcNow
+};
+
+await webhookService.NotifyAsync("ConfigurationVersionCreatedEvent", domainEvent);
+
+// Get delivery history for a subscription
+var deliveries = await webhookService.GetDeliveriesAsync(createdSubscription.Id);
+Console.WriteLine($"Delivery history: {deliveries.Count} entries");
+
+// Retry failed deliveries
+var retryCount = await webhookService.RetryFailedDeliveriesAsync(maxRetries: 3);
+Console.WriteLine($"Retried {retryCount} failed deliveries");
+
+// Test a webhook endpoint without recording a delivery
+var testPayload = new { message = "Test notification", timestamp = DateTime.UtcNow };
+var isSuccess = await webhookService.TestWebhookAsync(createdSubscription, testPayload);
+Console.WriteLine($"Webhook test result: {(isSuccess ? "Success" : "Failed")}");
+
+// Delete a subscription
+await webhookService.DeleteSubscriptionAsync(createdSubscription.Id, "admin@example.com");
+Console.WriteLine("Subscription deleted");
+```
+
+### Key Features
+
+- **Subscription Management**: Full CRUD operations for webhook subscriptions
+- **Event-Based Notifications**: Trigger notifications for specific configuration events
+- **Idempotent Delivery**: Prevents duplicate notifications for the same event
+- **Automatic Retries**: Configurable retry logic with exponential backoff
+- **Delivery History**: Complete audit trail of all webhook deliveries
+- **Signature Verification**: HMAC signature validation for security
+- **Custom Headers**: Support for custom HTTP headers in webhook requests
+- **Concurrent Request Guards**: Prevents duplicate deliveries during concurrent operations
+- **Status Tracking**: Tracks delivery attempts, success/failure status, and response times
+
 ### Usage Example
 
 ```csharp
