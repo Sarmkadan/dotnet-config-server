@@ -814,6 +814,53 @@ var age = birthDate.GetAge();
 Console.WriteLine($"Age from birth date {birthDate:yyyy-MM-dd}: {age} years");
 ```
 
+## CliArgumentParser
+
+The `CliArgumentParser` class provides utilities for parsing and validating command-line arguments in the Dotnet Config Server. It supports retrieving argument values by key, checking for flag presence, parsing integers and booleans, and validating required arguments. The parser automatically normalizes argument keys (case-insensitive, strips leading dashes) and provides a static method to generate help text for available options.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using Microsoft.Extensions.Logging;
+using System;
+
+// Example command-line arguments
+var args = new[] { "--port", "8080", "--environment", "Production", "--log-level", "Warning", "--enable-swagger" };
+
+// Create logger (typically injected via DI in real applications)
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<CliArgumentParser>();
+
+// Parse arguments
+var parser = new CliArgumentParser(args, logger);
+
+// Get argument values
+var port = parser.GetIntValue("port"); // 8080
+var environment = parser.GetValue("environment"); // "Production"
+var database = parser.GetValue("database"); // null
+var logLevel = parser.GetValue("log-level"); // "Warning"
+var enableSwagger = parser.GetBoolValue("enable-swagger"); // true
+var initDb = parser.HasFlag("init-db"); // false
+
+// Get values with defaults
+var timeout = parser.GetIntValue("timeout", 30); // 30 (default)
+var enableFeature = parser.GetBoolValue("enable-feature", true); // true (default)
+
+// Check if required arguments are present
+var isValid = parser.ValidateRequired("port", "environment"); // true if both are present
+
+// Get help text
+var helpText = CliArgumentParser.GetHelpText();
+Console.WriteLine(helpText);
+
+// Create configuration object from parsed arguments
+var config = CliConfig.FromParser(parser);
+Console.WriteLine($"Server will run on port: {config.Port}");
+Console.WriteLine($"Environment: {config.Environment}");
+Console.WriteLine($"Enable Swagger: {config.EnableSwagger}");
+```
+
 ## JsonExtensions
 
 The `JsonExtensions` static class provides extension methods for JSON serialization, deserialization, and manipulation. It includes utilities for converting objects to/from JSON strings, validating JSON, merging JSON objects, extracting values by path, and cleaning JSON data by removing null values. These extensions are particularly useful for configuration management, API communication, and data transformation in the configuration server.
