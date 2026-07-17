@@ -19,8 +19,15 @@ public static class ServiceExtensions
     /// <summary>
     /// Registers all database and repository services
     /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> instance to configure</param>
+    /// <param name="configuration">The application configuration</param>
+    /// <returns>The configured <see cref="IServiceCollection"/></returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> or <paramref name="configuration"/> is null</exception>
     public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
         // Add DbContext
         services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -49,10 +56,15 @@ public static class ServiceExtensions
     }
 
     /// <summary>
-    /// Registers all business logic services
+    /// Registers all business logic services with dependency injection
     /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> instance to configure</param>
+    /// <returns>The configured <see cref="IServiceCollection"/></returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null</exception>
     public static IServiceCollection AddBusinessServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddScoped<IEncryptionService, EncryptionService>();
         services.AddScoped<IConfigurationService, ConfigurationService>();
         services.AddScoped<IVersioningService, VersioningService>();
@@ -67,10 +79,15 @@ public static class ServiceExtensions
     }
 
     /// <summary>
-    /// Configures HTTP client for webhook delivery
+    /// Configures HTTP client for webhook delivery with default timeout and headers
     /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> instance to configure</param>
+    /// <returns>The configured <see cref="IServiceCollection"/></returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null</exception>
     public static IServiceCollection AddWebhookClient(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddHttpClient<IWebhookService, WebhookService>()
             .ConfigureHttpClient(client =>
             {
@@ -82,10 +99,15 @@ public static class ServiceExtensions
     }
 
     /// <summary>
-    /// Configures Swagger/OpenAPI
+    /// Configures Swagger/OpenAPI documentation with standardized metadata
     /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> instance to configure</param>
+    /// <returns>The configured <see cref="IServiceCollection"/></returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is null</exception>
     public static IServiceCollection AddSwaggerConfiguration(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddOpenApi(options =>
         {
             options.AddDocumentTransformer((document, context, cancellationToken) =>
@@ -111,8 +133,11 @@ public static class ServiceExtensions
     }
 
     /// <summary>
-    /// Initializes the database
+    /// Initializes the database by applying pending migrations
     /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve dependencies</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="serviceProvider"/> is null</exception>
     public static async Task InitializeDatabaseAsync(this IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
