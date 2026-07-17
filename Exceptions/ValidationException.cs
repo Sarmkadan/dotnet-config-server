@@ -11,7 +11,7 @@ namespace DotnetConfigServer.Exceptions;
 /// </summary>
 public sealed class ValidationException : DotnetConfigServerException
 {
-    public Dictionary<string, List<string>> Errors { get; set; }
+        public Dictionary<string, List<string>> Errors { get; set; }
 
     public ValidationException(string message, Dictionary<string, List<string>> errors) : base(message, "VALIDATION_FAILED", errors)
     {

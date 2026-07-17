@@ -10,6 +10,9 @@ using System.Text.Json.Serialization;
 
 namespace DotnetConfigServer.Exceptions;
 
+/// <summary>
+/// Provides System.Text.Json serialization extensions for <see cref="ValidationException"/>.
+/// </summary>
 public static class ValidationExceptionJsonExtensionsJsonExtensions
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
@@ -44,11 +47,12 @@ public static class ValidationExceptionJsonExtensionsJsonExtensions
     /// Deserializes a JSON string into a <see cref="ValidationException"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized <see cref="ValidationException"/> instance, or null if the JSON is null or empty.</returns>
+    /// <returns>The deserialized <see cref="ValidationException"/> instance, or null if the JSON is null, empty, or whitespace.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
     /// <exception cref="JsonException">Thrown if the JSON is invalid or cannot be deserialized.</exception>
-    public static ValidationException? FromJson(string json)
+    public static ValidationException? FromJson(string? json)
     {
-        if (string.IsNullOrEmpty(json))
+        if (string.IsNullOrWhiteSpace(json))
         {
             return null;
         }
@@ -62,12 +66,15 @@ public static class ValidationExceptionJsonExtensionsJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">The resulting <see cref="ValidationException"/> instance if deserialization succeeds; otherwise, null.</param>
     /// <returns>True if deserialization succeeds; otherwise, false.</returns>
-    public static bool TryFromJson(string json, out ValidationException? value)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
+    public static bool TryFromJson(string? json, out ValidationException? value)
     {
+        ArgumentNullException.ThrowIfNull(json);
+
         try
         {
             value = FromJson(json);
-            return true;
+            return value is not null;
         }
         catch (JsonException)
         {
