@@ -12,6 +12,9 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
+/// <summary>
+/// Tests for the <see cref="Configuration"/> model validation and behavior.
+/// </summary>
 public sealed class ConfigurationModelTests
 {
     private static Configuration CreateValidConfiguration() => new()
@@ -21,6 +24,9 @@ public sealed class ConfigurationModelTests
         CreatedBy = "user1"
     };
 
+    /// <summary>
+    /// Validates that an empty <c>Name</c> throws a <see cref="ValidationException"/> with a Name error.
+    /// </summary>
     [Fact]
     public void Validate_EmptyName_ThrowsValidationExceptionWithNameError()
     {
@@ -33,6 +39,9 @@ public sealed class ConfigurationModelTests
            .Which.Errors.Should().ContainKey("Name");
     }
 
+    /// <summary>
+    /// Validates that a whitespace <c>Name</c> throws a <see cref="ValidationException"/> with a Name error.
+    /// </summary>
     [Fact]
     public void Validate_WhitespaceName_ThrowsValidationException()
     {
@@ -45,6 +54,9 @@ public sealed class ConfigurationModelTests
            .Which.Errors.Should().ContainKey("Name");
     }
 
+    /// <summary>
+    /// Validates that an empty <c>ApplicationId</c> throws a <see cref="ValidationException"/> with an ApplicationId error.
+    /// </summary>
     [Fact]
     public void Validate_EmptyApplicationId_ThrowsValidationExceptionWithApplicationIdError()
     {
@@ -57,6 +69,9 @@ public sealed class ConfigurationModelTests
            .Which.Errors.Should().ContainKey("ApplicationId");
     }
 
+    /// <summary>
+    /// Validates that a <c>Name</c> exceeding the maximum length throws a <see cref="ValidationException"/>.
+    /// </summary>
     [Fact]
     public void Validate_NameExceedsMaxLength_ThrowsValidationException()
     {
@@ -69,6 +84,9 @@ public sealed class ConfigurationModelTests
            .Which.Errors.Should().ContainKey("Name");
     }
 
+    /// <summary>
+    /// Validates that a valid configuration does not throw any exception.
+    /// </summary>
     [Fact]
     public void Validate_ValidConfiguration_DoesNotThrow()
     {
@@ -79,6 +97,9 @@ public sealed class ConfigurationModelTests
         act.Should().NotThrow();
     }
 
+    /// <summary>
+    /// Validates that creating a new version increments the version number and preserves identity.
+    /// </summary>
     [Fact]
     public void CreateNewVersion_IncrementsVersionNumberAndPreservesIdentity()
     {
@@ -96,6 +117,9 @@ public sealed class ConfigurationModelTests
         next.ApplicationId.Should().Be(originalAppId);
     }
 
+    /// <summary>
+    /// Validates that deleting a configuration sets <c>IsActive</c> to false and records the deleter.
+    /// </summary>
     [Fact]
     public void Delete_SetsIsActiveFalseAndRecordsDeletedBy()
     {
@@ -110,6 +134,9 @@ public sealed class ConfigurationModelTests
         config.DeletedAt!.Value.Should().BeOnOrAfter(before);
     }
 
+    /// <summary>
+    /// Validates that setting encryption with <see cref="EncryptionAlgorithm.AES256"/> sets the encryption flag and stores the key ID.
+    /// </summary>
     [Fact]
     public void SetEncryption_WithAes256_SetsIsEncryptedTrueAndStoresKeyId()
     {
@@ -122,6 +149,9 @@ public sealed class ConfigurationModelTests
         config.EncryptionKeyId.Should().Be("key-abc-123");
     }
 
+    /// <summary>
+    /// Validates that setting encryption to <see cref="EncryptionAlgorithm.None"/> clears the encryption flag.
+    /// </summary>
     [Fact]
     public void SetEncryption_WithNone_ClearsEncryptionFlag()
     {
@@ -135,6 +165,9 @@ public sealed class ConfigurationModelTests
         config.EncryptionAlgorithm.Should().Be(EncryptionAlgorithm.None);
     }
 
+    /// <summary>
+    /// Validates that <see cref="Configuration.GetSummary"/> returns a snapshot matching the current state.
+    /// </summary>
     [Fact]
     public void GetSummary_ReturnsSnapshotMatchingCurrentState()
     {
