@@ -26,26 +26,27 @@ public static class DotnetConfigServerExceptionValidation
 
         var problems = new List<string>();
 
-        // Validate ErrorCode if it's set
-        if (!string.IsNullOrEmpty(value.ErrorCode))
+        // Validate ErrorCode
+        if (value.ErrorCode is not null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(value.ErrorCode, nameof(value.ErrorCode));
             if (string.IsNullOrWhiteSpace(value.ErrorCode))
             {
-                problems.Add("ErrorCode cannot be whitespace or empty string.");
+                problems.Add("ErrorCode cannot be whitespace.");
             }
         }
 
-        // Validate Details if it's set
-        if (value.Details is not null)
+        // Validate Details
+        if (value.Details is null)
         {
-            // Details can be any object, so we just check if it's null
-            // No further validation needed for arbitrary objects
+            problems.Add("Details cannot be null.");
         }
 
         // Validate base Exception members
+        ArgumentException.ThrowIfNullOrEmpty(value.Message, nameof(value.Message));
         if (string.IsNullOrWhiteSpace(value.Message))
         {
-            problems.Add("Message cannot be null, empty, or whitespace.");
+            problems.Add("Message cannot be whitespace.");
         }
 
         return problems.AsReadOnly();
@@ -56,11 +57,8 @@ public static class DotnetConfigServerExceptionValidation
     /// </summary>
     /// <param name="value">The exception to check.</param>
     /// <returns><see langword="true"/> if the exception is valid; otherwise, <see langword="false"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
-    public static bool IsValid([NotNullWhen(true)] this DotnetConfigServerException? value)
-    {
-        return value is not null && Validate(value).Count == 0;
-    }
+    public static bool IsValid([NotNullWhen(true)] this DotnetConfigServerException? value) =>
+        value is not null && Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified exception instance is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -76,7 +74,7 @@ public static class DotnetConfigServerExceptionValidation
         if (problems.Count > 0)
         {
             throw new ArgumentException(
-                $"DotnetConfigServerException is invalid. Problems: {string.Join(" ", problems)}");
+                $"DotnetConfigServerException is invalid. Problems: {string.Join("; ", problems)}");
         }
     }
 }
