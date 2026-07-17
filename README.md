@@ -1430,6 +1430,488 @@ public class ConfigurationManagementService
         };
 
         var result = await _controller.Create(configuration);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is Configuration createdConfig)
+        {
+            _logger.LogInformation("Created configuration: {ConfigId}", createdConfig.Id);
+            return createdConfig;
+        }
+
+        throw new Exception("Failed to create configuration");
+    }
+
+    public async Task<Configuration> GetConfigurationByIdAsync(Guid configurationId)
+    {
+        var result = await _controller.GetById(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is Configuration config)
+        {
+            return config;
+        }
+
+        throw new Exception("Configuration not found");
+    }
+
+    public async Task<List<Configuration>> GetConfigurationsByApplicationAsync(Guid applicationId)
+    {
+        var result = await _controller.GetByApplication(applicationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<Configuration> configs)
+        {
+            return configs;
+        }
+
+        return new List<Configuration>();
+    }
+
+    public async Task<Configuration> UpdateConfigurationAsync(
+        Guid configurationId,
+        string newName,
+        string newDescription)
+    {
+        var existingConfig = await GetConfigurationByIdAsync(configurationId);
+
+        existingConfig.Name = newName;
+        existingConfig.Description = newDescription;
+        existingConfig.UpdatedAt = DateTime.UtcNow;
+        existingConfig.UpdatedBy = "system";
+
+        var result = await _controller.Update(configurationId, existingConfig);
+
+        if (result is OkObjectResult okResult && okResult.Value is Configuration updatedConfig)
+        {
+            _logger.LogInformation("Updated configuration: {ConfigId}", configurationId);
+            return updatedConfig;
+        }
+
+        throw new Exception("Failed to update configuration");
+    }
+
+    public async Task DeleteConfigurationAsync(Guid configurationId)
+    {
+        var result = await _controller.Delete(configurationId);
+
+        if (result is NoContentResult)
+        {
+            _logger.LogInformation("Deleted configuration: {ConfigId}", configurationId);
+        }
+        else
+        {
+            throw new Exception("Failed to delete configuration");
+        }
+    }
+
+    public async Task<List<ConfigurationKey>> GetConfigurationKeysAsync(Guid configurationId)
+    {
+        var result = await _controller.GetKeys(configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ConfigurationKey> keys)
+        {
+            return keys;
+        }
+
+        return new List<ConfigurationKey>();
+    }
+
+    public async Task<ConfigurationKey> AddConfigurationKeyAsync(
+        Guid configurationId,
+        string keyName,
+        string keyValue)
+    {
+        var key = new ConfigurationKey
+        {
+            KeyName = keyName,
+            Value = keyValue,
+            Description = $"Added via API at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}",
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "system"
+        };
+
+        var result = await _controller.AddKey(configurationId, key);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is ConfigurationKey createdKey)
+        {
+            _logger.LogInformation("Added key {KeyName} to configuration {ConfigId}", keyName, configurationId);
+            return createdKey;
+        }
+
+        throw new Exception("Failed to add configuration key");
+    }
+
+    public async Task<List<Configuration>> SearchConfigurationsAsync(
+        string searchQuery,
+        Guid? applicationId = null)
+    {
+        var result = await _controller.Search(searchQuery, applicationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<Configuration> configs)
+        {
+            return configs;
+        }
+
+        return new List<Configuration>();
+    }
+
+    public async Task<List<ConfigurationKey>> SearchConfigurationKeysAsync(
+        string searchQuery,
+        string? keyPrefix = null,
+        Guid? configurationId = null)
+    {
+        var result = await _controller.SearchKeys(searchQuery, keyPrefix, configurationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<ConfigurationKey> keys)
+        {
+            return keys;
+        }
+
+        return new List<ConfigurationKey>();
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class ConfigurationClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/configurations";
+
+    public ConfigurationClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<Configuration> CreateConfigurationAsync(Configuration configuration)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}", configuration);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Configuration>();
+    }
+
+    public async Task<Configuration> GetConfigurationAsync(Guid configurationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Configuration>();
+    }
+
+    public async Task<List<Configuration>> GetConfigurationsByApplicationAsync(Guid applicationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/application/{applicationId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Configuration>>();
+    }
+
+    public async Task<Configuration> UpdateConfigurationAsync(Guid configurationId, Configuration configuration)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/{configurationId}", configuration);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<Configuration>();
+    }
+
+    public async Task DeleteConfigurationAsync(Guid configurationId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_baseUrl}/{configurationId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<List<ConfigurationKey>> GetConfigurationKeysAsync(Guid configurationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{configurationId}/keys");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<ConfigurationKey>>();
+    }
+
+    public async Task<ConfigurationKey> AddConfigurationKeyAsync(Guid configurationId, ConfigurationKey key)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{configurationId}/keys", key);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ConfigurationKey>();
+    }
+
+    public async Task<List<Configuration>> SearchConfigurationsAsync(string query, Guid? applicationId = null)
+    {
+        var url = $"{_baseUrl}/search?q={Uri.EscapeDataString(query)}";
+        if (applicationId.HasValue)
+        {
+            url += $"&applicationId={applicationId.Value}";
+        }
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<Configuration>>();
+    }
+
+    public async Task<List<ConfigurationKey>> SearchConfigurationKeysAsync(
+        string query,
+        string? prefix = null,
+        Guid? configurationId = null)
+    {
+        var url = $"{_baseUrl}/keys/search?q={Uri.EscapeDataString(query)}";
+        if (!string.IsNullOrEmpty(prefix))
+        {
+            url += $"&prefix={Uri.EscapeDataString(prefix)}";
+        }
+        if (configurationId.HasValue)
+        {
+            url += $"&configurationId={configurationId.Value}";
+        }
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<ConfigurationKey>>();
+    }
+}
+```
+
+## WebhooksController
+
+The `WebhooksController` provides RESTful API endpoints for managing webhook subscriptions and testing webhook deliveries. It enables external systems to be notified of configuration changes by subscribing to specific events and receiving payloads at configured URLs. The controller supports CRUD operations for webhook subscriptions, testing webhook endpoints, and retrieving delivery history.
+
+**Key Features:**
+- Create, read, update, and delete webhook subscriptions
+- Retrieve all webhook subscriptions for a specific application
+- Test webhook endpoints with sample payloads
+- Retrieve recent webhook delivery history
+- RESTful API design with proper HTTP status codes
+- Comprehensive error handling and logging
+- Integration with webhook service for delivery management
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using DotnetConfigServer.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+// Example: Using WebhooksController in a service
+public class WebhookManagementService
+{
+    private readonly WebhooksController _controller;
+    private readonly ILogger<WebhookManagementService> _logger;
+
+    public WebhookManagementService(
+        WebhooksController controller,
+        ILogger<WebhookManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<WebhookSubscription> CreateWebhookSubscriptionAsync(
+        Guid applicationId,
+        string webhookUrl,
+        string[] triggerEvents)
+    {
+        var subscription = new WebhookSubscription
+        {
+            ApplicationId = applicationId,
+            Url = webhookUrl,
+            TriggerEvents = triggerEvents,
+            Secret = Guid.NewGuid().ToString(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var result = await _controller.Create(subscription);
+
+        if (result is CreatedAtActionResult createdResult && createdResult.Value is WebhookSubscription createdSub)
+        {
+            _logger.LogInformation("Created webhook subscription {SubId} for {Url}", createdSub.Id, webhookUrl);
+            return createdSub;
+        }
+
+        throw new Exception("Failed to create webhook subscription");
+    }
+
+    public async Task<WebhookSubscription> GetWebhookSubscriptionAsync(Guid subscriptionId)
+    {
+        var result = await _controller.GetById(subscriptionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is WebhookSubscription subscription)
+        {
+            return subscription;
+        }
+
+        throw new Exception("Webhook subscription not found");
+    }
+
+    public async Task<List<WebhookSubscription>> GetApplicationWebhooksAsync(Guid applicationId)
+    {
+        var result = await _controller.GetByApplication(applicationId);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<WebhookSubscription> subscriptions)
+        {
+            return subscriptions;
+        }
+
+        return new List<WebhookSubscription>();
+    }
+
+    public async Task<WebhookSubscription> UpdateWebhookSubscriptionAsync(
+        Guid subscriptionId,
+        string newUrl,
+        string[] triggerEvents)
+    {
+        var existingSub = await GetWebhookSubscriptionAsync(subscriptionId);
+
+        existingSub.Url = newUrl;
+        existingSub.TriggerEvents = triggerEvents;
+        existingSub.UpdatedAt = DateTime.UtcNow;
+
+        var result = await _controller.Update(subscriptionId, existingSub);
+
+        if (result is OkObjectResult okResult && okResult.Value is WebhookSubscription updatedSub)
+        {
+            _logger.LogInformation("Updated webhook subscription {SubId}", subscriptionId);
+            return updatedSub;
+        }
+
+        throw new Exception("Failed to update webhook subscription");
+    }
+
+    public async Task DeleteWebhookSubscriptionAsync(Guid subscriptionId)
+    {
+        var result = await _controller.Delete(subscriptionId);
+
+        if (result is NoContentResult)
+        {
+            _logger.LogInformation("Deleted webhook subscription {SubId}", subscriptionId);
+        }
+        else
+        {
+            throw new Exception("Failed to delete webhook subscription");
+        }
+    }
+
+    public async Task<WebhookTestResult> TestWebhookAsync(Guid subscriptionId)
+    {
+        var result = await _controller.Test(subscriptionId);
+
+        if (result is OkObjectResult okResult && okResult.Value is WebhookTestResult testResult)
+        {
+            _logger.LogInformation("Webhook test result - Success: {Success}, Message: {Message}", 
+                testResult.Success, testResult.Message);
+            return testResult;
+        }
+
+        throw new Exception("Failed to test webhook");
+    }
+
+    public async Task<List<WebhookDelivery>> GetWebhookDeliveriesAsync(
+        Guid subscriptionId,
+        int limit = 20)
+    {
+        var result = await _controller.GetDeliveries(subscriptionId, limit);
+
+        if (result is OkObjectResult okResult && okResult.Value is List<WebhookDelivery> deliveries)
+        {
+            return deliveries;
+        }
+
+        return new List<WebhookDelivery>();
+    }
+}
+
+// Example: Calling endpoints via HTTP client
+public class WebhookClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUrl = "https://localhost:5001/api/v1/webhooks";
+
+    public WebhookClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<WebhookSubscription> CreateWebhookAsync(WebhookSubscription subscription)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}", subscription);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<WebhookSubscription>();
+    }
+
+    public async Task<WebhookSubscription> GetWebhookAsync(Guid subscriptionId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{subscriptionId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<WebhookSubscription>();
+    }
+
+    public async Task<List<WebhookSubscription>> GetApplicationWebhooksAsync(Guid applicationId)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/application/{applicationId}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<WebhookSubscription>>();
+    }
+
+    public async Task<WebhookSubscription> UpdateWebhookAsync(
+        Guid subscriptionId,
+        WebhookSubscription subscription)
+    {
+        var response = await _httpClient.PutAsJsonAsync($"{_baseUrl}/{subscriptionId}", subscription);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<WebhookSubscription>();
+    }
+
+    public async Task DeleteWebhookAsync(Guid subscriptionId)
+    {
+        var response = await _httpClient.DeleteAsync($"{_baseUrl}/{subscriptionId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<WebhookTestResult> TestWebhookAsync(Guid subscriptionId)
+    {
+        var response = await _httpClient.PostAsJsonAsync($"{_baseUrl}/{subscriptionId}/test", new { });
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<WebhookTestResult>();
+    }
+
+    public async Task<List<WebhookDelivery>> GetWebhookDeliveriesAsync(
+        Guid subscriptionId,
+        int limit = 20)
+    {
+        var response = await _httpClient.GetAsync($"{_baseUrl}/{subscriptionId}/deliveries?limit={limit}");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<WebhookDelivery>>();
+    }
+}
+```
+
+// Example: Using ConfigurationsController in a service
+public class ConfigurationManagementService
+{
+    private readonly ConfigurationsController _controller;
+    private readonly ILogger<ConfigurationManagementService> _logger;
+
+    public ConfigurationManagementService(
+        ConfigurationsController controller,
+        ILogger<ConfigurationManagementService> logger)
+    {
+        _controller = controller;
+        _logger = logger;
+    }
+
+    public async Task<Configuration> CreateConfigurationAsync(
+        Guid applicationId,
+        string name,
+        string environment,
+        string description)
+    {
+        var configuration = new Configuration
+        {
+            ApplicationId = applicationId,
+            Name = name,
+            Environment = environment,
+            Description = description,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = "system"
+        };
+
+        var result = await _controller.Create(configuration);
         
         if (result is CreatedAtActionResult createdResult && createdResult.Value is Configuration createdConfig)
         {
