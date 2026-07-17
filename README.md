@@ -1400,6 +1400,112 @@ string prefix = "config.database.host".CommonPrefix("config.database.port"); // 
 string safeFilename = "config/key?value=test".ToSafeFileName(); // "configkeyvalue=test"
 ```
 
+## ConfigurationServiceTests
+
+The `ConfigurationServiceTests` class provides comprehensive unit tests for the `ConfigurationService` functionality. It validates configuration management operations including creation, update, deletion, and key management with support for both encrypted and non-encrypted configurations.
+
+### What It Tests
+
+- **Configuration Creation**: Validates that configurations can be created with proper audit logging and event publishing
+- **Parent Validation**: Ensures parent configuration existence is validated before creating child configurations
+- **Configuration Updates**: Tests updating existing configurations with new values
+- **Configuration Deletion**: Validates soft deletion by setting DeletedAt timestamp
+- **Key Management**: Tests adding configuration keys with automatic encryption for encrypted configurations
+- **Error Handling**: Verifies proper exception throwing for invalid operations (e.g., non-existent parent configurations)
+
+### Public Members
+
+- `CreateAsync_ShouldCreateConfiguration_WhenValid` - Tests successful configuration creation with audit logging
+- `CreateAsync_ShouldThrowException_WhenParentNotFound` - Tests parent configuration validation
+- `UpdateAsync_ShouldUpdateConfiguration_WhenValid` - Tests configuration update functionality
+- `DeleteAsync_ShouldDeleteConfiguration` - Tests soft deletion with DeletedAt timestamp
+- `AddKeyAsync_ShouldAddKey_WhenValid` - Tests adding configuration keys to non-encrypted configurations
+- `AddKeyAsync_ShouldEncryptKey_WhenConfigEncrypted` - Tests automatic encryption for encrypted configurations
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Setup mock dependencies
+var configRepositoryMock = new Mock<IConfigurationRepository>();
+var keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
+var encryptionServiceMock = new Mock<IEncryptionService>();
+var auditLogRepositoryMock = new Mock<IAuditLogRepository>();
+var eventBusMock = new Mock<IEventBus>();
+var loggerMock = new Mock<ILogger<ConfigurationService>>();
+
+// Create the service under test
+var configurationService = new ConfigurationService(
+    configRepositoryMock.Object,
+    keyRepositoryMock.Object,
+    encryptionServiceMock.Object,
+    auditLogRepositoryMock.Object,
+    eventBusMock.Object,
+    loggerMock.Object
+);
+
+// Test 1: Create a new configuration
+var newConfig = new Configuration
+{
+    Name = "OrderProcessingService",
+    ApplicationId = Guid.NewGuid()
+};
+
+var createdConfig = await configurationService.CreateAsync(newConfig, "admin");
+Console.WriteLine($"Configuration created: {createdConfig.Id}");
+
+// Test 2: Update an existing configuration
+var updatedConfig = new Configuration
+{
+    Name = "OrderProcessingService-Updated",
+    ApplicationId = createdConfig.ApplicationId
+};
+
+var result = await configurationService.UpdateAsync(createdConfig.Id, updatedConfig, "admin");
+Console.WriteLine($"Configuration updated: {result.Name}");
+
+// Test 3: Add a configuration key (non-encrypted)
+var configKey = new ConfigurationKey
+{
+    Key = "Database:ConnectionString",
+    Value = "Server=localhost;Database=Orders;"
+};
+
+var addedKey = await configurationService.AddKeyAsync(createdConfig.Id, configKey, "admin");
+Console.WriteLine($"Key added: {addedKey.Key}");
+
+// Test 4: Add a configuration key (encrypted)
+var encryptedConfig = new Configuration
+{
+    Id = Guid.NewGuid(),
+    Name = "SecureService",
+    ApplicationId = Guid.NewGuid(),
+    IsEncrypted = true
+};
+
+configRepositoryMock.Setup(r => r.GetByIdAsync(encryptedConfig.Id))
+    .ReturnsAsync(encryptedConfig);
+encryptionServiceMock.Setup(e => e.EncryptAsync("secret-value", encryptedConfig.Id))
+    .ReturnsAsync("encrypted-secret");
+
+var secureKey = new ConfigurationKey
+{
+    Key = "Api:SecretKey",
+    Value = "secret-value"
+};
+
+var encryptedKey = await configurationService.AddKeyAsync(encryptedConfig.Id, secureKey, "admin");
+Console.WriteLine($"Encrypted key added: {encryptedKey.IsEncrypted}"); // true
+
+// Test 5: Delete a configuration (soft delete)
+await configurationService.DeleteAsync(createdConfig.Id, "admin");
+Console.WriteLine("Configuration marked as deleted");
+```
+
 ## CollectionExtensionsTests
 
 The `CollectionExtensionsTests` class provides comprehensive unit tests for the `CollectionExtensions` static class, which offers a suite of useful collection and enumerable extension methods. It validates batch processing, element-wise operations, collection state queries, and partitioning functionality for various collection types.
