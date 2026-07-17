@@ -1876,6 +1876,90 @@ var summary = databaseKey.GetSummary();
 Console.WriteLine($"Key summary - Id: {summary.Id}, Key: {summary.Key}, Type: {summary.ValueType}");
 ```
 
+## Configuration
+
+The `Configuration` class represents a configuration profile that contains multiple key-value pairs for a specific application and environment. It manages configuration state including encryption settings, versioning, soft deletion, and audit trails. Configurations support hierarchical inheritance through `ParentConfigurationId`, enabling base configurations to be extended by child configurations.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Common;
+using System;
+
+// Create a new configuration for a production order processing service
+var productionConfig = new Configuration
+{
+    Name = "OrderProcessingService-Production",
+    Description = "Production configuration for order processing service with payment integration",
+    Environment = Environment.Production,
+    ApplicationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    IsEncrypted = true,
+    EncryptionAlgorithm = EncryptionAlgorithm.AES256,
+    EncryptionKeyId = "prod-key-2026-001",
+    CreatedBy = "backend-team@example.com",
+    IsActive = true
+};
+
+// Validate the configuration
+try
+{
+    productionConfig.Validate();
+    Console.WriteLine("Configuration validation successful!");
+}
+catch (ValidationException ex)
+{
+    Console.WriteLine($"Validation failed: {ex.Message}");
+    foreach (var error in ex.Errors)
+    {
+        Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value)}");
+    }
+}
+
+// Create a new version for the next deployment
+var newVersion = productionConfig.CreateNewVersion();
+newVersion.Description = "Q3 2026 release with new features and optimizations";
+newVersion.UpdatedBy = "backend-team@example.com";
+
+Console.WriteLine($"Original config version: {productionConfig.VersionNumber}");
+Console.WriteLine($"New version number: {newVersion.VersionNumber}");
+Console.WriteLine($"New version ID: {newVersion.Id}");
+
+// Update configuration metadata
+productionConfig.Update(
+    "OrderProcessingService-Production-v2",
+    "Updated production configuration with new payment gateway settings",
+    Environment.Production,
+    true,
+    "backend-team@example.com"
+);
+
+Console.WriteLine($"Updated configuration: {productionConfig.Name}");
+Console.WriteLine($"Last updated: {productionConfig.UpdatedAt:yyyy-MM-dd HH:mm:ss}");
+
+// Set encryption settings
+productionConfig.SetEncryption(EncryptionAlgorithm.AES256, "prod-key-2026-002");
+Console.WriteLine($"Encryption enabled: {productionConfig.IsEncrypted}");
+Console.WriteLine($"Encryption algorithm: {productionConfig.EncryptionAlgorithm}");
+
+// Soft delete a configuration (mark as inactive)
+var oldConfig = new Configuration
+{
+    Name = "Legacy-Configuration",
+    ApplicationId = Guid.Parse("123e4567-e89b-12d3-a456-426614174000"),
+    Environment = Environment.Development,
+    CreatedBy = "admin@example.com"
+};
+
+oldConfig.Delete("admin@example.com");
+Console.WriteLine($"Configuration deleted at: {oldConfig.DeletedAt}");
+Console.WriteLine($"Is active: {oldConfig.IsActive}");
+
+// Get summary view (without sensitive data)
+var summary = productionConfig.GetSummary();
+Console.WriteLine($"Configuration summary - {summary.Name} ({summary.Id}): v{summary.VersionNumber}");
+```
+
 ## ChangeRequest
 
 The `ChangeRequest` class represents a pending configuration change that requires approval before being applied. It implements a controlled change management workflow with status tracking, reviewer assignment, and audit trails. Change requests support four operations: creating, updating, or deleting configuration keys, or performing configuration-level operations. Once approved, the change can be automatically applied or scheduled for later deployment.
