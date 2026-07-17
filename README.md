@@ -494,9 +494,66 @@ public class ConfigurationService
 }
 ```
 
-## CollectionExtensions
+## StringExtensions
 
-The `CollectionExtensions` static class provides a comprehensive set of utility methods for working with collections and enumerables in .NET. It includes methods for batching collections, checking collection state, performing LINQ-like operations, and manipulating sequences with additional functionality beyond the standard .NET collection APIs. These extensions are particularly useful for processing configuration data, managing collections of configuration keys, and handling various collection-based scenarios in the configuration server.
+The `StringExtensions` static class provides a comprehensive set of utility methods for string manipulation, validation, and transformation. It includes methods for checking null/empty strings, truncating text, sanitizing filenames, converting between different string cases, validating email addresses, and working with URLs. These extensions are particularly useful for processing configuration keys, environment names, application slugs, and other string-based data in the configuration server.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Utilities;
+using System;
+
+// Example configuration data processing
+var configName = "Database:ConnectionString";
+var environment = "Development";
+var fileName = "My Application Configuration";
+
+// Check if strings are null or whitespace
+if (configName.IsNullOrWhiteSpace() || environment.IsNullOrWhiteSpace())
+{
+    Console.WriteLine("Configuration name or environment is empty!");
+}
+
+// Truncate long configuration names for display
+var displayName = configName.Truncate(20); // "Database:Connecti..."
+
+// Create safe filenames from configuration names
+var safeFileName = fileName.ToSafeFileName(); // Removes invalid characters
+
+// Convert between different string cases for API endpoints and URLs
+var kebabCase = "DatabaseConnectionString".ToKebabCase(); // "database-connection-string"
+var pascalCase = "database-connection-string".ToPascalCase(); // "DatabaseConnectionString"
+var snakeCase = "DatabaseConnectionString".ToSnakeCase(); // "database_connection_string"
+
+// Validate email addresses
+var adminEmail = "admin@example.com";
+if (adminEmail.IsValidEmail())
+{
+    Console.WriteLine("Email is valid!");
+}
+
+// Remove whitespace from configuration keys
+var compactKey = "Database : Connection : String".RemoveWhitespace(); // "Database:Connection:String"
+
+// Repeat strings for patterns or separators
+var separator = "=".Repeat(30); // "=============================="
+
+// URL encoding for API endpoints
+var encodedKey = configName.UrlEncode(); // "Database%3AConnectionString"
+var decodedKey = encodedKey.UrlDecode(); // "Database:ConnectionString"
+
+// Find common prefix between configuration keys
+var prefix1 = "Database:ConnectionString";
+var prefix2 = "Database:Timeout";
+var common = prefix1.CommonPrefix(prefix2); // "Database:"
+
+// Check if a string matches a pattern
+if (environment.MatchesPattern("^[A-Za-z]+"))
+{
+    Console.WriteLine("Environment name is valid!");
+}
+```
 
 ### Usage Example
 
