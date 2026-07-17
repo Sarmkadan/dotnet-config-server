@@ -1319,8 +1319,94 @@ dotnet test --collect:"XPlat Code Coverage"
 | `ConfigurationDiffTests.cs` | Diff engine — added, modified, deleted key detection |
 | `ConfigurationModelTests.cs` | Model validation and JSON serialization round-trips |
 | `EncryptionServiceTests.cs` | AES-256 encrypt/decrypt, key rotation, tamper detection |
+| `WebhookServiceTests.cs` | Webhook subscription management, delivery retry logic, and signature generation |
 
 Individual test project path: `tests/dotnet-config-server.Tests/`
+
+## WebhookServiceTests
+
+The `WebhookServiceTests` class provides comprehensive unit tests for the `WebhookService` functionality. It covers subscription management operations (create, read, update, delete), subscription lifecycle management (activate, deactivate), delivery retry logic, and HMAC signature generation for webhook authenticity verification.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Tests;
+using DotnetConfigServer.Models;
+using DotnetConfigServer.Services;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+// Setup mock dependencies
+var subscriptionRepositoryMock = new Mock<IWebhookSubscriptionRepository>();
+var deliveryRepositoryMock = new Mock<IWebhookDeliveryRepository>();
+var loggerMock = new Mock<ILogger<WebhookService>>();
+var httpHandlerMock = new Mock<HttpMessageHandler>();
+var httpClient = new HttpClient(httpHandlerMock.Object);
+
+// Create the service under test
+var webhookService = new WebhookService(
+    subscriptionRepositoryMock.Object,
+    deliveryRepositoryMock.Object,
+    loggerMock.Object,
+    httpClient
+);
+
+// Test 1: Create a new webhook subscription
+var newSubscription = new WebhookSubscription
+{
+    Name = "OrderService Webhook",
+    Url = "https://order-service.example.com/config/webhook",
+    ConfigurationId = Guid.NewGuid(),
+    VerifySignature = true,
+    IsActive = true
+};
+
+var createdSubscription = await webhookService.CreateSubscriptionAsync(newSubscription, "admin");
+Assert.NotNull(createdSubscription);
+Assert.Equal("admin", createdSubscription.CreatedBy);
+
+// Test 2: Generate HMAC signature for webhook verification
+if (createdSubscription.Secret != null)
+{
+    var payload = "{\"configurationId\":\"...\",\"event\":\"ConfigurationUpdated\"}";
+    var signature = createdSubscription.GenerateSignature(payload);
+    Assert.NotNull(signature);
+    Assert.Matches("^[0-9A-F]+$", signature);
+}
+
+// Test 3: Update subscription
+var updatedSubscription = new WebhookSubscription
+{
+    Name = "Updated OrderService Webhook",
+    Url = "https://updated-order-service.example.com/config/webhook",
+    Description = "Updated description"
+};
+
+var result = await webhookService.UpdateSubscriptionAsync(
+    createdSubscription.Id,
+    updatedSubscription,
+    "editor"
+);
+Assert.Equal("Updated OrderService Webhook", result.Name);
+
+// Test 4: Get subscription by ID
+var retrieved = await webhookService.GetSubscriptionAsync(createdSubscription.Id);
+Assert.NotNull(retrieved);
+
+// Test 5: Delete subscription (soft delete - sets IsActive to false)
+await webhookService.DeleteSubscriptionAsync(createdSubscription.Id, "admin");
+
+// Test 6: Activate and deactivate lifecycle
+var activated = await webhookService.ActivateAsync(createdSubscription.Id, "admin");
+Assert.True(activated.IsActive);
+
+var deactivated = await webhookService.DeactivateAsync(createdSubscription.Id, "admin");
+Assert.False(deactivated.IsActive);
+
+// Test 7: Handle retry logic for failed deliveries
+var deliveryCount = await webhookService.RetryFailedDeliveriesAsync(maxRetries: 5);
+```
 
 ## Performance
 
