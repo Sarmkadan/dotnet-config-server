@@ -238,7 +238,7 @@ public sealed class ChangeRequestServiceTests
 		var id = Guid.NewGuid();
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ChangeRequest?)null);
 
-		var act = () => _sut.RejectAsync(id, "reviewer");
+		var act = () => _sut.RejectAsync(id, "reviewer", "Security risk");
 
 		await act.Should().ThrowAsync<ConfigurationNotFoundException>();
 	}
@@ -278,7 +278,7 @@ public sealed class ChangeRequestServiceTests
 
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
 
-		var act = () => _sut.RejectAsync(id, "reviewer");
+		var act = () => _sut.RejectAsync(id, "reviewer", "Invalid request");
 
 		await act.Should().ThrowAsync<ConfigurationException>();
 	}
@@ -422,4 +422,44 @@ public sealed class ChangeRequestServiceTests
 
 		request.Status.Should().Be(ChangeRequestStatus.Cancelled);
 	}
-}
+
+        /// <summary>
+        /// Tests that rejecting a change request with an empty comment throws a ValidationException.
+        /// </summary>
+        [Fact]
+        public async Task RejectAsync_WithEmptyComment_ThrowsValidationException()
+        {
+            var id = Guid.NewGuid();
+            var request = CreateValidRequest();
+            request.Id = id;
+            request.Status = ChangeRequestStatus.Pending;
+
+            _repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
+            _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
+            _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            var act = () => _sut.RejectAsync(id, "reviewer", string.Empty);
+
+            await act.Should().ThrowAsync<ValidationException>();
+        }
+
+        /// <summary>
+        /// Tests that rejecting a change request with a whitespace comment throws a ValidationException.
+        /// </summary>
+        [Fact]
+        public async Task RejectAsync_WithWhitespaceComment_ThrowsValidationException()
+        {
+            var id = Guid.NewGuid();
+            var request = CreateValidRequest();
+            request.Id = id;
+            request.Status = ChangeRequestStatus.Pending;
+
+            _repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
+            _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
+            _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+            var act = () => _sut.RejectAsync(id, "reviewer", "   ");
+
+            await act.Should().ThrowAsync<ValidationException>();
+        }
+    }

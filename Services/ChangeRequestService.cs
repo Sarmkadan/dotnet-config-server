@@ -97,8 +97,11 @@ public sealed class ChangeRequestService : IChangeRequestService
     /// <summary>
     /// Rejects a pending change request.
     /// </summary>
-    public async Task<ChangeRequest> RejectAsync(Guid id, string reviewerId, string? comment = null)
+    public async Task<ChangeRequest> RejectAsync(Guid id, string reviewerId, string comment)
     {
+            if (string.IsNullOrWhiteSpace(comment))
+                throw new ValidationException("Rejection comment is required", new Dictionary<string, List<string>>());
+
         var request = await _repository.GetByIdAsync(id)
             ?? throw new ConfigurationNotFoundException($"Change request {id} not found");
 
