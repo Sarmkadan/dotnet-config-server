@@ -59,12 +59,18 @@ try
     builder.Services.AddScoped<ConfigurationEventHandlers>();
     builder.Services.AddHostedService<ConfigurationSyncWorker>();
     builder.Services.AddHostedService<WebhookRetryWorker>();
+builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
 
     builder.Services.AddControllers();
     builder.Services.AddOptions<DotnetConfigServerOptions>()
         .Bind(builder.Configuration.GetSection("DotnetConfigServer"))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+
+builder.Services.AddOptions<ConfigurationSnapshotOptions>()
+    .Bind(builder.Configuration.GetSection("DotnetConfigServer:Snapshot"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
