@@ -199,6 +199,52 @@ public sealed class ConfigurationExporter
     }
 
     /// <summary>
+    /// Exports configurations to YAML format.
+    /// </summary>
+    public static string ExportAsYaml(IEnumerable<Configuration> configurations)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var config in configurations)
+        {
+            sb.AppendLine("- Id: " + EscapeYamlValue(config.Id.ToString()));
+            sb.AppendLine("  ApplicationId: " + EscapeYamlValue(config.ApplicationId.ToString()));
+            sb.AppendLine("  Name: " + EscapeYamlValue(config.Name));
+            sb.AppendLine("  Description: " + EscapeYamlValue(config.Description));
+            sb.AppendLine("  Environment: " + EscapeYamlValue(config.Environment.ToString()));
+            sb.AppendLine("  IsActive: " + config.IsActive.ToString().ToLower());
+            sb.AppendLine("  IsEncrypted: " + config.IsEncrypted.ToString().ToLower());
+            sb.AppendLine("  CreatedAt: " + EscapeYamlValue(config.CreatedAt.ToString("O")));
+            sb.AppendLine("  UpdatedAt: " + EscapeYamlValue(config.UpdatedAt?.ToString("O")));
+            sb.AppendLine("  CreatedBy: " + EscapeYamlValue(config.CreatedBy));
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Exports configuration keys to YAML format.
+    /// </summary>
+    public static string ExportKeysAsYaml(IEnumerable<ConfigurationKey> keys)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var key in keys)
+        {
+            sb.AppendLine("- Id: " + EscapeYamlValue(key.Id.ToString()));
+            sb.AppendLine("  ConfigurationId: " + EscapeYamlValue(key.ConfigurationId.ToString()));
+            sb.AppendLine("  Key: " + EscapeYamlValue(key.Key));
+            sb.AppendLine("  Value: " + EscapeYamlValue(key.Value));
+            sb.AppendLine("  Description: " + EscapeYamlValue(key.Description));
+            sb.AppendLine("  IsEncrypted: " + key.IsEncrypted.ToString().ToLower());
+            sb.AppendLine("  IsActive: " + key.IsActive.ToString().ToLower());
+            sb.AppendLine("  CreatedAt: " + EscapeYamlValue(key.CreatedAt.ToString("O")));
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
     /// Escapes special characters in CSV values.
     /// </summary>
     private static string EscapeCsvValue(string value)
@@ -225,6 +271,51 @@ public sealed class ConfigurationExporter
         if (value.Contains(" ") || value.Contains("\"") || value.Contains("$"))
         {
             return "\"" + value.Replace("\"", "\\\"").Replace("$", "\\$") + "\"";
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Escapes special characters in YAML values.
+    /// </summary>
+    private static string EscapeYamlValue(string? value)
+    {
+        if (value == null)
+            return "null";
+
+        // Empty string should be quoted to differentiate from null
+        if (value.Length == 0)
+            return "\"\"";
+
+        // Characters that require quoting in YAML
+        bool needsQuotes = value.Contains(':') ||
+                           value.Contains('-') && (value.StartsWith("-") || value.Contains("\n-")) ||
+                           value.Contains('#') ||
+                           value.Contains('{') ||
+                           value.Contains('}') ||
+                           value.Contains('[') ||
+                           value.Contains(']') ||
+                           value.Contains(',') ||
+                           value.Contains('&') ||
+                           value.Contains('*') ||
+                           value.Contains('?') ||
+                           value.Contains('|') ||
+                           value.Contains('>') ||
+                           value.Contains('\'') ||
+                           value.Contains('\"') ||
+                           value.Contains('\n') ||
+                           value.Contains('\r') ||
+                           value.StartsWith(' ') ||
+                           value.EndsWith(' ') ||
+                           value.StartsWith("\"") ||
+                           value.StartsWith("'");
+
+        if (needsQuotes)
+        {
+            // Escape double quotes
+            var escaped = value.Replace("\"", "\\\"");
+            return $"\"{escaped}\"";
         }
 
         return value;
