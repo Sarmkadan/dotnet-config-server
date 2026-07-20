@@ -20,6 +20,7 @@ public sealed class RollbackService : IRollbackService
     private readonly IVersioningService _versioningService;
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly ILogger<RollbackService> _logger;
+    private readonly IConfigurationKeyRepository _keyRepository;
 
     /// <summary>
     /// Initializes a new instance of <see cref="RollbackService"/>.
@@ -27,11 +28,13 @@ public sealed class RollbackService : IRollbackService
     public RollbackService(
         IVersioningService versioningService,
         IAuditLogRepository auditLogRepository,
-        ILogger<RollbackService> logger)
+        ILogger<RollbackService> logger,
+        IConfigurationKeyRepository keyRepository)
     {
         _versioningService = versioningService;
         _auditLogRepository = auditLogRepository;
         _logger = logger;
+        _keyRepository = keyRepository;
     }
 
     /// <inheritdoc />
@@ -91,10 +94,105 @@ public sealed class RollbackService : IRollbackService
         var logs = await _auditLogRepository.GetByConfigurationAsync(configurationId);
 
         return logs
-            .Where(log => string.Equals(log.EntityType, "Rollback", StringComparison.OrdinalIgnoreCase))
-            .Select(MapRecord)
-            .OrderByDescending(record => record.PerformedAt)
+        .Where(log => string.Equals(log.EntityType, "Rollback", StringComparison.OrdinalIgnoreCase))
+        .Select(MapRecord)
+        .OrderByDescending(record => record.PerformedAt)
+        .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<RollbackPreview> PreviewRollbackAsync(Guid configurationId, Guid targetVersionId, string userId)
+    {
+        var targetVersion = await _versioningService.GetVersionAsync(targetVersionId);
+        if (targetVersion is null || targetVersion.ConfigurationId != configurationId)
+            throw new ConfigurationNotFoundException(targetVersionId.ToString());
+
+        var activeVersion = await _versioningService.GetActiveVersionAsync(configurationId);
+        if (activeVersion is null)
+            throw new ConfigurationNotFoundException("No active version found for configuration");
+
+        var targetKeys = await _keyRepository.GetByVersionAsync(targetVersionId);
+        var activeKeys = await _keyRepository.GetByVersionAsync(activeVersion.Id);
+
+        var changes = new List<DiffEntry>();
+
+        // Find keys that would be added (present in target but not in active)
+        foreach (var targetKey in targetKeys)
+        {
+            var activeKey = activeKeys.FirstOrDefault(k => k.Key == targetKey.Key);
+            if (activeKey is null)
+            {
+                changes.Add(new DiffEntry
+                {
+                    Key = targetKey.Key,
+                    ChangeType = ChangeType.Added,
+                    OldValue = null,
+                    NewValue = targetKey.Value,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else if (activeKey.Value != targetKey.Value)
+            {
+                changes.Add(new DiffEntry
+                {
+                    Key = targetKey.Key,
+                    ChangeType = ChangeType.Modified,
+                    OldValue = activeKey.Value,
+                    NewValue = targetKey.Value,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        // Find keys that would be deleted (present in active but not in target)
+        foreach (var activeKey in activeKeys)
+        {
+            if (!targetKeys.Any(k => k.Key == activeKey.Key))
+            {
+                changes.Add(new DiffEntry
+                {
+                    Key = activeKey.Key,
+                    ChangeType = ChangeType.Deleted,
+                    OldValue = activeKey.Value,
+                    NewValue = null,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        var preview = new RollbackPreview
+        {
+            ConfigurationId = configurationId,
+            CurrentVersion = activeVersion.GetSummary(),
+            TargetVersion = targetVersion.GetSummary(),
+            Changes = changes,
+            AddedCount = changes.Count(c => c.ChangeType == ChangeType.Added),
+            ModifiedCount = changes.Count(c => c.ChangeType == ChangeType.Modified),
+            DeletedCount = changes.Count(c => c.ChangeType == ChangeType.Deleted),
+            IsRollbackSafe = true
+        };
+
+        // Check for safety - if any required key would be deleted, mark as unsafe
+        var requiredKeysToDelete = activeKeys
+            .Where(k => k.IsRequired && !targetKeys.Any(t => t.Key == k.Key))
             .ToList();
+
+        if (requiredKeysToDelete.Any())
+        {
+            preview.IsRollbackSafe = false;
+            preview.WarningMessages = requiredKeysToDelete
+                .Select(k => $"Required key '{k.Key}' would be deleted by this rollback")
+                .ToList();
+        }
+
+        _logger.LogInformation(
+            "Rollback preview generated for configuration {ConfigurationId} to version {TargetVersionId} by {UserId}. Changes: {TotalChanges}",
+            configurationId,
+            targetVersionId,
+            userId,
+            preview.TotalChanges);
+
+        return preview;
     }
 
     private static RollbackRecord MapRecord(AuditLog auditLog)

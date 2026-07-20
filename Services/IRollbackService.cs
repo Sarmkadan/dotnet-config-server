@@ -22,4 +22,10 @@ public interface IRollbackService
     /// Gets rollback history for a configuration.
     /// </summary>
     Task<List<RollbackRecord>> GetRollbackHistoryAsync(Guid configurationId);
+
+    /// <summary>
+    /// Generates a preview of changes that would be applied during a rollback to a target version.
+    /// Returns the set of changes without applying them.
+    /// </summary>
+    Task<RollbackPreview> PreviewRollbackAsync(Guid configurationId, Guid targetVersionId, string userId);
 }

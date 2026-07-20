@@ -98,7 +98,8 @@ public sealed class RollbackController : ControllerBase
     {
         try
         {
-            var preview = await _diffViewerService.GetRollbackPreviewAsync(configurationId, targetVersionId);
+            var userId = User.Identity?.Name ?? "system";
+            var preview = await _rollbackService.PreviewRollbackAsync(configurationId, targetVersionId, userId);
             return Ok(preview);
         }
         catch (ConfigurationNotFoundException)

@@ -24,6 +24,7 @@ public sealed class RollbackServiceTests
     private readonly Mock<IVersioningService> _versioningServiceMock;
     private readonly Mock<IAuditLogRepository> _auditLogRepositoryMock;
     private readonly Mock<ILogger<RollbackService>> _loggerMock;
+    private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
     private readonly RollbackService _sut;
 
     /// <summary>
@@ -35,11 +36,13 @@ public sealed class RollbackServiceTests
         _versioningServiceMock = new Mock<IVersioningService>();
         _auditLogRepositoryMock = new Mock<IAuditLogRepository>();
         _loggerMock = new Mock<ILogger<RollbackService>>();
+        _keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
 
         _sut = new RollbackService(
             _versioningServiceMock.Object,
             _auditLogRepositoryMock.Object,
-            _loggerMock.Object);
+            _loggerMock.Object,
+            _keyRepositoryMock.Object);
     }
 
     /// <summary>
