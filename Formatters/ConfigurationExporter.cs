@@ -215,7 +215,8 @@ public sealed class ConfigurationExporter
             sb.AppendLine("  IsActive: " + config.IsActive.ToString().ToLower());
             sb.AppendLine("  IsEncrypted: " + config.IsEncrypted.ToString().ToLower());
             sb.AppendLine("  CreatedAt: " + EscapeYamlValue(config.CreatedAt.ToString("O")));
-            sb.AppendLine("  UpdatedAt: " + EscapeYamlValue(config.UpdatedAt?.ToString("O")));
+            // UpdatedAt is a non‑nullable DateTime, so we call ToString directly.
+            sb.AppendLine("  UpdatedAt: " + EscapeYamlValue(config.UpdatedAt.ToString("O")));
             sb.AppendLine("  CreatedBy: " + EscapeYamlValue(config.CreatedBy));
         }
 
