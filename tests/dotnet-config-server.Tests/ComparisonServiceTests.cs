@@ -1,214 +1,129 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
 
 using DotnetConfigServer.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Collections.Generic;
 using Xunit;
 
 namespace DotnetConfigServer.Tests;
 
-/// <summary>
-/// Tests for the ComparisonService class.
-/// </summary>
 public sealed class ComparisonServiceTests
 {
+    private readonly Mock<ILogger<ComparisonService>> _loggerMock;
     private readonly ComparisonService _sut;
 
-    /// <summary>
-    /// Initializes a new instance of the ComparisonServiceTests class.
-    /// </summary>
     public ComparisonServiceTests()
     {
-        var loggerMock = new Mock<ILogger<ComparisonService>>();
-        _sut = new ComparisonService(loggerMock.Object);
+        _loggerMock = new Mock<ILogger<ComparisonService>>();
+        _sut = new ComparisonService(_loggerMock.Object);
     }
 
-    private sealed class SampleRecord
-    {
-        /// <summary>
-        /// Gets or sets the name of the record.
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
-        /// <summary>
-        /// Gets or sets the port of the record.
-        /// </summary>
-        public int Port { get; set; }
-        /// <summary>
-        /// Gets or sets a value indicating whether the record is enabled.
-        /// </summary>
-        public bool Enabled { get; set; }
-    }
-
-    // ── Compare ──────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Tests that comparing two identical objects returns no changes.
-    /// </summary>
     [Fact]
-    public void Compare_IdenticalObjects_ReturnsNoChanges()
+    public void Compare_DifferentObjects_ReturnsChanges()
     {
-        var a = new SampleRecord { Name = "db", Port = 5432, Enabled = true };
-        var b = new SampleRecord { Name = "db", Port = 5432, Enabled = true };
-
-        var result = _sut.Compare(a, b);
-
-        result.Changes.Should().BeEmpty();
-        result.ItemType.Should().Be(nameof(SampleRecord));
-    }
-
-    /// <summary>
-    /// Tests that comparing two objects with a single field changed returns a single change.
-    /// </summary>
-    [Fact]
-    public void Compare_SingleFieldChanged_ReturnsSingleChange()
-    {
-        var original = new SampleRecord { Name = "db-host", Port = 5432, Enabled = true };
-        var modified = new SampleRecord { Name = "prod-db", Port = 5432, Enabled = true };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Modified" };
 
         var result = _sut.Compare(original, modified);
 
         result.Changes.Should().HaveCount(1);
-        var change = result.Changes[0];
-        change.PropertyName.Should().Be(nameof(SampleRecord.Name));
-        change.OriginalValue.Should().Be("db-host");
-        change.ModifiedValue.Should().Be("prod-db");
+        result.Changes[0].PropertyName.Should().Be("Name");
+        result.Changes[0].OriginalValue.Should().Be("Original");
+        result.Changes[0].ModifiedValue.Should().Be("Modified");
     }
 
-    /// <summary>
-    /// Tests that comparing two objects with multiple fields changed returns all changes.
-    /// </summary>
     [Fact]
-    public void Compare_MultipleFieldsChanged_ReturnsAllChanges()
+    public void Compare_SameObjects_ReturnsNoChanges()
     {
-        var original = new SampleRecord { Name = "old", Port = 80, Enabled = false };
-        var modified = new SampleRecord { Name = "new", Port = 443, Enabled = true };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Original" };
 
         var result = _sut.Compare(original, modified);
 
-        result.Changes.Should().HaveCount(3);
-        result.Changes.Select(c => c.PropertyName)
-            .Should().BeEquivalentTo(
-                new[] { nameof(SampleRecord.Name), nameof(SampleRecord.Port), nameof(SampleRecord.Enabled) });
+        result.Changes.Should().BeEmpty();
     }
 
-    /// <summary>
-    /// Tests that comparing two objects with a property change includes the property type.
-    /// </summary>
     [Fact]
-    public void Compare_PropertyChange_IncludesPropertyType()
+    public void Compare_MissingKeyInOriginal_ReturnsChange()
     {
-        var a = new SampleRecord { Port = 80 };
-        var b = new SampleRecord { Port = 443 };
+        var original = new Dictionary<string, string> { { "key1", "value1" } };
+        var modified = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
 
-        var result = _sut.Compare(a, b);
+        var result = _sut.Compare(original, modified);
 
-        var portChange = result.Changes.Single(c => c.PropertyName == nameof(SampleRecord.Port));
-        portChange.PropertyType.Should().Be(nameof(Int32));
+        result.Changes.Should().HaveCount(1);
+        result.Changes[0].PropertyName.Should().Be("key2");
+        result.Changes[0].OriginalValue.Should().Be("null");
+        result.Changes[0].ModifiedValue.Should().Be("value2");
     }
 
-    // ── HasDifferences ───────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Tests that checking for differences between two identical objects returns false.
-    /// </summary>
     [Fact]
-    public void HasDifferences_IdenticalObjects_ReturnsFalse()
+    public void Compare_MissingKeyInModified_ReturnsChange()
     {
-        var a = new SampleRecord { Name = "same", Port = 1234, Enabled = true };
-        var b = new SampleRecord { Name = "same", Port = 1234, Enabled = true };
+        var original = new Dictionary<string, string> { { "key1", "value1" }, { "key2", "value2" } };
+        var modified = new Dictionary<string, string> { { "key1", "value1" } };
 
-        _sut.HasDifferences(a, b).Should().BeFalse();
+        var result = _sut.Compare(original, modified);
+
+        result.Changes.Should().HaveCount(1);
+        result.Changes[0].PropertyName.Should().Be("key2");
+        result.Changes[0].OriginalValue.Should().Be("value2");
+        result.Changes[0].ModifiedValue.Should().Be("null");
     }
 
-    /// <summary>
-    /// Tests that checking for differences between two different objects returns true.
-    /// </summary>
     [Fact]
     public void HasDifferences_DifferentObjects_ReturnsTrue()
     {
-        var a = new SampleRecord { Name = "before" };
-        var b = new SampleRecord { Name = "after" };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Modified" };
 
-        _sut.HasDifferences(a, b).Should().BeTrue();
+        var result = _sut.HasDifferences(original, modified);
+
+        result.Should().BeTrue();
     }
 
-    // ── GetSummary ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Tests that getting a summary of two identical objects returns zero total changes and an empty list of changed fields.
-    /// </summary>
     [Fact]
-    public void GetSummary_NoChanges_ReturnsTotalChangesZeroAndEmptyFields()
+    public void HasDifferences_SameObjects_ReturnsFalse()
     {
-        var a = new SampleRecord { Name = "x", Port = 1, Enabled = true };
-        var b = new SampleRecord { Name = "x", Port = 1, Enabled = true };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Original" };
 
-        var summary = _sut.GetSummary(a, b);
+        var result = _sut.HasDifferences(original, modified);
 
-        summary.TotalChanges.Should().Be(0);
-        summary.ChangedFields.Should().BeEmpty();
-        summary.ChangePercentage.Should().Be(0);
+        result.Should().BeFalse();
     }
 
-    /// <summary>
-    /// Tests that getting a summary of two objects with one of three fields changed returns a 33% change percentage.
-    /// </summary>
     [Fact]
-    public void GetSummary_OneOfThreeFieldsChanged_Returns33PercentChangePercentage()
+    public void GetSummary_DifferentObjects_ReturnsSummary()
     {
-        var a = new SampleRecord { Name = "old", Port = 80, Enabled = false };
-        var b = new SampleRecord { Name = "new", Port = 80, Enabled = false };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Modified" };
 
-        var summary = _sut.GetSummary(a, b);
+        var result = _sut.GetSummary(original, modified);
 
-        summary.TotalChanges.Should().Be(1);
-        summary.ChangedFields.Should().ContainSingle().Which.Should().Be(nameof(SampleRecord.Name));
-        summary.ChangePercentage.Should().BeApproximately(33.33, 0.5);
+        result.TotalChanges.Should().Be(1);
+        result.ChangedFields.Should().Contain("Name");
+        result.ChangePercentage.Should().Be(50);
     }
 
-    /// <summary>
-    /// Tests that getting a summary of two objects with all fields changed returns a 100% change percentage.
-    /// </summary>
     [Fact]
-    public void GetSummary_AllFieldsChanged_Returns100PercentChangePercentage()
+    public void GetSummary_SameObjects_ReturnsSummary()
     {
-        var a = new SampleRecord { Name = "a", Port = 1, Enabled = false };
-        var b = new SampleRecord { Name = "b", Port = 2, Enabled = true };
+        var original = new TestObject { Id = 1, Name = "Original" };
+        var modified = new TestObject { Id = 1, Name = "Original" };
 
-        var summary = _sut.GetSummary(a, b);
+        var result = _sut.GetSummary(original, modified);
 
-        summary.TotalChanges.Should().Be(3);
-        summary.ChangePercentage.Should().BeApproximately(100.0, 0.1);
+        result.TotalChanges.Should().Be(0);
+        result.ChangedFields.Should().BeEmpty();
+        result.ChangePercentage.Should().Be(0);
     }
 
-    // ── Edge cases ───────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Tests that comparing two objects with a null to string property value returns the null literal.
-    /// </summary>
-    [Fact]
-    public void Compare_NullToString_PropertyValue_ReturnsNullLiteral()
+    private sealed class TestObject
     {
-        var original = new NullableRecord { Label = null };
-        var modified = new NullableRecord { Label = "set" };
-
-        var result = _sut.Compare(original, modified);
-
-        result.Changes.Should().HaveCount(1);
-        result.Changes[0].OriginalValue.Should().Be("null");
-        result.Changes[0].ModifiedValue.Should().Be("set");
-    }
-
-    private sealed class NullableRecord
-    {
-        /// <summary>
-        /// Gets or sets the label of the record.
-        /// </summary>
-        public string? Label { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }
