@@ -222,4 +222,77 @@ public sealed class EncryptionServiceTests
 
         _keyRepositoryMock.Verify(r => r.UpdateAsync(key), Times.Once);
     }
+
+    /// <summary>
+    /// Tests that decrypting with a different key than the one used for encryption fails.
+    /// Verifies that encryption keys are not interchangeable and wrong keys produce decryption errors.
+    /// </summary>
+    [Fact]
+    public void Decrypt_WithWrongKey_ThrowsEncryptionException()
+    {
+        var key1 = CreateValidKey();
+        var key2 = CreateValidKey();
+
+        var plainText = "secret-password";
+        var cipherText = _sut.Encrypt(plainText, key1);
+
+        var act = () => _sut.Decrypt(cipherText, key2);
+
+        act.Should().Throw<EncryptionException>();
+    }
+
+    /// <summary>
+    /// Tests that encrypting an empty string throws an exception.
+    /// Verifies that the service properly validates input and rejects empty values.
+    /// </summary>
+    [Fact]
+    public void Encrypt_EmptyString_ThrowsArgumentException()
+    {
+        var key = CreateValidKey();
+        var act = () => _sut.Encrypt(string.Empty, key);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    /// <summary>
+    /// Tests that encrypting a null string throws an exception.
+    /// Verifies that the service properly validates input and rejects null values.
+    /// </summary>
+    [Fact]
+    public void Encrypt_NullString_ThrowsArgumentNullException()
+    {
+        var key = CreateValidKey();
+        var act = () => _sut.Encrypt(null!, key);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    /// <summary>
+    /// Tests that encrypting and decrypting unicode characters preserves the original text.
+    /// Verifies that the encryption handles international characters, emojis, and special symbols correctly.
+    /// </summary>
+    [Fact]
+    public void EncryptDecrypt_UnicodeCharacters_ReturnsOriginalText()
+    {
+        var key = CreateValidKey();
+        var unicodeText = "Hello 世界 🌍 Привет مرحبا こんにちは";
+
+        var cipherText = _sut.Encrypt(unicodeText, key);
+        var decrypted = _sut.Decrypt(cipherText, key);
+
+        decrypted.Should().Be(unicodeText);
+    }
+
+    /// <summary>
+    /// Tests that encrypting and decrypting whitespace-only strings fails.
+    /// Verifies that the service rejects whitespace-only values which are considered invalid.
+    /// </summary>
+    [Fact]
+    public void Encrypt_WhitespaceString_ThrowsArgumentException()
+    {
+        var key = CreateValidKey();
+        var act = () => _sut.Encrypt("   ", key);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }
