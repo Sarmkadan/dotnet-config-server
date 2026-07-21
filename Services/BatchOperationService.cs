@@ -5,7 +5,9 @@
 // =============================================================================
 
 using System.Collections.Concurrent;
+using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
+using DotnetConfigServer.Exceptions;
 
 namespace DotnetConfigServer.Services;
 
@@ -34,19 +36,27 @@ public interface IBatchOperationService
     /// Cancels a pending batch operation.
     /// </summary>
     Task CancelAsync(Guid operationId);
+
+    /// <summary>
+    /// Validates a batch of configuration keys against validation rules without applying changes.
+    /// </summary>
+    Task<ValidationRuleResult> ValidateBatchAsync(List<ConfigurationKey> keys, Guid configurationId, Guid? versionId = null);
 }
 
 public sealed class BatchOperationService : IBatchOperationService
 {
     private readonly IConfigurationKeyRepository _keyRepository;
+    private readonly IValidationRuleService _validationRuleService;
     private readonly ILogger<BatchOperationService> _logger;
     private readonly ConcurrentDictionary<Guid, BatchOperationContext> _operations = new();
 
     public BatchOperationService(
         IConfigurationKeyRepository keyRepository,
+        IValidationRuleService validationRuleService,
         ILogger<BatchOperationService> logger)
     {
         _keyRepository = keyRepository;
+        _validationRuleService = validationRuleService;
         _logger = logger;
     }
 
@@ -241,6 +251,63 @@ public sealed class BatchOperationService : IBatchOperationService
         }
 
         return Task.CompletedTask;
+    }
+
+    public async Task<ValidationRuleResult> ValidateBatchAsync(List<ConfigurationKey> keys, Guid configurationId, Guid? versionId = null)
+    {
+        if (keys is null || keys.Count == 0)
+            return new ValidationRuleResult { IsValid = true, Violations = new List<ValidationViolation>() };
+
+        _logger.LogInformation("Starting batch validation for {Count} keys in configuration {ConfigId}", keys.Count, configurationId);
+
+        var result = new ValidationRuleResult { Violations = new List<ValidationViolation>() };
+
+        try
+        {
+            // Validate each key individually first
+            foreach (var key in keys)
+            {
+                try
+                {
+                    key.Validate();
+                }
+                catch (ValidationException ex)
+                {
+                    foreach (var error in ex.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            result.Violations.Add(new ValidationViolation
+                            {
+                                KeyName = key.Key,
+                                RuleName = "ConfigurationKey",
+                                Message = $"{error.Key}: {message}",
+                                RuleId = Guid.Empty
+                            });
+                        }
+                    }
+                }
+            }
+
+            // If there are configuration-level validation rules, apply them
+            if (configurationId != Guid.Empty)
+            {
+                var validationResult = await _validationRuleService.ValidateConfigurationAsync(configurationId, versionId);
+                result.Violations.AddRange(validationResult.Violations);
+            }
+
+            result.IsValid = result.Violations.Count == 0;
+
+            _logger.LogInformation("Batch validation completed for {Count} keys: {Valid} valid, {Violations} violations found",
+                keys.Count, result.IsValid, result.Violations.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Batch validation failed for configuration {ConfigId}", configurationId);
+            throw;
+        }
+
+        return result;
     }
 
     private class BatchOperationContext

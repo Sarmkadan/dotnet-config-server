@@ -10,6 +10,7 @@ using DotnetConfigServer.Middleware;
 using DotnetConfigServer.Caching;
 using DotnetConfigServer.Events;
 using DotnetConfigServer.Services;
+using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Integration;
 using DotnetConfigServer.Infrastructure;
 using DotnetConfigServer.BackgroundWorkers;
@@ -41,7 +42,13 @@ try
     builder.Services.AddScoped<IConfigurationSnapshotService, ConfigurationSnapshotService>();
     builder.Services.AddScoped<IHealthCheckService, HealthCheckService>();
     builder.Services.AddScoped<IConfigurationImportService, ConfigurationImportService>();
-    builder.Services.AddScoped<IBatchOperationService, BatchOperationService>();
+    builder.Services.AddScoped<IBatchOperationService>(provider =>
+{
+    var keyRepository = provider.GetRequiredService<IConfigurationKeyRepository>();
+    var validationRuleService = provider.GetRequiredService<IValidationRuleService>();
+    var logger = provider.GetRequiredService<ILogger<BatchOperationService>>();
+    return new BatchOperationService(keyRepository, validationRuleService, logger);
+});
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
     builder.Services.AddSingleton(new ExternalApiClientOptions());
     builder.Services.AddScoped<ExternalApiClient>();

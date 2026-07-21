@@ -24,6 +24,7 @@ public sealed class BatchOperationServiceTests
 	/// Mock repository for testing configuration key operations.
 	/// </summary>
 	private readonly Mock<IConfigurationKeyRepository> _keyRepositoryMock;
+        private readonly Mock<IValidationRuleService> _validationRuleServiceMock;
 
 	/// <summary>
 	/// Mock logger for testing service logging behavior.
@@ -42,7 +43,8 @@ public sealed class BatchOperationServiceTests
 	{
 		_keyRepositoryMock = new Mock<IConfigurationKeyRepository>();
 		_loggerMock = new Mock<ILogger<BatchOperationService>>();
-		_sut = new BatchOperationService(_keyRepositoryMock.Object, _loggerMock.Object);
+		_validationRuleServiceMock = new Mock<IValidationRuleService>();
+            _sut = new BatchOperationService(_keyRepositoryMock.Object, _validationRuleServiceMock.Object, _loggerMock.Object);
 	}
 
 	/// <summary>
