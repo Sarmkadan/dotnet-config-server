@@ -176,4 +176,196 @@ public sealed class ValidationRuleServiceTests
         _validationRuleRepositoryMock.Verify(r => r.AddAsync(It.Is<ValidationRule>(created => created.Name == "URL validation")), Times.Once);
         _validationRuleRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
+
+    /// <summary>
+    /// Ensures that when a configuration key is missing and a required rule applies to it,
+    /// <see cref="ValidationRuleService.ValidateConfigurationAsync"/> reports a violation.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ValidateConfigurationAsync_MissingRequiredKey_ReturnsViolation()
+    {
+        var configurationId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+        var keys = new List<ConfigurationKey>();
+        var rules = new List<ValidationRule>
+        {
+            new()
+            {
+                Name = "Required API key",
+                ConfigurationId = configurationId,
+                RuleType = ValidationRuleType.Required,
+                TargetKeyPattern = "^ApiKey$"
+            }
+        };
+
+        _configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(keys);
+        _validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(rules);
+
+        var result = await _sut.ValidateConfigurationAsync(configurationId, versionId);
+
+        result.IsValid.Should().BeFalse();
+        result.Violations.Should().ContainSingle();
+        result.Violations[0].KeyName.Should().Be("^ApiKey$");
+        result.Violations[0].Message.Should().Be("Required key is missing.");
+    }
+
+    /// <summary>
+    /// Verifies that when multiple rules apply to a configuration, all violations are collected.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ValidateConfigurationAsync_MultipleRules_AggregatesViolations()
+    {
+        var configurationId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+        var keys = new List<ConfigurationKey>
+        {
+            new() { Key = "MinLengthKey", Value = "ab" },
+            new() { Key = "MaxLengthKey", Value = "toolongvalue" }
+        };
+        var rules = new List<ValidationRule>
+        {
+            new()
+            {
+                Name = "Min length",
+                ConfigurationId = configurationId,
+                RuleType = ValidationRuleType.MinLength,
+                Parameters = "5",
+                TargetKeyPattern = "MinLengthKey"
+            },
+            new()
+            {
+                Name = "Max length",
+                ConfigurationId = configurationId,
+                RuleType = ValidationRuleType.MaxLength,
+                Parameters = "10",
+                TargetKeyPattern = "MaxLengthKey"
+            }
+        };
+
+        _configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(keys);
+        _validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(rules);
+
+        var result = await _sut.ValidateConfigurationAsync(configurationId, versionId);
+
+        result.IsValid.Should().BeFalse();
+        result.Violations.Should().HaveCount(2);
+    }
+
+    /// <summary>
+    /// Confirms that updating an existing <see cref="ValidationRule"/> via
+    /// <see cref="ValidationRuleService.UpdateRuleAsync"/> updates the rule fields and audit information.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateRuleAsync_ExistingRule_UpdatesFields()
+    {
+        var ruleId = Guid.NewGuid();
+        var existingRule = new ValidationRule
+        {
+            Id = ruleId,
+            Name = "Old name",
+            ConfigurationId = Guid.NewGuid(),
+            RuleType = ValidationRuleType.Regex,
+            Parameters = "^old$",
+            TargetKeyPattern = "^oldKey$",
+            IsActive = true,
+            CreatedBy = "admin"
+        };
+        var updatedRule = new ValidationRule
+        {
+            Id = ruleId,
+            Name = "New name",
+            ConfigurationId = existingRule.ConfigurationId,
+            RuleType = ValidationRuleType.Url,
+            Parameters = null,
+            TargetKeyPattern = "^newKey$",
+            IsActive = false
+        };
+
+        _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync(existingRule);
+        _validationRuleRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ValidationRule>())).Returns(Task.CompletedTask);
+        _validationRuleRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+        var result = await _sut.UpdateRuleAsync(ruleId, updatedRule, "admin");
+
+        result.Name.Should().Be("New name");
+        result.RuleType.Should().Be(ValidationRuleType.Url);
+        result.Parameters.Should().BeNull();
+        result.TargetKeyPattern.Should().Be("^newKey$");
+        result.IsActive.Should().BeFalse();
+        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+    }
+
+    /// <summary>
+    /// Ensures that attempting to update a non-existent rule throws a <see cref="ConfigurationNotFoundException"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task UpdateRuleAsync_NonExistentRule_Throws()
+    {
+        var ruleId = Guid.NewGuid();
+        var updatedRule = new ValidationRule { Id = ruleId, Name = "Test" };
+
+        _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync((ValidationRule?)null);
+
+        await Assert.ThrowsAsync<DotnetConfigServer.Exceptions.ConfigurationNotFoundException>(
+            () => _sut.UpdateRuleAsync(ruleId, updatedRule, "admin"));
+    }
+
+    /// <summary>
+    /// Verifies that deleting an existing rule succeeds and persists the deletion.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteRuleAsync_ExistingRule_DeletesSuccessfully()
+    {
+        var ruleId = Guid.NewGuid();
+        var existingRule = new ValidationRule { Id = ruleId, Name = "Test" };
+
+        _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync(existingRule);
+        _validationRuleRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<ValidationRule>())).Returns(Task.CompletedTask);
+        _validationRuleRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
+
+        await _sut.DeleteRuleAsync(ruleId);
+
+        _validationRuleRepositoryMock.Verify(r => r.DeleteAsync(It.Is<ValidationRule>(r => r.Id == ruleId)), Times.Once);
+        _validationRuleRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+    }
+
+    /// <summary>
+    /// Ensures that attempting to delete a non-existent rule throws a <see cref="ConfigurationNotFoundException"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task DeleteRuleAsync_NonExistentRule_Throws()
+    {
+        var ruleId = Guid.NewGuid();
+
+        _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync((ValidationRule?)null);
+
+        await Assert.ThrowsAsync<DotnetConfigServer.Exceptions.ConfigurationNotFoundException>(
+            () => _sut.DeleteRuleAsync(ruleId));
+    }
+
+    /// <summary>
+    /// Confirms that when no rules are defined for a configuration,
+    /// <see cref="ValidationRuleService.ValidateConfigurationAsync"/> returns a valid result with no violations.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test operation.</returns>
+    [Fact]
+    public async Task ValidateConfigurationAsync_NoRules_ReturnsValid()
+    {
+        var configurationId = Guid.NewGuid();
+        var versionId = Guid.NewGuid();
+
+        _configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(new List<ConfigurationKey>());
+        _validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(new List<ValidationRule>());
+
+        var result = await _sut.ValidateConfigurationAsync(configurationId, versionId);
+
+        result.IsValid.Should().BeTrue();
+        result.Violations.Should().BeEmpty();
+    }
 }
