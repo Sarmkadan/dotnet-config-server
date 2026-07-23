@@ -73,6 +73,9 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasKey(v => v.Id);
             entity.HasIndex(v => v.ConfigurationId);
             entity.HasIndex(v => new { v.ConfigurationId, v.Status });
+    entity.HasIndex(v => new { v.ConfigurationId, v.VersionNumber })
+        .IsUnique()
+        .HasDatabaseName("IX_ConfigurationVersion_ConfigurationId_VersionNumber_Unique");
             entity.Property(v => v.VersionNumber).IsRequired().HasMaxLength(50);
             entity.HasMany(v => v.Keys).WithOne().HasForeignKey(k => k.VersionId).OnDelete(DeleteBehavior.Cascade);
         });

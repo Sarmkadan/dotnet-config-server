@@ -16,7 +16,19 @@ public interface IVersioningService
     /// <summary>
     /// Creates a new version of a configuration
     /// </summary>
-    Task<ConfigurationVersion> CreateVersionAsync(Guid configurationId, string releaseNotes, string userId);
+    /// <summary>
+/// Creates a new version of a configuration
+/// </summary>
+/// <param name="configurationId">The configuration ID</param>
+/// <param name="releaseNotes">Release notes for the version</param>
+/// <param name="userId">User ID creating the version</param>
+/// <param name="expectedVersionNumber">Optional: Expected current version number for optimistic concurrency check</param>
+/// <exception cref="OptimisticConcurrencyException">Thrown when the expected version doesn't match the actual current version</exception>
+Task<ConfigurationVersion> CreateVersionAsync(
+    Guid configurationId,
+    string releaseNotes,
+    string userId,
+    string? expectedVersionNumber = null);
 
     /// <summary>
     /// Gets a configuration version

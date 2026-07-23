@@ -39,13 +39,41 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Creates a new version of a configuration
     /// </summary>
-    public async Task<ConfigurationVersion> CreateVersionAsync(Guid configurationId, string releaseNotes, string userId)
+    /// <param name="configurationId">The configuration ID</param>
+    /// <param name="releaseNotes">Release notes for the version</param>
+    /// <param name="userId">User ID creating the version</param>
+    /// <param name="expectedVersionNumber">Optional: Expected current version number for optimistic concurrency check</param>
+    /// <exception cref="OptimisticConcurrencyException">Thrown when the expected version doesn't match the actual current version</exception>
+    public async Task<ConfigurationVersion> CreateVersionAsync(
+        Guid configurationId,
+        string releaseNotes,
+        string userId,
+        string? expectedVersionNumber = null)
     {
+        ArgumentNullException.ThrowIfNull(configurationId);
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var config = await _configRepository.GetByIdAsync(configurationId);
         if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
+        // Get the current active version for version calculation and concurrency check
         var previousVersion = await GetActiveVersionAsync(configurationId);
+
+        // Check optimistic concurrency if expected version is provided
+        if (expectedVersionNumber is not null && previousVersion is not null)
+        {
+            if (previousVersion.VersionNumber != expectedVersionNumber)
+            {
+                throw new OptimisticConcurrencyException(
+                    nameof(ConfigurationVersion),
+                    previousVersion.Id,
+                    expectedVersionNumber,
+                    previousVersion.VersionNumber);
+            }
+        }
+
+        // Calculate new version number
         var newVersionNumber = ConfigurationVersion.IncrementVersion(
             previousVersion?.VersionNumber ?? "1.0.0",
             VersionIncrementType.Patch
