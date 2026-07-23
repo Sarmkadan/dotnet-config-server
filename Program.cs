@@ -14,6 +14,7 @@ using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Integration;
 using DotnetConfigServer.Infrastructure;
 using DotnetConfigServer.BackgroundWorkers;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,7 +89,10 @@ builder.Services.AddOptions<ConfigurationSnapshotOptions>()
         });
     });
 
-    builder.Services.AddHealthChecks();
+    builder.Services.AddHealthChecks()
+        .AddCheck<ProcessLivenessHealthCheck>("process", tags: ["live"])
+        .AddCheck<ConfigStoreReadinessHealthCheck>("config-store", tags: ["ready"])
+        .AddCheck<EncryptionKeyReadinessHealthCheck>("encryption-keys", tags: ["ready"]);
 
     var app = builder.Build();
 
@@ -141,6 +145,14 @@ builder.Services.AddOptions<ConfigurationSnapshotOptions>()
     app.UseAuthorization();
     app.MapControllers();
     app.MapHealthChecks("/health");
+    app.MapHealthChecks("/health/live", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("live")
+    });
+    app.MapHealthChecks("/health/ready", new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    });
 
     Log.Information("Dotnet Config Server started successfully with Phase 2 features");
     await app.RunAsync();

@@ -51,7 +51,8 @@ public static class ServiceExtensions
         services.AddScoped<IConfigurationSnapshotRepository, ConfigurationSnapshotRepository>();
         services.AddScoped<IChangeRequestRepository, ChangeRequestRepository>();
         services.AddScoped<IValidationRuleRepository, ValidationRuleRepository>();
- 
+        services.AddScoped<IConfigStore, ConfigStore>();
+
         return services;
     }
 
