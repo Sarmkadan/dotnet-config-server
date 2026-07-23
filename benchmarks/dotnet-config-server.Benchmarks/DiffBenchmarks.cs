@@ -54,6 +54,7 @@ public class DiffBenchmarks
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=ConfigServerBenchmarks;Trusted_Connection=True;MultipleActiveResultSets=true"));
 
+        services.AddSingleton<IConfigDiffer, KeyValueConfigDiffer>();
         services.AddScoped<IDiffService, DiffService>();
         services.AddScoped<IDiffViewerService, DiffViewerService>();
         services.AddScoped<IConfigurationVersionRepository, ConfigurationVersionRepository>();

@@ -7,6 +7,7 @@
 using Serilog;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Middleware;
+using DotnetConfigServer.Middleware.RateLimiting;
 using DotnetConfigServer.Caching;
 using DotnetConfigServer.Events;
 using DotnetConfigServer.Services;
@@ -38,6 +39,20 @@ try
     builder.Services.AddSingleton<IEventBus, EventBus>();
     builder.Services.AddSingleton<INotificationService, NotificationService>();
     builder.Services.AddSingleton<PerformanceMetrics>();
+
+    // Rate-limit counter store: shared across instances when UseDistributedStore is enabled,
+    // otherwise process-local. AddDistributedMemoryCache provides the default IDistributedCache
+    // backend; point it at Redis/SQL Server in hosting configuration for real multi-instance use.
+    var rateLimitOptions = builder.Configuration.GetSection("DotnetConfigServer:RateLimit").Get<RateLimitOptions>() ?? new RateLimitOptions();
+    if (rateLimitOptions.UseDistributedStore)
+    {
+        builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddSingleton<IRateLimitStore, DistributedRateLimitStore>();
+    }
+    else
+    {
+        builder.Services.AddSingleton<IRateLimitStore, InMemoryRateLimitStore>();
+    }
 
     builder.Services.AddScoped<IComparisonService, ComparisonService>();
     builder.Services.AddScoped<IConfigurationSnapshotService, ConfigurationSnapshotService>();

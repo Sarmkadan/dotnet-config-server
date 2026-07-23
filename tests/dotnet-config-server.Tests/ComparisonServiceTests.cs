@@ -17,7 +17,7 @@ public sealed class ComparisonServiceTests
     public ComparisonServiceTests()
     {
         _loggerMock = new Mock<ILogger<ComparisonService>>();
-        _sut = new ComparisonService(_loggerMock.Object);
+        _sut = new ComparisonService(new KeyValueConfigDiffer(), _loggerMock.Object);
     }
 
     [Fact]

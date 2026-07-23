@@ -4,88 +4,112 @@
 // CTO & Software Architect
 // =============================================================================
 
-using System.Collections.Concurrent;
-using System.Net;
+using DotnetConfigServer.Common;
+using DotnetConfigServer.Middleware.RateLimiting;
 using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Middleware;
 
 /// <summary>
-/// Rate limiting middleware using token bucket algorithm per IP address.
+/// Rate limiting middleware using a fixed-window algorithm keyed per client.
 /// Prevents abuse by limiting requests per client within a time window.
+/// Counter storage is delegated to an <see cref="IRateLimitStore"/>, which lets
+/// the same middleware enforce either a per-instance limit
+/// (<see cref="InMemoryRateLimitStore"/>) or a single combined limit shared
+/// across every instance behind a load balancer
+/// (<see cref="DistributedRateLimitStore"/>).
 /// </summary>
 public sealed class RateLimitingMiddleware
 {
+    private static readonly TimeSpan Window = TimeSpan.FromMinutes(1);
+
     private readonly RequestDelegate _next;
     private readonly RateLimitOptions _options;
     private readonly ILogger<RateLimitingMiddleware> _logger;
-    private readonly ConcurrentDictionary<string, RateLimitBucket> _buckets;
+    private readonly IRateLimitStore _store;
 
-    public RateLimitingMiddleware(RequestDelegate next, Microsoft.Extensions.Options.IOptions<DotnetConfigServerOptions> options, ILogger<RateLimitingMiddleware> logger)
+    /// <summary>
+    /// Creates a new <see cref="RateLimitingMiddleware"/>.
+    /// </summary>
+    /// <param name="next">Next delegate in the middleware pipeline.</param>
+    /// <param name="options">Application options, from which rate-limit settings are read.</param>
+    /// <param name="logger">Logger used to record rate-limit rejections.</param>
+    /// <param name="store">
+    /// Backing counter store. When not supplied by the DI container (or not registered),
+    /// a fresh process-local <see cref="InMemoryRateLimitStore"/> is used, matching prior behavior.
+    /// </param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="next"/>, <paramref name="options"/>, or <paramref name="logger"/> is null.</exception>
+    public RateLimitingMiddleware(
+        RequestDelegate next,
+        Microsoft.Extensions.Options.IOptions<DotnetConfigServerOptions> options,
+        ILogger<RateLimitingMiddleware> logger,
+        IRateLimitStore? store = null)
     {
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _next = next;
         _options = options.Value.RateLimit;
         _logger = logger;
-        _buckets = new ConcurrentDictionary<string, RateLimitBucket>();
+        _store = store ?? new InMemoryRateLimitStore();
     }
 
+    /// <summary>
+    /// Evaluates the rate limit for the current request's client key and either
+    /// forwards it to the next delegate or short-circuits with a 429 response.
+    /// </summary>
+    /// <param name="context">The current HTTP context.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is null.</exception>
     public async Task InvokeAsync(HttpContext context)
     {
-        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var bucket = _buckets.GetOrAdd(clientIp, _ => new RateLimitBucket(_options.RequestsPerMinute));
+        ArgumentNullException.ThrowIfNull(context);
 
-        // Check if rate limit exceeded
-        if (!bucket.TryConsumeToken())
+        if (!_options.EnableRateLimiting)
         {
-            _logger.LogWarning("Rate limit exceeded for client {ClientIp}", clientIp);
+            await _next(context);
+            return;
+        }
+
+        var clientKey = ResolveClientKey(context);
+        var decision = await _store.EvaluateAsync(clientKey, _options.RequestsPerMinute, Window, context.RequestAborted);
+
+        context.Response.Headers["X-RateLimit-Limit"] = decision.Limit.ToString();
+        context.Response.Headers["X-RateLimit-Remaining"] = decision.Remaining.ToString();
+        context.Response.Headers["X-RateLimit-Reset"] = decision.ResetsAtUtc.ToUnixTimeSeconds().ToString();
+
+        if (!decision.IsAllowed)
+        {
+            var retryAfterSeconds = Math.Max(_options.RetryAfterSeconds, (int)Math.Ceiling(decision.RetryAfter.TotalSeconds));
+
+            _logger.LogWarning("Rate limit exceeded for client {ClientKey}", clientKey);
 
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-            context.Response.Headers.RetryAfter = _options.RetryAfterSeconds.ToString();
+            context.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
             await context.Response.WriteAsJsonAsync(new { error = "Rate limit exceeded" });
             return;
         }
 
         await _next(context);
     }
-}
 
-public sealed class RateLimitBucket
-{
-    private readonly int _capacity;
-    private double _tokens;
-    private DateTime _lastRefillTime;
-    private readonly object _lock = new();
-
-    public RateLimitBucket(int requestsPerMinute)
+    /// <summary>
+    /// Resolves the identity used to key rate-limit counters for a request:
+    /// the caller's API key when present (services behind NAT share a single
+    /// IP, so IP alone would let them collectively exceed the intended limit
+    /// or throttle each other unfairly), falling back to the remote IP address
+    /// when no API key header is supplied.
+    /// </summary>
+    private static string ResolveClientKey(HttpContext context)
     {
-        _capacity = requestsPerMinute;
-        _tokens = requestsPerMinute;
-        _lastRefillTime = DateTime.UtcNow;
-    }
-
-    public bool TryConsumeToken()
-    {
-        lock (_lock)
+        if (context.Request.Headers.TryGetValue(AppConstants.Api.ApiKeyHeader, out var apiKeyValues))
         {
-            RefillTokens();
-
-            if (_tokens >= 1)
-            {
-                _tokens--;
-                return true;
-            }
-
-            return false;
+            var apiKey = apiKeyValues.ToString();
+            if (!string.IsNullOrWhiteSpace(apiKey))
+                return $"apikey:{apiKey}";
         }
-    }
 
-    private void RefillTokens()
-    {
-        var now = DateTime.UtcNow;
-        var timePassed = (now - _lastRefillTime).TotalSeconds;
-        var tokensToAdd = timePassed * (_capacity / 60.0);
-
-        _tokens = Math.Min(_capacity, _tokens + tokensToAdd);
-        _lastRefillTime = now;
+        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return $"ip:{clientIp}";
     }
 }

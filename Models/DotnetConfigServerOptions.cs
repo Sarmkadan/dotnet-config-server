@@ -198,6 +198,13 @@ public class RateLimitOptions
     /// Exempt certain paths from rate limiting
     /// </summary>
     public string[] RateLimitExemptPaths { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// When true, rate-limit counters are stored in the shared <c>IDistributedCache</c>
+    /// backend so every instance behind a load balancer enforces one combined limit.
+    /// When false (default), each instance tracks its own in-memory counters.
+    /// </summary>
+    public bool UseDistributedStore { get; set; } = false;
 }
 
 public class DatabaseOptions

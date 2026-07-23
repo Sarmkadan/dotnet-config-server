@@ -73,6 +73,7 @@ public sealed class ConfigurationWorkflowIntegrationTests
             _diffRepositoryMock.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _diffLoggerMock.Object);
     }
 

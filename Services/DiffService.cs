@@ -19,17 +19,30 @@ public sealed class DiffService : IDiffService
     private readonly IConfigurationDiffRepository _diffRepository;
     private readonly IConfigurationVersionRepository _versionRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
+    private readonly IConfigDiffer _differ;
     private readonly ILogger<DiffService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="DiffService"/>.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when any dependency is <c>null</c>.</exception>
     public DiffService(
         IConfigurationDiffRepository diffRepository,
         IConfigurationVersionRepository versionRepository,
         IConfigurationKeyRepository keyRepository,
+        IConfigDiffer differ,
         ILogger<DiffService> logger)
     {
+        ArgumentNullException.ThrowIfNull(diffRepository);
+        ArgumentNullException.ThrowIfNull(versionRepository);
+        ArgumentNullException.ThrowIfNull(keyRepository);
+        ArgumentNullException.ThrowIfNull(differ);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _diffRepository = diffRepository;
         _versionRepository = versionRepository;
         _keyRepository = keyRepository;
+        _differ = differ;
         _logger = logger;
     }
 
@@ -79,27 +92,12 @@ public sealed class DiffService : IDiffService
             CreatedAt = DateTime.UtcNow
         };
 
-        // Find added and modified keys
-        foreach (var toKey in toKeys)
-        {
-            var fromKey = fromKeys.FirstOrDefault(k => k.Key == toKey.Key);
-            if (fromKey is null)
-            {
-                diff.AddChange(toKey.Key, ChangeType.Added, null, toKey.Value);
-            }
-            else if (ValuesDiffer(fromKey.Value, toKey.Value, ignoreWhitespaceAndBlankLines))
-            {
-                diff.AddChange(toKey.Key, ChangeType.Modified, fromKey.Value, toKey.Value);
-            }
-        }
+        var options = new ConfigDiffOptions(IgnoreWhitespaceAndBlankLines: ignoreWhitespaceAndBlankLines);
+        var changes = _differ.Diff(ToKeyMap(fromKeys), ToKeyMap(toKeys), options);
 
-        // Find deleted keys
-        foreach (var fromKey in fromKeys)
+        foreach (var change in changes)
         {
-            if (!toKeys.Any(k => k.Key == fromKey.Key))
-            {
-                diff.AddChange(fromKey.Key, ChangeType.Deleted, fromKey.Value, null);
-            }
+            diff.AddChange(change.Key, change.ChangeType, change.OldValue, change.NewValue);
         }
 
         await _diffRepository.AddAsync(diff);
@@ -181,13 +179,12 @@ public sealed class DiffService : IDiffService
         var keys1 = await _keyRepository.GetByVersionAsync(version1Id);
         var keys2 = await _keyRepository.GetByVersionAsync(version2Id);
 
-        int added = keys2.Count(k => !keys1.Any(k1 => k1.Key == k.Key));
-        int deleted = keys1.Count(k => !keys2.Any(k2 => k2.Key == k.Key));
-        int modified = keys1.Count(k =>
-        {
-            var matching = keys2.FirstOrDefault(k2 => k2.Key == k.Key);
-            return matching != null && ValuesDiffer(k.Value, matching.Value, ignoreWhitespaceAndBlankLines);
-        });
+        var options = new ConfigDiffOptions(IgnoreWhitespaceAndBlankLines: ignoreWhitespaceAndBlankLines);
+        var changes = _differ.Diff(ToKeyMap(keys1), ToKeyMap(keys2), options);
+
+        int added = changes.Count(c => c.ChangeType == ChangeType.Added);
+        int deleted = changes.Count(c => c.ChangeType == ChangeType.Deleted);
+        int modified = changes.Count(c => c.ChangeType == ChangeType.Modified);
 
         return new ConfigurationDiffSummary
         {
@@ -202,30 +199,18 @@ public sealed class DiffService : IDiffService
     }
 
     /// <summary>
-    /// Determines whether two configuration values differ, taking the optional
-    /// whitespace‑ignoring behaviour into account.
+    /// Projects a list of configuration keys into the key/value map shape expected by
+    /// <see cref="IConfigDiffer.Diff"/>. When the same key name appears more than once,
+    /// the last occurrence in enumeration order wins.
     /// </summary>
-    private static bool ValuesDiffer(string? a, string? b, bool ignoreWhitespaceAndBlankLines)
+    private static Dictionary<string, string?> ToKeyMap(IEnumerable<Models.ConfigurationKey> keys)
     {
-        if (!ignoreWhitespaceAndBlankLines)
-            return a != b;
+        var map = new Dictionary<string, string?>();
+        foreach (var key in keys)
+        {
+            map[key.Key] = key.Value;
+        }
 
-        // Normalise both values: trim whitespace and treat pure whitespace as empty.
-        var normA = NormalizeValue(a);
-        var normB = NormalizeValue(b);
-        return normA != normB;
-    }
-
-    /// <summary>
-    /// Normalises a configuration value for whitespace‑ignoring comparison.
-    /// Trims leading/trailing whitespace and converts a value that is null,
-    /// empty, or consists only of whitespace to an empty string.
-    /// </summary>
-    private static string NormalizeValue(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return string.Empty;
-
-        return value.Trim();
+        return map;
     }
 }

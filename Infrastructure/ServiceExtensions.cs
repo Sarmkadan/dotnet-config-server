@@ -69,6 +69,7 @@ public static class ServiceExtensions
         services.AddScoped<IEncryptionService, EncryptionService>();
         services.AddScoped<IConfigurationService, ConfigurationService>();
         services.AddScoped<IVersioningService, VersioningService>();
+        services.AddSingleton<IConfigDiffer, KeyValueConfigDiffer>();
         services.AddScoped<IDiffService, DiffService>();
         services.AddScoped<IDiffViewerService, DiffViewerService>();
         services.AddScoped<IRollbackService, RollbackService>();

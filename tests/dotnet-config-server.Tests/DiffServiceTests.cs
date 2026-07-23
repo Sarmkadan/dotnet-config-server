@@ -33,6 +33,7 @@ public sealed class DiffServiceTests
             _diffRepositoryMock.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
     }
 
@@ -174,6 +175,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -250,6 +252,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -324,6 +327,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -398,6 +402,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -474,6 +479,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -541,6 +547,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -599,6 +606,7 @@ public sealed class DiffServiceTests
             mockDiffRepo.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -656,6 +664,7 @@ public sealed class DiffServiceTests
             mockDiffRepo.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
@@ -720,6 +729,7 @@ public sealed class DiffServiceTests
             mockDiff.Object,
             _versionRepositoryMock.Object,
             _keyRepositoryMock.Object,
+            new KeyValueConfigDiffer(),
             _loggerMock.Object);
 
         // Act
