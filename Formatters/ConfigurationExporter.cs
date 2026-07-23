@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -17,6 +18,120 @@ namespace DotnetConfigServer.Formatters;
 /// </summary>
 public sealed class ConfigurationExporter
 {
+    /// <summary>
+    /// Streams configurations as a JSON array directly onto the destination stream using a
+    /// <see cref="Utf8JsonWriter"/>, without ever materializing the full payload in memory.
+    /// Intended for large exports (thousands of configurations) where buffering the whole
+    /// response as a string would spike Large Object Heap allocations.
+    /// </summary>
+    /// <param name="destination">Stream to write the JSON array to, typically the HTTP response body.</param>
+    /// <param name="configurations">Asynchronous source of configurations to serialize, pulled one at a time.</param>
+    /// <param name="pretty">Whether to indent the output.</param>
+    /// <param name="cancellationToken">Token used to cancel enumeration and writing.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> or <paramref name="configurations"/> is null.</exception>
+    public static async Task WriteAsJsonAsync(
+        Stream destination,
+        IAsyncEnumerable<Configuration> configurations,
+        bool pretty = true,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        ArgumentNullException.ThrowIfNull(configurations);
+
+        await using var writer = new Utf8JsonWriter(destination, new JsonWriterOptions { Indented = pretty });
+
+        writer.WriteStartArray();
+
+        await foreach (var config in configurations.WithCancellation(cancellationToken))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", config.Id);
+            writer.WriteString("applicationId", config.ApplicationId);
+            writer.WriteString("name", config.Name);
+            writer.WriteString("description", config.Description);
+            writer.WriteString("environment", config.Environment.ToString());
+            writer.WriteBoolean("isActive", config.IsActive);
+            writer.WriteBoolean("isEncrypted", config.IsEncrypted);
+            writer.WriteString("createdAt", config.CreatedAt);
+            writer.WriteString("updatedAt", config.UpdatedAt);
+            writer.WriteString("createdBy", config.CreatedBy);
+            writer.WriteEndObject();
+
+            // Flush periodically so the writer's internal buffer never grows unbounded
+            // and downstream middleware (e.g. response compression) can start sending bytes early.
+            await writer.FlushAsync(cancellationToken);
+        }
+
+        writer.WriteEndArray();
+        await writer.FlushAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Streams configuration keys as a JSON array directly onto the destination stream using a
+    /// <see cref="Utf8JsonWriter"/>, without buffering the whole payload in memory.
+    /// </summary>
+    /// <param name="destination">Stream to write the JSON array to, typically the HTTP response body.</param>
+    /// <param name="keys">Asynchronous source of configuration keys to serialize, pulled one at a time.</param>
+    /// <param name="pretty">Whether to indent the output.</param>
+    /// <param name="cancellationToken">Token used to cancel enumeration and writing.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> or <paramref name="keys"/> is null.</exception>
+    public static async Task WriteKeysAsJsonAsync(
+        Stream destination,
+        IAsyncEnumerable<ConfigurationKey> keys,
+        bool pretty = true,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        ArgumentNullException.ThrowIfNull(keys);
+
+        await using var writer = new Utf8JsonWriter(destination, new JsonWriterOptions { Indented = pretty });
+
+        writer.WriteStartArray();
+
+        await foreach (var key in keys.WithCancellation(cancellationToken))
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", key.Id);
+            writer.WriteString("key", key.Key);
+            writer.WriteString("value", key.Value);
+            writer.WriteString("description", key.Description);
+            writer.WriteBoolean("isEncrypted", key.IsEncrypted);
+            writer.WriteBoolean("isActive", key.IsActive);
+            writer.WriteString("createdAt", key.CreatedAt);
+            writer.WriteString("updatedAt", key.UpdatedAt);
+            writer.WriteEndObject();
+
+            await writer.FlushAsync(cancellationToken);
+        }
+
+        writer.WriteEndArray();
+        await writer.FlushAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Adapts a synchronous, potentially deferred-execution <see cref="IEnumerable{T}"/> source
+    /// (e.g. an EF Core <c>IQueryable</c> materialized lazily) into an <see cref="IAsyncEnumerable{T}"/>
+    /// suitable for the streaming export methods, yielding control back to the caller between items.
+    /// </summary>
+    /// <typeparam name="T">Element type of the sequence.</typeparam>
+    /// <param name="source">Sequence to adapt.</param>
+    /// <param name="cancellationToken">Token used to stop enumeration early.</param>
+    /// <returns>An asynchronous stream that yields the same elements as <paramref name="source"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is null.</exception>
+    public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+        IEnumerable<T> source,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        foreach (var item in source)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return item;
+            await Task.Yield();
+        }
+    }
+
     /// <summary>
     /// Exports configurations to JSON format.
     /// </summary>
