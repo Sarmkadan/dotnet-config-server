@@ -98,18 +98,71 @@ public sealed class EncryptionServiceTests
     }
 
     /// <summary>
-    /// Tests that the encryption output is valid Base64 encoded data.
+    /// Tests that the base64 payload portion of the encryption output (after the
+    /// "v&lt;version&gt;:&lt;keyId&gt;:" header) is valid Base64 encoded data.
     /// Verifies that the cipher text can be safely transmitted as a string.
     /// </summary>
     [Fact]
-    public void Encrypt_OutputIsValidBase64()
+    public void Encrypt_PayloadIsValidBase64()
+    {
+        var key = CreateValidKey();
+
+        var cipherText = _sut.Encrypt("hello", key);
+        var payload = cipherText.Split(':', 3)[2];
+
+        var act = () => Convert.FromBase64String(payload);
+        act.Should().NotThrow();
+    }
+
+    /// <summary>
+    /// Tests that new ciphertext carries the current ciphertext format version tag
+    /// and the identifier of the key that produced it.
+    /// </summary>
+    [Fact]
+    public void Encrypt_NewCipherText_CarriesCurrentVersionTagAndKeyId()
     {
         var key = CreateValidKey();
 
         var cipherText = _sut.Encrypt("hello", key);
 
-        var act = () => Convert.FromBase64String(cipherText);
-        act.Should().NotThrow();
+        cipherText.Should().StartWith($"v{AppConstants.Encryption.CurrentCiphertextVersion}:{key.KeyId}:");
+    }
+
+    /// <summary>
+    /// Tests that ciphertext produced before the version-tag prefix was introduced
+    /// (a bare Base64 payload with no "v&lt;n&gt;:" header) still decrypts successfully.
+    /// </summary>
+    [Fact]
+    public void Decrypt_LegacyUnversionedCipherText_StillSucceeds()
+    {
+        var key = CreateValidKey();
+        var plainText = "legacy-secret-value";
+
+        var versionedCipherText = _sut.Encrypt(plainText, key);
+        var legacyCipherText = versionedCipherText.Split(':', 3)[2];
+
+        var decrypted = _sut.Decrypt(legacyCipherText, key);
+
+        decrypted.Should().Be(plainText);
+    }
+
+    /// <summary>
+    /// Tests that ciphertext tagged with a version this build does not recognize
+    /// is rejected outright with a clear <see cref="EncryptionException"/> instead of
+    /// being fed through the AES pipeline and possibly yielding silent garbage.
+    /// </summary>
+    [Fact]
+    public void Decrypt_UnknownVersionTag_ThrowsEncryptionExceptionMentioningVersion()
+    {
+        var key = CreateValidKey();
+        var versionedCipherText = _sut.Encrypt("hello", key);
+        var payload = versionedCipherText.Split(':', 3)[2];
+        var futureVersionCipherText = $"v99:{key.KeyId}:{payload}";
+
+        var act = () => _sut.Decrypt(futureVersionCipherText, key);
+
+        act.Should().Throw<EncryptionException>()
+           .WithMessage("*v99*");
     }
 
     /// <summary>

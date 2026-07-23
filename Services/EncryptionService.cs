@@ -4,8 +4,10 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using DotnetConfigServer.Common;
 using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
@@ -18,6 +20,25 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class EncryptionService : IEncryptionService
 {
+    /// <summary>
+    /// Matches the versioned ciphertext header written by <see cref="Encrypt"/>:
+    /// "v&lt;version&gt;:&lt;keyId&gt;:&lt;base64 payload&gt;".
+    /// </summary>
+    private static readonly Regex VersionedCiphertextHeader =
+        new(@"^v(?<version>\d+):(?<keyId>[^:]+):(?<payload>.+)$", RegexOptions.Singleline | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Ciphertext format versions this build knows how to decode. Anything outside this
+    /// set is rejected outright instead of being fed to the AES pipeline, which would
+    /// otherwise either throw an opaque cryptographic error or - worse - decode into
+    /// silent garbage.
+    /// </summary>
+    private static readonly HashSet<int> SupportedCiphertextVersions =
+    [
+        AppConstants.Encryption.LegacyCiphertextVersion,
+        AppConstants.Encryption.CurrentCiphertextVersion
+    ];
+
     private readonly IEncryptionKeyRepository _keyRepository;
     private readonly ILogger<EncryptionService> _logger;
 
@@ -65,7 +86,8 @@ public sealed class EncryptionService : IEncryptionService
                     sw.Write(plainText);
                 }
 
-                return Convert.ToBase64String(ms.ToArray());
+                var payload = Convert.ToBase64String(ms.ToArray());
+                return $"v{AppConstants.Encryption.CurrentCiphertextVersion.ToString(CultureInfo.InvariantCulture)}:{key.KeyId}:{payload}";
             }
         }
     }
@@ -73,16 +95,24 @@ public sealed class EncryptionService : IEncryptionService
     /// <summary>
     /// Decrypts cipher text using AES-256
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="cipherText"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key"/> is null.</exception>
+    /// <exception cref="EncryptionException">
+    /// Thrown when <paramref name="key"/> is invalid, the ciphertext carries a version tag
+    /// this build does not understand, or decryption otherwise fails (e.g. wrong key material).
+    /// </exception>
     public string Decrypt(string cipherText, EncryptionKey key)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
         ArgumentNullException.ThrowIfNull(key);
-        
+
         ValidateKey(key);
+
+        var payload = ExtractCiphertextPayload(cipherText, key.KeyId);
 
         try
         {
-            var buffer = Convert.FromBase64String(cipherText);
+            var buffer = Convert.FromBase64String(payload);
 
             using (var aes = Aes.Create())
             {
@@ -133,13 +163,36 @@ public sealed class EncryptionService : IEncryptionService
     }
 
     /// <summary>
-    /// Decrypts a value using the appropriate key
+    /// Decrypts a value using the appropriate key from the configuration's keyring.
+    /// If the ciphertext carries an embedded key identifier (the versioned format
+    /// produced by <see cref="Encrypt"/>), that exact key is tried first; otherwise
+    /// the primary key is tried, falling back to every other active key.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="cipherText"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="configurationId"/> is <see cref="Guid.Empty"/>.</exception>
+    /// <exception cref="ConfigurationException">Thrown when no primary encryption key is configured.</exception>
+    /// <exception cref="EncryptionException">Thrown when no key in the keyring can decrypt the ciphertext, or the ciphertext version is unsupported.</exception>
     public async Task<string> DecryptAsync(string cipherText, Guid configurationId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
-        
+
+        if (TryParseVersionedCiphertext(cipherText, out _, out var embeddedKeyId, out _))
+        {
+            var taggedKey = await _keyRepository.GetByKeyIdAsync(embeddedKeyId);
+            if (taggedKey is not null)
+            {
+                try
+                {
+                    return Decrypt(cipherText, taggedKey);
+                }
+                catch (EncryptionException)
+                {
+                    // Fall through to the primary/keyring scan below.
+                }
+            }
+        }
+
         var primaryKey = await GetPrimaryKeyAsync(configurationId);
         if (primaryKey is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
@@ -291,6 +344,49 @@ public sealed class EncryptionService : IEncryptionService
                 throw;
             }
         }
+    }
+
+    /// <summary>
+    /// Attempts to parse the "v&lt;version&gt;:&lt;keyId&gt;:&lt;payload&gt;" header written by
+    /// <see cref="Encrypt"/>. Ciphertext produced before versioning was introduced has no
+    /// such header and is treated by callers as the legacy format.
+    /// </summary>
+    private static bool TryParseVersionedCiphertext(string cipherText, out int version, out string keyId, out string payload)
+    {
+        var match = VersionedCiphertextHeader.Match(cipherText);
+        if (!match.Success)
+        {
+            version = AppConstants.Encryption.LegacyCiphertextVersion;
+            keyId = string.Empty;
+            payload = cipherText;
+            return false;
+        }
+
+        version = int.Parse(match.Groups["version"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+        keyId = match.Groups["keyId"].Value;
+        payload = match.Groups["payload"].Value;
+        return true;
+    }
+
+    /// <summary>
+    /// Extracts the base64 AES payload from a ciphertext string, validating the embedded
+    /// version tag along the way. Ciphertext without a tag is assumed to be the legacy,
+    /// pre-versioning format so previously stored secrets keep working after an upgrade.
+    /// </summary>
+    /// <exception cref="EncryptionException">Thrown when the ciphertext carries a version tag this build does not recognize.</exception>
+    private static string ExtractCiphertextPayload(string cipherText, string keyId)
+    {
+        if (!TryParseVersionedCiphertext(cipherText, out var version, out _, out var payload))
+            return cipherText;
+
+        if (!SupportedCiphertextVersions.Contains(version))
+        {
+            throw new EncryptionException(
+                $"Ciphertext for key {keyId} carries unsupported version tag 'v{version.ToString(CultureInfo.InvariantCulture)}'. " +
+                $"Supported versions: {string.Join(", ", SupportedCiphertextVersions.OrderBy(v => v))}.");
+        }
+
+        return payload;
     }
 
     private byte[] DeriveKeyFromEncryptedKey(EncryptionKey key)
