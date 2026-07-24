@@ -89,4 +89,13 @@ public interface IEncryptionService
     /// <param name="keys">The configuration keys to re-encrypt.</param>
     /// <param name="userId">The ID of the user performing the action.</param>
     Task ReEncryptConfigurationAsync(Guid configurationId, IEnumerable<ConfigurationKey> keys, string userId);
+
+    /// <summary>
+    /// Reads the ciphertext format version tag from a value produced by <see cref="Encrypt"/>
+    /// without decrypting it. Ciphertext written before versioning was introduced has no tag
+    /// and reports as the legacy version.
+    /// </summary>
+    /// <param name="cipherText">The ciphertext to inspect.</param>
+    /// <returns>The ciphertext format version.</returns>
+    int GetCiphertextVersion(string cipherText);
 }

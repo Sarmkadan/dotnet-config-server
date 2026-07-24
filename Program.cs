@@ -83,8 +83,25 @@ try
     builder.Services.AddHostedService<ConfigurationSyncWorker>();
     builder.Services.AddHostedService<WebhookRetryWorker>();
 builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
+    builder.Services.AddHostedService<EncryptionKeyRotationWorker>();
 
     builder.Services.AddControllers();
+
+    // Response compression for large streamed payloads (e.g. configuration exports).
+    // Combined with Utf8JsonWriter-based streaming in ConfigurationExporter, this lets
+    // large exports be gzip-compressed on the fly instead of buffering the whole
+    // response before compressing it.
+    builder.Services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+        options.MimeTypes = Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes
+            .Concat(["application/json", "text/csv", "application/xml", "application/x-yaml"]);
+    });
+    builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(options =>
+    {
+        options.Level = System.IO.Compression.CompressionLevel.Fastest;
+    });
     builder.Services.AddOptions<DotnetConfigServerOptions>()
         .Bind(builder.Configuration.GetSection("DotnetConfigServer"))
         .ValidateDataAnnotations()
@@ -92,6 +109,11 @@ builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
 
 builder.Services.AddOptions<ConfigurationSnapshotOptions>()
     .Bind(builder.Configuration.GetSection("DotnetConfigServer:Snapshot"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<EncryptionKeyRotationOptions>()
+    .Bind(builder.Configuration.GetSection("DotnetConfigServer:EncryptionKeyRotation"))
     .ValidateDataAnnotations()
     .ValidateOnStart();
     builder.Services.AddCors(options =>
@@ -155,6 +177,7 @@ builder.Services.AddOptions<ConfigurationSnapshotOptions>()
         });
     }
 
+    app.UseResponseCompression();
     app.UseHttpsRedirection();
     app.UseCors("AllowAll");
     app.UseAuthorization();

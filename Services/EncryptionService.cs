@@ -347,6 +347,22 @@ public sealed class EncryptionService : IEncryptionService
     }
 
     /// <summary>
+    /// Reads the ciphertext format version tag from a value produced by <see cref="Encrypt"/>
+    /// without decrypting it. Ciphertext written before versioning was introduced has no tag
+    /// and reports as the legacy version.
+    /// </summary>
+    /// <param name="cipherText">The ciphertext to inspect.</param>
+    /// <returns>The ciphertext format version.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="cipherText"/> is null, empty, or whitespace.</exception>
+    public int GetCiphertextVersion(string cipherText)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(cipherText);
+
+        TryParseVersionedCiphertext(cipherText, out var version, out _, out _);
+        return version;
+    }
+
+    /// <summary>
     /// Attempts to parse the "v&lt;version&gt;:&lt;keyId&gt;:&lt;payload&gt;" header written by
     /// <see cref="Encrypt"/>. Ciphertext produced before versioning was introduced has no
     /// such header and is treated by callers as the legacy format.
