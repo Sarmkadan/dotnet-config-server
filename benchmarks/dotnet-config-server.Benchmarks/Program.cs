@@ -13,6 +13,7 @@ Console.WriteLine("5. WebhookBenchmarks - Webhook subscription management");
 Console.WriteLine("6. CachingBenchmarks - Memory cache performance");
 Console.WriteLine("7. ValidationBenchmarks - Configuration validation rules");
 Console.WriteLine("8. AuditBenchmarks - Audit logging performance");
+Console.WriteLine("9. ExportBenchmarks - Buffered vs streaming configuration export");
 Console.WriteLine();
 
 var summary = BenchmarkRunner.Run(typeof(Program).Assembly);
