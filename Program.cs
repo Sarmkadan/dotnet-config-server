@@ -59,12 +59,12 @@ try
     builder.Services.AddScoped<IHealthCheckService, HealthCheckService>();
     builder.Services.AddScoped<IConfigurationImportService, ConfigurationImportService>();
     builder.Services.AddScoped<IBatchOperationService>(provider =>
-{
-    var keyRepository = provider.GetRequiredService<IConfigurationKeyRepository>();
-    var validationRuleService = provider.GetRequiredService<IValidationRuleService>();
-    var logger = provider.GetRequiredService<ILogger<BatchOperationService>>();
-    return new BatchOperationService(keyRepository, validationRuleService, logger);
-});
+    {
+        var keyRepository = provider.GetRequiredService<IConfigurationKeyRepository>();
+        var validationRuleService = provider.GetRequiredService<IValidationRuleService>();
+        var logger = provider.GetRequiredService<ILogger<BatchOperationService>>();
+        return new BatchOperationService(keyRepository, validationRuleService, logger);
+    });
     builder.Services.AddScoped<IApiResponseTransformer, ApiResponseTransformer>();
     builder.Services.AddSingleton(new ExternalApiClientOptions());
     builder.Services.AddScoped<ExternalApiClient>();
@@ -82,7 +82,7 @@ try
     builder.Services.AddScoped<ConfigurationEventHandlers>();
     builder.Services.AddHostedService<ConfigurationSyncWorker>();
     builder.Services.AddHostedService<WebhookRetryWorker>();
-builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
+    builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
     builder.Services.AddHostedService<EncryptionKeyRotationWorker>();
 
     builder.Services.AddControllers();
@@ -107,15 +107,19 @@ builder.Services.AddHostedService<ConfigurationSnapshotWorker>();
         .ValidateDataAnnotations()
         .ValidateOnStart();
 
-builder.Services.AddOptions<ConfigurationSnapshotOptions>()
-    .Bind(builder.Configuration.GetSection("DotnetConfigServer:Snapshot"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+    builder.Services.AddOptions<ConfigurationSnapshotOptions>()
+        .Bind(builder.Configuration.GetSection("DotnetConfigServer:Snapshot"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
 
-builder.Services.AddOptions<EncryptionKeyRotationOptions>()
-    .Bind(builder.Configuration.GetSection("DotnetConfigServer:EncryptionKeyRotation"))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+    builder.Services.AddOptions<EncryptionKeyRotationOptions>()
+        .Bind(builder.Configuration.GetSection("DotnetConfigServer:EncryptionKeyRotation"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Bind performance monitoring options (defaults are defined in the class)
+    builder.Services.Configure<PerformanceMonitoringOptions>(builder.Configuration.GetSection("PerformanceMonitoring"));
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -203,4 +207,3 @@ finally
 {
     Log.CloseAndFlush();
 }
-

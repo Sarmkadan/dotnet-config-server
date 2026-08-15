@@ -6,6 +6,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Microsoft.Extensions.Options;
 
 namespace DotnetConfigServer.Middleware;
 
@@ -18,12 +19,18 @@ public sealed class PerformanceMonitoringMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<PerformanceMonitoringMiddleware> _logger;
     private readonly PerformanceMetrics _metrics;
+    private readonly PerformanceMonitoringOptions _options;
 
-    public PerformanceMonitoringMiddleware(RequestDelegate next, ILogger<PerformanceMonitoringMiddleware> logger, PerformanceMetrics metrics)
+    public PerformanceMonitoringMiddleware(
+        RequestDelegate next,
+        ILogger<PerformanceMonitoringMiddleware> logger,
+        PerformanceMetrics metrics,
+        IOptions<PerformanceMonitoringOptions> options)
     {
         _next = next;
         _logger = logger;
         _metrics = metrics;
+        _options = options.Value;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -53,7 +60,7 @@ public sealed class PerformanceMonitoringMiddleware
 
             _metrics.RecordRequest(metric);
 
-            if (stopwatch.ElapsedMilliseconds > 500)
+            if (stopwatch.ElapsedMilliseconds > _options.SlowRequestThresholdMs)
             {
                 _logger.LogWarning(
                     "High latency detected on {Method} {Path}: {DurationMs}ms, Memory: {MemoryMb}MB",
@@ -70,12 +77,15 @@ public sealed class PerformanceMonitoringMiddleware
 public sealed class PerformanceMetrics
 {
     private readonly ConcurrentQueue<RequestMetric> _metrics = new();
-    private readonly int _maxMetrics = 1000;
     private readonly ILogger<PerformanceMetrics> _logger;
+    private readonly PerformanceMonitoringOptions _options;
 
-    public PerformanceMetrics(ILogger<PerformanceMetrics> logger)
+    public PerformanceMetrics(
+        ILogger<PerformanceMetrics> logger,
+        IOptions<PerformanceMonitoringOptions> options)
     {
         _logger = logger;
+        _options = options.Value;
     }
 
     public void RecordRequest(RequestMetric metric)
@@ -83,7 +93,7 @@ public sealed class PerformanceMetrics
         _metrics.Enqueue(metric);
 
         // Keep a bounded queue to prevent memory issues
-        while (_metrics.Count > _maxMetrics)
+        while (_metrics.Count > _options.MaxMetrics)
         {
             _metrics.TryDequeue(out _);
         }
@@ -91,7 +101,8 @@ public sealed class PerformanceMetrics
 
     public IEnumerable<RequestMetric> GetRecentMetrics(int count = 100)
     {
-        return _metrics.TakeLast(count);
+        var take = count > 0 ? count : _options.RecentMetricsCount;
+        return _metrics.TakeLast(take);
     }
 
     public double GetAverageDurationMs(string? path = null)
@@ -109,10 +120,10 @@ public sealed class PerformanceMetrics
         if (_metrics.IsEmpty)
             return;
 
-        var recentMetrics = _metrics.TakeLast(100).ToList();
+        var recentMetrics = _metrics.TakeLast(_options.RecentMetricsCount).ToList();
         var avgDuration = recentMetrics.Average(m => m.DurationMs);
         var avgMemory = recentMetrics.Average(m => m.MemoryUsedBytes) / (1024 * 1024);
-        var slowRequests = recentMetrics.Count(m => m.DurationMs > 500);
+        var slowRequests = recentMetrics.Count(m => m.DurationMs > _options.SlowRequestThresholdMs);
 
         _logger.LogInformation(
             "Performance Summary - Avg Duration: {AvgDuration}ms, Avg Memory: {AvgMemory:F2}MB, Slow Requests: {SlowCount}",
