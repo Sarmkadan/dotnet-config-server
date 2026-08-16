@@ -281,20 +281,32 @@ public sealed class DiffService : IDiffService
         var options = new ConfigDiffOptions(IgnoreWhitespaceAndBlankLines: ignoreWhitespaceAndBlankLines);
         var changes = _differ.Diff(ToKeyMap(keys1), ToKeyMap(keys2), options);
 
-        int added = changes.Count(c => c.ChangeType == ChangeType.Added);
-        int deleted = changes.Count(c => c.ChangeType == ChangeType.Deleted);
-        int modified = changes.Count(c => c.ChangeType == ChangeType.Modified);
-
-        return new ConfigurationDiffSummary
+        var summary = new ConfigurationDiffSummary
         {
             Id = Guid.NewGuid(),
-            TotalChanges = added + deleted + modified,
-            AddedCount = added,
-            DeletedCount = deleted,
-            ModifiedCount = modified,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "system"
         };
+
+        foreach (var change in changes)
+        {
+            switch (change.ChangeType)
+            {
+                case ChangeType.Added:
+                    summary.AddedCount++;
+                    break;
+                case ChangeType.Deleted:
+                    summary.DeletedCount++;
+                    break;
+                case ChangeType.Modified:
+                    summary.ModifiedCount++;
+                    break;
+            }
+        }
+
+        summary.TotalChanges = summary.AddedCount + summary.DeletedCount + summary.ModifiedCount;
+
+        return summary;
     }
 
     /// <summary>
