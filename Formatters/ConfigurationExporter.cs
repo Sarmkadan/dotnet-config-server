@@ -7,6 +7,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
 using System.Xml.Linq;
 using DotnetConfigServer.Models;
 
@@ -18,17 +19,15 @@ namespace DotnetConfigServer.Formatters;
 /// </summary>
 public sealed class ConfigurationExporter
 {
+    // ------------------------------------------------------------------------
+    // JSON – streaming version (already existed)
+    // ------------------------------------------------------------------------
     /// <summary>
     /// Streams configurations as a JSON array directly onto the destination stream using a
     /// <see cref="Utf8JsonWriter"/>, without ever materializing the full payload in memory.
     /// Intended for large exports (thousands of configurations) where buffering the whole
     /// response as a string would spike Large Object Heap allocations.
     /// </summary>
-    /// <param name="destination">Stream to write the JSON array to, typically the HTTP response body.</param>
-    /// <param name="configurations">Asynchronous source of configurations to serialize, pulled one at a time.</param>
-    /// <param name="pretty">Whether to indent the output.</param>
-    /// <param name="cancellationToken">Token used to cancel enumeration and writing.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> or <paramref name="configurations"/> is null.</exception>
     public static async Task WriteAsJsonAsync(
         Stream destination,
         IAsyncEnumerable<Configuration> configurations,
@@ -58,7 +57,6 @@ public sealed class ConfigurationExporter
             writer.WriteEndObject();
 
             // Flush periodically so the writer's internal buffer never grows unbounded
-            // and downstream middleware (e.g. response compression) can start sending bytes early.
             await writer.FlushAsync(cancellationToken);
         }
 
@@ -66,15 +64,9 @@ public sealed class ConfigurationExporter
         await writer.FlushAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Streams configuration keys as a JSON array directly onto the destination stream using a
-    /// <see cref="Utf8JsonWriter"/>, without buffering the whole payload in memory.
-    /// </summary>
-    /// <param name="destination">Stream to write the JSON array to, typically the HTTP response body.</param>
-    /// <param name="keys">Asynchronous source of configuration keys to serialize, pulled one at a time.</param>
-    /// <param name="pretty">Whether to indent the output.</param>
-    /// <param name="cancellationToken">Token used to cancel enumeration and writing.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="destination"/> or <paramref name="keys"/> is null.</exception>
+    // ------------------------------------------------------------------------
+    // JSON – keys (streaming)
+    // ------------------------------------------------------------------------
     public static async Task WriteKeysAsJsonAsync(
         Stream destination,
         IAsyncEnumerable<ConfigurationKey> keys,
@@ -108,16 +100,9 @@ public sealed class ConfigurationExporter
         await writer.FlushAsync(cancellationToken);
     }
 
-    /// <summary>
-    /// Adapts a synchronous, potentially deferred-execution <see cref="IEnumerable{T}"/> source
-    /// (e.g. an EF Core <c>IQueryable</c> materialized lazily) into an <see cref="IAsyncEnumerable{T}"/>
-    /// suitable for the streaming export methods, yielding control back to the caller between items.
-    /// </summary>
-    /// <typeparam name="T">Element type of the sequence.</typeparam>
-    /// <param name="source">Sequence to adapt.</param>
-    /// <param name="cancellationToken">Token used to stop enumeration early.</param>
-    /// <returns>An asynchronous stream that yields the same elements as <paramref name="source"/>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is null.</exception>
+    // ------------------------------------------------------------------------
+    // Helper – adapt IEnumerable to IAsyncEnumerable
+    // ------------------------------------------------------------------------
     public static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
         IEnumerable<T> source,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -132,9 +117,221 @@ public sealed class ConfigurationExporter
         }
     }
 
-    /// <summary>
-    /// Exports configurations to JSON format.
-    /// </summary>
+    // ------------------------------------------------------------------------
+    // CSV – streaming (TextWriter) and string wrapper
+    // ------------------------------------------------------------------------
+    public static void WriteAsCsv(TextWriter writer, IEnumerable<Configuration> configurations)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(configurations);
+
+        writer.WriteLine("Id,ApplicationId,Name,Description,Environment,IsActive,IsEncrypted,CreatedAt,CreatedBy");
+
+        foreach (var config in configurations)
+        {
+            var line = new[]
+            {
+                EscapeCsvValue(config.Id.ToString()),
+                EscapeCsvValue(config.ApplicationId.ToString()),
+                EscapeCsvValue(config.Name),
+                EscapeCsvValue(config.Description ?? string.Empty),
+                EscapeCsvValue(config.Environment.ToString()),
+                config.IsActive.ToString(),
+                config.IsEncrypted.ToString(),
+                config.CreatedAt.ToString("O"),
+                EscapeCsvValue(config.CreatedBy)
+            };
+
+            writer.WriteLine(string.Join(",", line));
+        }
+    }
+
+    public static string ExportAsCsv(IEnumerable<Configuration> configurations)
+    {
+        using var sw = new StringWriter();
+        WriteAsCsv(sw, configurations);
+        return sw.ToString();
+    }
+
+    public static void WriteKeysAsCsv(TextWriter writer, IEnumerable<ConfigurationKey> keys)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(keys);
+
+        writer.WriteLine("Id,ConfigurationId,Key,Value,Description,IsEncrypted,IsActive,CreatedAt");
+
+        foreach (var key in keys)
+        {
+            var line = new[]
+            {
+                EscapeCsvValue(key.Id.ToString()),
+                EscapeCsvValue(key.ConfigurationId.ToString()),
+                EscapeCsvValue(key.Key),
+                EscapeCsvValue(key.Value ?? string.Empty),
+                EscapeCsvValue(key.Description ?? string.Empty),
+                key.IsEncrypted.ToString(),
+                key.IsActive.ToString(),
+                key.CreatedAt.ToString("O")
+            };
+
+            writer.WriteLine(string.Join(",", line));
+        }
+    }
+
+    public static string ExportKeysAsCsv(IEnumerable<ConfigurationKey> keys)
+    {
+        using var sw = new StringWriter();
+        WriteKeysAsCsv(sw, keys);
+        return sw.ToString();
+    }
+
+    // ------------------------------------------------------------------------
+    // XML – streaming (TextWriter) and string wrapper
+    // ------------------------------------------------------------------------
+    public static void WriteAsXml(TextWriter writer, IEnumerable<Configuration> configurations)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(configurations);
+
+        writer.WriteLine("<Configurations>");
+
+        foreach (var config in configurations)
+        {
+            writer.WriteLine("  <Configuration>");
+            writer.WriteLine($"    <Id>{config.Id}</Id>");
+            writer.WriteLine($"    <ApplicationId>{config.ApplicationId}</ApplicationId>");
+            writer.WriteLine($"    <Name>{EscapeXmlValue(config.Name)}</Name>");
+            writer.WriteLine($"    <Description>{EscapeXmlValue(config.Description)}</Description>");
+            writer.WriteLine($"    <Environment>{EscapeXmlValue(config.Environment.ToString())}</Environment>");
+            writer.WriteLine($"    <IsActive>{config.IsActive}</IsActive>");
+            writer.WriteLine($"    <IsEncrypted>{config.IsEncrypted}</IsEncrypted>");
+            writer.WriteLine($"    <CreatedAt>{config.CreatedAt}</CreatedAt>");
+            writer.WriteLine($"    <UpdatedAt>{config.UpdatedAt}</UpdatedAt>");
+            writer.WriteLine($"    <CreatedBy>{EscapeXmlValue(config.CreatedBy)}</CreatedBy>");
+            writer.WriteLine("  </Configuration>");
+        }
+
+        writer.WriteLine("</Configurations>");
+    }
+
+    public static string ExportAsXml(IEnumerable<Configuration> configurations)
+    {
+        using var sw = new StringWriter();
+        WriteAsXml(sw, configurations);
+        return sw.ToString();
+    }
+
+    public static void WriteKeysAsXml(TextWriter writer, IEnumerable<ConfigurationKey> keys)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(keys);
+
+        writer.WriteLine("<ConfigurationKeys>");
+
+        foreach (var key in keys)
+        {
+            writer.WriteLine("  <Key>");
+            writer.WriteLine($"    <Id>{key.Id}</Id>");
+            writer.WriteLine($"    <ConfigurationId>{key.ConfigurationId}</ConfigurationId>");
+            writer.WriteLine($"    <KeyName>{EscapeXmlValue(key.Key)}</KeyName>");
+            writer.WriteLine($"    <Value>{EscapeXmlValue(key.Value)}</Value>");
+            writer.WriteLine($"    <Description>{EscapeXmlValue(key.Description)}</Description>");
+            writer.WriteLine($"    <IsEncrypted>{key.IsEncrypted}</IsEncrypted>");
+            writer.WriteLine($"    <IsActive>{key.IsActive}</IsActive>");
+            writer.WriteLine($"    <CreatedAt>{key.CreatedAt}</CreatedAt>");
+            writer.WriteLine("  </Key>");
+        }
+
+        writer.WriteLine("</ConfigurationKeys>");
+    }
+
+    public static string ExportKeysAsXml(IEnumerable<ConfigurationKey> keys)
+    {
+        using var sw = new StringWriter();
+        WriteKeysAsXml(sw, keys);
+        return sw.ToString();
+    }
+
+    // ------------------------------------------------------------------------
+    // ENV – streaming (TextWriter) and string wrapper
+    // ------------------------------------------------------------------------
+    public static void WriteAsEnvFormat(TextWriter writer, IEnumerable<ConfigurationKey> keys)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(keys);
+
+        foreach (var key in keys)
+        {
+            var escapedValue = EscapeEnvValue(key.Value);
+            writer.WriteLine($"{key.Key}={escapedValue}");
+        }
+    }
+
+    public static string ExportAsEnvFormat(IEnumerable<ConfigurationKey> keys)
+    {
+        using var sw = new StringWriter();
+        WriteAsEnvFormat(sw, keys);
+        return sw.ToString();
+    }
+
+    // ------------------------------------------------------------------------
+    // YAML – streaming (TextWriter) and string wrapper
+    // ------------------------------------------------------------------------
+    public static void WriteAsYaml(TextWriter writer, IEnumerable<Configuration> configurations)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(configurations);
+
+        foreach (var config in configurations)
+        {
+            writer.WriteLine("- Id: " + EscapeYamlValue(config.Id.ToString()));
+            writer.WriteLine("  ApplicationId: " + EscapeYamlValue(config.ApplicationId.ToString()));
+            writer.WriteLine("  Name: " + EscapeYamlValue(config.Name));
+            writer.WriteLine("  Description: " + EscapeYamlValue(config.Description));
+            writer.WriteLine("  Environment: " + EscapeYamlValue(config.Environment.ToString()));
+            writer.WriteLine("  IsActive: " + config.IsActive.ToString().ToLower());
+            writer.WriteLine("  IsEncrypted: " + config.IsEncrypted.ToString().ToLower());
+            writer.WriteLine("  CreatedAt: " + EscapeYamlValue(config.CreatedAt.ToString("O")));
+            writer.WriteLine("  UpdatedAt: " + EscapeYamlValue(config.UpdatedAt.ToString("O")));
+            writer.WriteLine("  CreatedBy: " + EscapeYamlValue(config.CreatedBy));
+        }
+    }
+
+    public static string ExportAsYaml(IEnumerable<Configuration> configurations)
+    {
+        using var sw = new StringWriter();
+        WriteAsYaml(sw, configurations);
+        return sw.ToString();
+    }
+
+    public static void WriteKeysAsYaml(TextWriter writer, IEnumerable<ConfigurationKey> keys)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+        ArgumentNullException.ThrowIfNull(keys);
+
+        foreach (var key in keys)
+        {
+            writer.WriteLine("- Id: " + EscapeYamlValue(key.Id.ToString()));
+            writer.WriteLine("  ConfigurationId: " + EscapeYamlValue(key.ConfigurationId.ToString()));
+            writer.WriteLine("  Key: " + EscapeYamlValue(key.Key));
+            writer.WriteLine("  Value: " + EscapeYamlValue(key.Value));
+            writer.WriteLine("  Description: " + EscapeYamlValue(key.Description));
+            writer.WriteLine("  IsEncrypted: " + key.IsEncrypted.ToString().ToLower());
+            writer.WriteLine("  IsActive: " + key.IsActive.ToString().ToLower());
+            writer.WriteLine("  CreatedAt: " + EscapeYamlValue(key.CreatedAt.ToString("O")));
+        }
+    }
+
+    public static string ExportKeysAsYaml(IEnumerable<ConfigurationKey> keys)
+    {
+        using var sw = new StringWriter();
+        WriteKeysAsYaml(sw, keys);
+        return sw.ToString();
+    }
+
+    // ------------------------------------------------------------------------
+    // JSON – string wrappers (kept for compatibility)
+    // ------------------------------------------------------------------------
     public static string ExportAsJson(IEnumerable<Configuration> configurations, bool pretty = true)
     {
         var data = configurations.Select(c => new
@@ -160,9 +357,6 @@ public sealed class ConfigurationExporter
         return JsonSerializer.Serialize(data, options);
     }
 
-    /// <summary>
-    /// Exports configuration keys to JSON format with values.
-    /// </summary>
     public static string ExportKeysAsJson(IEnumerable<ConfigurationKey> keys, bool pretty = true)
     {
         var data = keys.Select(k => new
@@ -186,183 +380,9 @@ public sealed class ConfigurationExporter
         return JsonSerializer.Serialize(data, options);
     }
 
-    /// <summary>
-    /// Exports configurations to CSV format.
-    /// </summary>
-    public static string ExportAsCsv(IEnumerable<Configuration> configurations)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("Id,ApplicationId,Name,Description,Environment,IsActive,IsEncrypted,CreatedAt,CreatedBy");
-
-        foreach (var config in configurations)
-        {
-            var line = new[]
-            {
-                EscapeCsvValue(config.Id.ToString()),
-                EscapeCsvValue(config.ApplicationId.ToString()),
-                EscapeCsvValue(config.Name),
-                EscapeCsvValue(config.Description ?? string.Empty),
-                EscapeCsvValue(config.Environment.ToString()),
-                config.IsActive.ToString(),
-                config.IsEncrypted.ToString(),
-                config.CreatedAt.ToString("O"),
-                EscapeCsvValue(config.CreatedBy)
-            };
-
-            sb.AppendLine(string.Join(",", line));
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Exports configuration keys to CSV format.
-    /// </summary>
-    public static string ExportKeysAsCsv(IEnumerable<ConfigurationKey> keys)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("Id,ConfigurationId,Key,Value,Description,IsEncrypted,IsActive,CreatedAt");
-
-        foreach (var key in keys)
-        {
-            var line = new[]
-            {
-                EscapeCsvValue(key.Id.ToString()),
-                EscapeCsvValue(key.ConfigurationId.ToString()),
-                EscapeCsvValue(key.Key),
-                EscapeCsvValue(key.Value ?? string.Empty),
-                EscapeCsvValue(key.Description ?? string.Empty),
-                key.IsEncrypted.ToString(),
-                key.IsActive.ToString(),
-                key.CreatedAt.ToString("O")
-            };
-
-            sb.AppendLine(string.Join(",", line));
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Exports configurations to XML format.
-    /// </summary>
-    public static string ExportAsXml(IEnumerable<Configuration> configurations)
-    {
-        var root = new XElement("Configurations");
-
-        foreach (var config in configurations)
-        {
-            var element = new XElement("Configuration",
-                new XElement("Id", config.Id),
-                new XElement("ApplicationId", config.ApplicationId),
-                new XElement("Name", config.Name),
-                new XElement("Description", config.Description),
-                new XElement("Environment", config.Environment),
-                new XElement("IsActive", config.IsActive),
-                new XElement("IsEncrypted", config.IsEncrypted),
-                new XElement("CreatedAt", config.CreatedAt),
-                new XElement("UpdatedAt", config.UpdatedAt),
-                new XElement("CreatedBy", config.CreatedBy)
-            );
-
-            root.Add(element);
-        }
-
-        return root.ToString();
-    }
-
-    /// <summary>
-    /// Exports configuration keys to XML format.
-    /// </summary>
-    public static string ExportKeysAsXml(IEnumerable<ConfigurationKey> keys)
-    {
-        var root = new XElement("ConfigurationKeys");
-
-        foreach (var key in keys)
-        {
-            var element = new XElement("Key",
-                new XElement("Id", key.Id),
-                new XElement("ConfigurationId", key.ConfigurationId),
-                new XElement("KeyName", key.Key),
-                new XElement("Value", key.Value),
-                new XElement("Description", key.Description),
-                new XElement("IsEncrypted", key.IsEncrypted),
-                new XElement("IsActive", key.IsActive),
-                new XElement("CreatedAt", key.CreatedAt)
-            );
-
-            root.Add(element);
-        }
-
-        return root.ToString();
-    }
-
-    /// <summary>
-    /// Exports configurations as key-value pairs suitable for environment variables.
-    /// </summary>
-    public static string ExportAsEnvFormat(IEnumerable<ConfigurationKey> keys)
-    {
-        var sb = new StringBuilder();
-
-        foreach (var key in keys)
-        {
-            var escapedValue = EscapeEnvValue(key.Value);
-            sb.AppendLine($"{key.Key}={escapedValue}");
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Exports configurations to YAML format.
-    /// </summary>
-    public static string ExportAsYaml(IEnumerable<Configuration> configurations)
-    {
-        var sb = new StringBuilder();
-
-        foreach (var config in configurations)
-        {
-            sb.AppendLine("- Id: " + EscapeYamlValue(config.Id.ToString()));
-            sb.AppendLine("  ApplicationId: " + EscapeYamlValue(config.ApplicationId.ToString()));
-            sb.AppendLine("  Name: " + EscapeYamlValue(config.Name));
-            sb.AppendLine("  Description: " + EscapeYamlValue(config.Description));
-            sb.AppendLine("  Environment: " + EscapeYamlValue(config.Environment.ToString()));
-            sb.AppendLine("  IsActive: " + config.IsActive.ToString().ToLower());
-            sb.AppendLine("  IsEncrypted: " + config.IsEncrypted.ToString().ToLower());
-            sb.AppendLine("  CreatedAt: " + EscapeYamlValue(config.CreatedAt.ToString("O")));
-            // UpdatedAt is a non‑nullable DateTime, so we call ToString directly.
-            sb.AppendLine("  UpdatedAt: " + EscapeYamlValue(config.UpdatedAt.ToString("O")));
-            sb.AppendLine("  CreatedBy: " + EscapeYamlValue(config.CreatedBy));
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Exports configuration keys to YAML format.
-    /// </summary>
-    public static string ExportKeysAsYaml(IEnumerable<ConfigurationKey> keys)
-    {
-        var sb = new StringBuilder();
-
-        foreach (var key in keys)
-        {
-            sb.AppendLine("- Id: " + EscapeYamlValue(key.Id.ToString()));
-            sb.AppendLine("  ConfigurationId: " + EscapeYamlValue(key.ConfigurationId.ToString()));
-            sb.AppendLine("  Key: " + EscapeYamlValue(key.Key));
-            sb.AppendLine("  Value: " + EscapeYamlValue(key.Value));
-            sb.AppendLine("  Description: " + EscapeYamlValue(key.Description));
-            sb.AppendLine("  IsEncrypted: " + key.IsEncrypted.ToString().ToLower());
-            sb.AppendLine("  IsActive: " + key.IsActive.ToString().ToLower());
-            sb.AppendLine("  CreatedAt: " + EscapeYamlValue(key.CreatedAt.ToString("O")));
-        }
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Escapes special characters in CSV values.
-    /// </summary>
+    // ------------------------------------------------------------------------
+    // Helper methods – escaping
+    // ------------------------------------------------------------------------
     private static string EscapeCsvValue(string value)
     {
         if (string.IsNullOrEmpty(value))
@@ -376,9 +396,6 @@ public sealed class ConfigurationExporter
         return value;
     }
 
-    /// <summary>
-    /// Escapes special characters in environment variable values.
-    /// </summary>
     private static string EscapeEnvValue(string? value)
     {
         if (string.IsNullOrEmpty(value))
@@ -392,21 +409,16 @@ public sealed class ConfigurationExporter
         return value;
     }
 
-    /// <summary>
-    /// Escapes special characters in YAML values.
-    /// </summary>
     private static string EscapeYamlValue(string? value)
     {
         if (value == null)
             return "null";
 
-        // Empty string should be quoted to differentiate from null
         if (value.Length == 0)
             return "\"\"";
 
-        // Characters that require quoting in YAML
         bool needsQuotes = value.Contains(':') ||
-                           value.Contains('-') && (value.StartsWith("-") || value.Contains("\n-")) ||
+                           (value.Contains('-') && (value.StartsWith("-") || value.Contains("\n-"))) ||
                            value.Contains('#') ||
                            value.Contains('{') ||
                            value.Contains('}') ||
@@ -429,11 +441,19 @@ public sealed class ConfigurationExporter
 
         if (needsQuotes)
         {
-            // Escape double quotes
             var escaped = value.Replace("\"", "\\\"");
             return $"\"{escaped}\"";
         }
 
         return value;
+    }
+
+    private static string EscapeXmlValue(string? value)
+    {
+        if (value == null)
+            return string.Empty;
+
+        // Simple XML escaping – sufficient for our use‑case
+        return System.Security.SecurityElement.Escape(value);
     }
 }
