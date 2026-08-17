@@ -70,6 +70,11 @@ public sealed class AuditLog
         string? details = null,
         string? newValues = null)
     {
+        System.ArgumentException.ThrowIfNullOrEmpty(entityType);
+        System.ArgumentException.ThrowIfNullOrEmpty(entityId);
+        System.ArgumentException.ThrowIfNullOrEmpty(userId);
+        System.ArgumentException.ThrowIfNullOrEmpty(entityName);
+        System.ArgumentException.ThrowIfNullOrEmpty(userEmail);
         return new AuditLog
         {
             ActionType = AuditActionType.ConfigurationCreated,
@@ -149,6 +154,8 @@ public sealed class AuditLog
     /// </summary>
     public void SetRequestContext(string? ipAddress, string? userAgent)
     {
+        if (ipAddress == null) throw new ArgumentNullException(nameof(ipAddress));
+        if (string.IsNullOrWhiteSpace(userAgent)) throw new ArgumentException("User agent is required", nameof(userAgent));
         IpAddress = ipAddress;
         UserAgent = userAgent;
     }
@@ -156,8 +163,9 @@ public sealed class AuditLog
     /// <summary>
     /// Marks the audit entry as failed
     /// </summary>
-    public void MarkAsFailed(string failureReason)
+    public void MarkAsFailed(string? failureReason)
     {
+        if (failureReason == null) throw new ArgumentNullException(nameof(failureReason));
         Status = "Failed";
         Details = failureReason;
     }
