@@ -24,6 +24,8 @@ namespace DotnetConfigServer.Examples
 
         public MultiEnvironmentManager(string baseUrl, string applicationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(baseUrl);
+            ArgumentException.ThrowIfNullOrEmpty(applicationId);
             _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
             _applicationId = applicationId;
         }
