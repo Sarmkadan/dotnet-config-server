@@ -10,6 +10,7 @@ using DotnetConfigServer.Models;
 using DotnetConfigServer.Repositories;
 
 using DotnetConfigServer.Exceptions;
+using Microsoft.EntityFrameworkCore;
 namespace DotnetConfigServer.Services;
 
 /// <summary>
@@ -112,56 +113,73 @@ public sealed class ConfigurationService : IConfigurationService
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
     
-        var existing = await _configRepository.GetByIdAsync(id);
-        if (existing is null)
-            throw new ConfigurationNotFoundException(id.ToString());
+        int retryCount = 0;
+        const int maxRetries = 3;
 
-        // Hotfix: Fixed update method to properly trigger hot reload when nested config values change
-        existing.Update(configuration.Name, configuration.Description, configuration.Environment, configuration.IsActive, userId);
-        existing.ParentConfigurationId = configuration.ParentConfigurationId; // Update parent ID
-
-        existing.Validate();
-
-        // Validate parent configuration exists and no circular dependency
-        if (existing.ParentConfigurationId.HasValue)
+        while (true)
         {
-            var parentConfig = await _configRepository.GetByIdAsync(existing.ParentConfigurationId.Value);
-            if (parentConfig is null)
+            var existing = await _configRepository.GetByIdAsync(id);
+            if (existing is null)
+                throw new ConfigurationNotFoundException(id.ToString());
+
+            // Hotfix: Fixed update method to properly trigger hot reload when nested config values change
+            existing.Update(configuration.Name, configuration.Description, configuration.Environment, configuration.IsActive, userId);
+            existing.ParentConfigurationId = configuration.ParentConfigurationId; // Update parent ID
+
+            existing.Validate();
+
+            // Validate parent configuration exists and no circular dependency
+            if (existing.ParentConfigurationId.HasValue)
             {
-                throw new ConfigurationNotFoundException($"Parent configuration {existing.ParentConfigurationId} not found.");
+                var parentConfig = await _configRepository.GetByIdAsync(existing.ParentConfigurationId.Value);
+                if (parentConfig is null)
+                {
+                    throw new ConfigurationNotFoundException($"Parent configuration {existing.ParentConfigurationId} not found.");
+                }
+                // Check for circular dependency by attempting to resolve keys (without actual data processing)
+                // A simple way to check for circularity is to call GetKeysInternalAsync, which will throw
+                // a ConfigurationException if a circular dependency is detected.
+                try
+                {
+                    await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>()); // false to avoid resolving parent keys for this check
+                }
+                catch (ConfigurationException ex) when (ex.Message.Contains("Circular dependency detected"))
+                {
+                    throw new ConfigurationException($"Update creates a circular dependency in configuration inheritance: {ex.Message}");
+                }
             }
-            // Check for circular dependency by attempting to resolve keys (without actual data processing)
-            // A simple way to check for circularity is to call GetKeysInternalAsync, which will throw
-            // a ConfigurationException if a circular dependency is detected.
+
             try
             {
-                await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>()); // false to avoid resolving parent keys for this check
+                await _configRepository.UpdateAsync(existing);
+                await _configRepository.SaveChangesAsync();
+
+                // Log update
+                var auditEntry = AuditLog.UpdateEntry(
+                    existing.Id,
+                    nameof(Configuration),
+                    existing.Id.ToString(),
+                    existing.Name,
+                    userId,
+                    null,
+                    oldValues: $"Name={configuration.Name}", // This part of logging needs to be improved to reflect all changes
+                    newValues: $"Name={existing.Name}"
+                );
+                await _auditLogRepository.AddAsync(auditEntry);
+                await _auditLogRepository.SaveChangesAsync();
+
+                _logger.LogInformation("Configuration {ConfigId} updated by {UserId}", id, userId);
+                return existing;
             }
-            catch (ConfigurationException ex) when (ex.Message.Contains("Circular dependency detected"))
+            catch (DatabaseException ex) when (ex.InnerException is DbUpdateConcurrencyException)
             {
-                throw new ConfigurationException($"Update creates a circular dependency in configuration inheritance: {ex.Message}");
+                if (++retryCount >= maxRetries)
+                {
+                    throw new ConcurrencyException("Max retries exceeded for concurrent update", ex);
+                }
+                _logger.LogWarning("Concurrency conflict detected for config {Id}. Retrying ({RetryCount}/{MaxRetries})", id, retryCount, maxRetries);
             }
         }
-
-        await _configRepository.UpdateAsync(existing);
-        await _configRepository.SaveChangesAsync();
-
-        // Log update
-        var auditEntry = AuditLog.UpdateEntry(
-            existing.Id,
-            nameof(Configuration),
-            existing.Id.ToString(),
-            existing.Name,
-            userId,
-            null,
-            oldValues: $"Name={configuration.Name}", // This part of logging needs to be improved to reflect all changes
-            newValues: $"Name={existing.Name}"
-        );
-        await _auditLogRepository.AddAsync(auditEntry);
-        await _auditLogRepository.SaveChangesAsync();
-
-        _logger.LogInformation("Configuration {ConfigId} updated by {UserId}", id, userId);
-        return existing;
     }
 
     /// <summary>
