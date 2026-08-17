@@ -70,6 +70,7 @@ public sealed class Configuration
     /// </summary>
     public void Validate()
     {
+        ArgumentNullException.ThrowIfNull(this);
         var errors = new Dictionary<string, List<string>>();
 
         if (string.IsNullOrWhiteSpace(Name))
@@ -115,6 +116,7 @@ public sealed class Configuration
     /// </summary>
     public void Delete(string deletedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(deletedBy);
         IsActive = false;
         DeletedAt = DateTime.UtcNow;
         DeletedBy = deletedBy;
@@ -125,6 +127,7 @@ public sealed class Configuration
     /// </summary>
     public void Update(string name, string? description, string updatedBy)
     {
+        ArgumentNullException.ThrowIfNull(updatedBy);
         Name = name;
         Description = description;
         UpdatedBy = updatedBy;
@@ -136,6 +139,7 @@ public sealed class Configuration
     /// </summary>
     public void Update(string name, string? description, Environment environment, bool isActive, string updatedBy)
     {
+        ArgumentNullException.ThrowIfNull(updatedBy);
         Name = name;
         Description = description;
         Environment = environment;
