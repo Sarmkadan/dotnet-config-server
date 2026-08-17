@@ -42,6 +42,8 @@ public sealed class ConfigurationEventHandlers
     /// </summary>
     public async Task HandleConfigurationCreatedAsync(ConfigurationCreatedEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
+
         _logger.LogInformation("Handling ConfigurationCreated event for {ConfigId}", @event.ConfigurationId);
 
         // Invalidate cache
@@ -74,6 +76,7 @@ public sealed class ConfigurationEventHandlers
     /// </summary>
     public async Task HandleConfigurationUpdatedAsync(ConfigurationUpdatedEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         _logger.LogInformation("Handling ConfigurationUpdated event for {ConfigId}", @event.ConfigurationId);
 
         // Invalidate relevant caches
@@ -105,6 +108,7 @@ public sealed class ConfigurationEventHandlers
     /// </summary>
     public async Task HandleConfigurationKeyChangedAsync(ConfigurationKeyChangedEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         _logger.LogInformation("Handling ConfigurationKeyChanged event for key {Key} in config {ConfigId}", @event.Key, @event.ConfigurationId);
 
         // Invalidate cache for this configuration's keys
@@ -131,6 +135,7 @@ public sealed class ConfigurationEventHandlers
     /// </summary>
     public async Task HandleConfigurationDeletedAsync(ConfigurationDeletedEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         _logger.LogInformation("Handling ConfigurationDeleted event for {ConfigId}", @event.ConfigurationId);
 
         // Invalidate all related caches
