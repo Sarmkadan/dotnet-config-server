@@ -39,6 +39,7 @@ public sealed class ChangeRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Submit([FromBody] ChangeRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
         try
         {
             request.RequestedBy = User.Identity?.Name ?? "system";
@@ -103,6 +104,7 @@ public sealed class ChangeRequestsController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] ReviewDecisionRequest decision)
     {
+        ArgumentNullException.ThrowIfNull(decision);
         try
         {
             var reviewerId = User.Identity?.Name ?? "system";
@@ -135,6 +137,7 @@ public sealed class ChangeRequestsController : ControllerBase
         [FromRoute] Guid id,
         [FromBody] ReviewDecisionRequest decision)
     {
+        ArgumentNullException.ThrowIfNull(decision);
         try
         {
             var reviewerId = User.Identity?.Name ?? "system";
