@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Text.RegularExpressions;
 using DotnetConfigServer.Data;
 using DotnetConfigServer.Models;
 using Microsoft.EntityFrameworkCore;
@@ -48,5 +49,71 @@ public sealed class ValidationRuleRepository : BaseRepository<ValidationRule>, I
             .Where(rule => rule.IsActive && (rule.ConfigurationId == null || rule.ConfigurationId == configurationId))
             .OrderBy(rule => rule.Name)
             .ToListAsync();
+    }
+}
+
+/// <summary>
+/// Extension methods for <see cref="ValidationRule"/>.
+/// </summary>
+public static class ValidationRuleExtensions
+{
+    /// <summary>
+    /// Determines whether the rule applies to the supplied configuration key.
+    /// If <see cref="ValidationRule.TargetKeyPattern"/> is <c>null</c> or empty,
+    /// the rule is considered applicable to all keys.
+    /// </summary>
+    /// <param name="rule">The validation rule.</param>
+    /// <param name="key">The configuration key to test.</param>
+    /// <returns><c>true</c> if the rule applies to the key; otherwise <c>false</c>.</returns>
+    public static bool AppliesTo(this ValidationRule rule, string key)
+    {
+        if (string.IsNullOrEmpty(rule.TargetKeyPattern))
+            return true;
+
+        return Regex.IsMatch(key, rule.TargetKeyPattern);
+    }
+
+    /// <summary>
+    /// Provides a human‑readable description of the rule.
+    /// Includes the rule name, type, activity status and, when present,
+    /// the target‑key pattern.
+    /// </summary>
+    /// <param name="rule">The validation rule.</param>
+    /// <returns>A description string.</returns>
+    public static string Describe(this ValidationRule rule)
+    {
+        var parts = new List<string>
+        {
+            $"{rule.Name} ({rule.RuleType})",
+            rule.IsActive ? "Active" : "Inactive"
+        };
+
+        if (!string.IsNullOrWhiteSpace(rule.TargetKeyPattern))
+            parts.Add($"Pattern: {rule.TargetKeyPattern}");
+
+        return string.Join(" - ", parts);
+    }
+
+    /// <summary>
+    /// Determines whether this rule is stricter than another rule.
+    /// The comparison is simplified:
+    /// <list type="bullet">
+    ///   <item>Rules of different <see cref="ValidationRuleType"/> are never considered stricter.</item>
+    ///   <item>For rules of the same type, a higher <see cref="ValidationRuleType"/> enum value is treated as stricter.</item>
+    /// </list>
+    /// This heuristic provides a deterministic result without needing to parse the
+    /// <see cref="ValidationRule.Parameters"/> JSON payload.
+    /// </summary>
+    /// <param name="rule">The rule to evaluate.</param>
+    /// <param name="other">The rule to compare against.</param>
+    /// <returns><c>true</c> if <paramref name="rule"/> is stricter than <paramref name="other"/>; otherwise <c>false</c>.</returns>
+    public static bool IsStricterThan(this ValidationRule rule, ValidationRule other)
+    {
+        if (rule.RuleType != other.RuleType)
+            return false;
+
+        // Simple heuristic: a rule with a higher enum value is considered stricter.
+        // This works because the enum is ordered from least to most restrictive.
+        return rule.RuleType > other.RuleType;
     }
 }
