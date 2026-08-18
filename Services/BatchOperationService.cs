@@ -62,7 +62,10 @@ public sealed class BatchOperationService : IBatchOperationService
 
     public async Task<BatchOperationResult> UpdateKeysAsync(List<KeyUpdateRequest> updates, string userId)
     {
-        if (updates is null || updates.Count == 0)
+        ArgumentNullException.ThrowIfNull(updates);
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
+        if (updates.Count == 0)
             return new BatchOperationResult { Success = true, OperationId = Guid.Empty };
 
         var operationId = Guid.NewGuid();
@@ -146,7 +149,10 @@ public sealed class BatchOperationService : IBatchOperationService
 
     public async Task<BatchOperationResult> DeleteKeysAsync(List<Guid> keyIds, string userId)
     {
-        if (keyIds is null || keyIds.Count == 0)
+        ArgumentNullException.ThrowIfNull(keyIds);
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
+        if (keyIds.Count == 0)
             return new BatchOperationResult { Success = true, OperationId = Guid.Empty };
 
         var operationId = Guid.NewGuid();
@@ -255,7 +261,9 @@ public sealed class BatchOperationService : IBatchOperationService
 
     public async Task<ValidationRuleResult> ValidateBatchAsync(List<ConfigurationKey> keys, Guid configurationId, Guid? versionId = null)
     {
-        if (keys is null || keys.Count == 0)
+        ArgumentNullException.ThrowIfNull(keys);
+
+        if (keys.Count == 0)
             return new ValidationRuleResult { IsValid = true, Violations = new List<ValidationViolation>() };
 
         _logger.LogInformation("Starting batch validation for {Count} keys in configuration {ConfigId}", keys.Count, configurationId);
