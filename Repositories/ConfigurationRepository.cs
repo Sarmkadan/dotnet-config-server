@@ -28,12 +28,14 @@ public sealed class ConfigurationRepository : BaseRepository<Configuration>, ICo
 
     public async Task<Configuration?> GetByNameAsync(string name, Guid applicationId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(name);
         return await _dbSet.FirstOrDefaultAsync(c =>
             c.Name == name && c.ApplicationId == applicationId && c.IsActive);
     }
 
     public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(query);
         var configurations = _dbSet.Where(c => c.IsActive);
 
         if (applicationId.HasValue)
@@ -53,11 +55,13 @@ public sealed class ConfigurationRepository : BaseRepository<Configuration>, ICo
 
     public async Task<int> GetCountByApplicationAsync(Guid applicationId)
     {
+        ArgumentNullException.ThrowIfNull(applicationId);
         return await _dbSet.CountAsync(c => c.ApplicationId == applicationId && c.IsActive);
     }
 
     public async Task<List<Configuration>> GetDeletedBeforeAsync(DateTime cutoff)
     {
+        ArgumentNullException.ThrowIfNull(cutoff);
         return await _dbSet.Where(c => !c.IsActive && c.DeletedAt != null && c.DeletedAt < cutoff)
             .ToListAsync();
     }
