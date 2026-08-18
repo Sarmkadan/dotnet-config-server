@@ -29,6 +29,9 @@ namespace DotnetConfigServer.Examples
             int timeoutSeconds = 30,
             int maxRetries = 3)
         {
+            ArgumentNullException.ThrowIfNull(nameof(baseUrl));
+            if (apiKey == null)
+                throw new ArgumentNullException(nameof(apiKey));
             _baseUrl = baseUrl;
             _apiKey = apiKey;
             _timeoutSeconds = timeoutSeconds;
