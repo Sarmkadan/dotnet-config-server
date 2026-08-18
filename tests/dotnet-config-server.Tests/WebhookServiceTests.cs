@@ -70,6 +70,7 @@ public sealed class WebhookServiceTests
     [Fact]
     public async Task CreateSubscriptionAsync_WithValidSubscription_SavesAndReturns()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(CreateSubscriptionAsync_WithValidSubscription_SavesAndReturns));
         var subscription = CreateValidSubscription();
         var userId = "deploy-user";
 
@@ -82,6 +83,7 @@ public sealed class WebhookServiceTests
         result.CreatedBy.Should().Be(userId);
         _subscriptionRepositoryMock.Verify(r => r.AddAsync(subscription), Times.Once);
         _subscriptionRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(CreateSubscriptionAsync_WithValidSubscription_SavesAndReturns));
     }
 
     /// <summary>
@@ -91,6 +93,7 @@ public sealed class WebhookServiceTests
     [Fact]
     public async Task CreateSubscriptionAsync_WithVerifySignatureAndNoSecret_GeneratesSecret()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(CreateSubscriptionAsync_WithVerifySignatureAndNoSecret_GeneratesSecret));
         var subscription = CreateValidSubscription();
         subscription.VerifySignature = true;
         subscription.Secret = null;
@@ -101,6 +104,7 @@ public sealed class WebhookServiceTests
         await _sut.CreateSubscriptionAsync(subscription, "admin");
 
         subscription.Secret.Should().NotBeNullOrEmpty();
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(CreateSubscriptionAsync_WithVerifySignatureAndNoSecret_GeneratesSecret));
     }
 
     /// <summary>
@@ -109,12 +113,14 @@ public sealed class WebhookServiceTests
     [Fact]
     public async Task CreateSubscriptionAsync_WithInvalidUrl_ThrowsValidationException()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(CreateSubscriptionAsync_WithInvalidUrl_ThrowsValidationException));
         var subscription = CreateValidSubscription();
         subscription.Url = "not-a-valid-url";
 
         var act = () => _sut.CreateSubscriptionAsync(subscription, "admin");
 
         await act.Should().ThrowAsync<ValidationException>();
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(CreateSubscriptionAsync_WithInvalidUrl_ThrowsValidationException));
     }
 
     /// <summary>
