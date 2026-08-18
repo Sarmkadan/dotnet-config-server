@@ -55,6 +55,7 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromJsonAsync(string json, Guid configurationId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(json);
         try
         {
             var doc = JsonDocument.Parse(json);
@@ -90,7 +91,9 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromCsvAsync(string csv, Guid configurationId)
     {
-        var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        ArgumentException.ThrowIfNullOrEmpty(csv);
+            ArgumentException.ThrowIfNullOrEmpty(csv);
+            var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var keys = new List<ConfigurationKey>();
 
         if (lines.Length < 2)
@@ -127,7 +130,8 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromEnvAsync(string envContent, Guid configurationId)
     {
-        var lines = envContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        ArgumentException.ThrowIfNullOrEmpty(envContent);
+            var lines = envContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var keys = new List<ConfigurationKey>();
 
         foreach (var line in lines)
@@ -189,7 +193,9 @@ public sealed class ConfigurationImportService : IConfigurationImportService
 
     private void ValidateCsv(string csv)
     {
-        var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        ArgumentException.ThrowIfNullOrEmpty(csv);
+            ArgumentException.ThrowIfNullOrEmpty(csv);
+            var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         if (lines.Length < 2)
             throw new InvalidOperationException("CSV must contain header and at least one row");
 
