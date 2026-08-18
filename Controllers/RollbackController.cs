@@ -66,6 +66,8 @@ public sealed class RollbackController : ControllerBase
         [FromRoute] Guid targetVersionId,
         [FromBody] RollbackRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         try
         {
             var userId = User.Identity?.Name ?? "system";
