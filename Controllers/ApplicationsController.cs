@@ -41,6 +41,7 @@ public sealed class ApplicationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] Application application)
     {
+        ArgumentNullException.ThrowIfNull("application");
         try
         {
             if (string.IsNullOrWhiteSpace(application.Name))
