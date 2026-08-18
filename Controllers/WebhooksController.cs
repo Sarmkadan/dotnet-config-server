@@ -42,6 +42,7 @@ public sealed class WebhooksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] WebhookSubscription subscription)
     {
+        ArgumentNullException.ThrowIfNull(subscription);
         try
         {
             if (string.IsNullOrWhiteSpace(subscription.Url))
@@ -117,6 +118,7 @@ public sealed class WebhooksController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] WebhookSubscription subscription)
     {
+        ArgumentNullException.ThrowIfNull(subscription);
         try
         {
             var existing = await _repository.GetByIdAsync(id);
