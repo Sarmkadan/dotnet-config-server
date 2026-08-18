@@ -107,6 +107,7 @@ public static class CacheKeyGenerator
     /// </summary>
     public static string GetSearchKey(string query, Guid? applicationId = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(query);
         var key = $"search{Separator}{Uri.EscapeDataString(query)}";
         if (applicationId.HasValue)
             key += $"{Separator}{applicationId}";
