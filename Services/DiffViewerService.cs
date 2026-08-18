@@ -45,6 +45,9 @@ public sealed class DiffViewerService : IDiffViewerService
         Guid toVersionId,
         CancellationToken cancellationToken = default)
     {
+        if (cancellationToken == null) throw new ArgumentNullException(nameof(cancellationToken));
+        if (fromVersionId == Guid.Empty) throw new ArgumentException("From version ID cannot be empty.", nameof(fromVersionId));
+        if (toVersionId == Guid.Empty) throw new ArgumentException("To version ID cannot be empty.", nameof(toVersionId));
         cancellationToken.ThrowIfCancellationRequested();
 
         var fromVersion = await _versioningService.GetVersionAsync(fromVersionId);
@@ -114,6 +117,8 @@ public sealed class DiffViewerService : IDiffViewerService
         Guid targetVersionId,
         CancellationToken cancellationToken = default)
     {
+        if (configurationId == Guid.Empty) throw new ArgumentException("Configuration ID cannot be empty.", nameof(configurationId));
+        if (targetVersionId == Guid.Empty) throw new ArgumentException("Target version ID cannot be empty.", nameof(targetVersionId));
         cancellationToken.ThrowIfCancellationRequested();
 
         var targetVersion = await _versioningService.GetVersionAsync(targetVersionId);
@@ -181,6 +186,8 @@ public sealed class DiffViewerService : IDiffViewerService
         Guid configurationId,
         CancellationToken cancellationToken = default)
     {
+        if (configurationId == Guid.Empty) throw new ArgumentException("Configuration ID cannot be empty.", nameof(configurationId));
+        if (cancellationToken == null) throw new ArgumentNullException(nameof(cancellationToken));
         cancellationToken.ThrowIfCancellationRequested();
 
         var history = await _versioningService.GetVersionHistoryAsync(configurationId);
