@@ -60,6 +60,7 @@ public sealed class ValidationRulesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateRule([FromRoute] Guid configurationId, [FromBody] ValidationRule rule)
     {
+        ArgumentNullException.ThrowIfNull(rule);
         try
         {
             var userId = User.Identity?.Name ?? "system";
@@ -110,6 +111,7 @@ public sealed class ValidationRulesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateRule([FromRoute] Guid configurationId, [FromRoute] Guid ruleId, [FromBody] ValidationRule rule)
     {
+        ArgumentNullException.ThrowIfNull(rule);
         try
         {
             var existing = await _validationRuleService.GetRuleAsync(ruleId);
