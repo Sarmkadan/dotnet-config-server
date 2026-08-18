@@ -65,6 +65,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<string> GetConfigurationValueAsync(string key)
         {
+            ArgumentException.ThrowIfNullOrEmpty(key);
             // Try to get from local cache first
             if (_localCache.TryGetValue(key, out var value))
                 return value;
@@ -83,6 +84,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<T> GetConfigurationAsync<T>(string key) where T : class
         {
+            ArgumentException.ThrowIfNullOrEmpty(key);
             var value = await GetConfigurationValueAsync(key);
             return ConvertValue<T>(value);
         }
