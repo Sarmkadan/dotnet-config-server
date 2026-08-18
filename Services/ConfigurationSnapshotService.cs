@@ -59,6 +59,8 @@ public sealed class ConfigurationSnapshotService : IConfigurationSnapshotService
 
   public async Task<ConfigurationSnapshot> CreateSnapshotAsync(Guid configurationId, string userId, string? reason = null)
   {
+    ArgumentException.ThrowIfNullOrEmpty(userId);
+
     var config = await _configRepository.GetByIdAsync(configurationId);
     if (config is null)
       throw new ConfigurationNotFoundException(configurationId.ToString());
@@ -95,6 +97,9 @@ public sealed class ConfigurationSnapshotService : IConfigurationSnapshotService
 
   public async Task RestoreFromSnapshotAsync(Guid snapshotId, string userId, string reason)
   {
+    ArgumentException.ThrowIfNullOrEmpty(userId);
+    ArgumentException.ThrowIfNullOrEmpty(reason);
+
     var snapshot = await _snapshotRepository.GetByIdAsync(snapshotId);
     if (snapshot is null)
       throw new ConfigurationSnapshotNotFoundException(snapshotId.ToString());
