@@ -45,6 +45,8 @@ public sealed class VersioningServiceTests_v2
     [Fact]
     public async Task CreateVersionAsync_VersionNumbersIncrementCorrectly()
     {
+        _loggerMock.Object.LogInformation("Starting CreateVersionAsync_VersionNumbersIncrementCorrectly test");
+
         var configId = Guid.NewGuid();
         var config = new Configuration { Id = configId, Name = "test", ApplicationId = Guid.NewGuid(), CreatedBy = "admin" };
 
@@ -75,6 +77,8 @@ public sealed class VersioningServiceTests_v2
         // Third version increments patch from 1.0.2 to 1.0.3
         var v3 = await _sut.CreateVersionAsync(configId, "Third version", "admin");
         v3.VersionNumber.Should().Be("1.0.3");
+
+        _loggerMock.Object.LogInformation("Completed CreateVersionAsync_VersionNumbersIncrementCorrectly test");
     }
 
     [Fact]
