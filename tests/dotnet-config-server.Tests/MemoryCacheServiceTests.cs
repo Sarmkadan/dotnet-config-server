@@ -27,12 +27,19 @@ public sealed class MemoryCacheServiceTests : IDisposable
     {
         _loggerMock = new Mock<ILogger<MemoryCacheService>>();
         _sut = new MemoryCacheService(_loggerMock.Object);
+        _loggerMock.Object.LogInformation("Entering {Constructor}", "MemoryCacheServiceTests");
+        _loggerMock.Object.LogInformation("Exiting {Constructor}", "MemoryCacheServiceTests");
     }
 
     /// <summary>
     /// Disposes of the test resources.
     /// </summary>
-    public void Dispose() => _sut.Dispose();
+    public void Dispose()
+    {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "Dispose");
+        _sut.Dispose();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "Dispose");
+    }
 
     /// <summary>
     /// Tests that setting a value and then getting it returns the stored value.
@@ -41,11 +48,13 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task SetAsync_ThenGetAsync_ReturnsStoredValue()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "SetAsync_ThenGetAsync_ReturnsStoredValue");
         await _sut.SetAsync("key1", "value1");
 
         var result = await _sut.GetAsync<string>("key1");
 
         result.Should().Be("value1");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "SetAsync_ThenGetAsync_ReturnsStoredValue");
     }
 
     /// <summary>
@@ -55,9 +64,11 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetAsync_NonExistentKey_ReturnsDefault()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetAsync_NonExistentKey_ReturnsDefault");
         var result = await _sut.GetAsync<string>("missing-key");
 
         result.Should().BeNull();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetAsync_NonExistentKey_ReturnsDefault");
     }
 
     /// <summary>
@@ -67,12 +78,14 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetAsync_AfterExpiration_ReturnsDefault()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetAsync_AfterExpiration_ReturnsDefault");
         await _sut.SetAsync("expiring-key", "value", TimeSpan.FromMilliseconds(50));
 
         await Task.Delay(100);
 
         var result = await _sut.GetAsync<string>("expiring-key");
         result.Should().BeNull();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetAsync_AfterExpiration_ReturnsDefault");
     }
 
     /// <summary>
@@ -82,11 +95,13 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetAsync_BeforeExpiration_ReturnsValue()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetAsync_BeforeExpiration_ReturnsValue");
         await _sut.SetAsync("long-lived-key", 42, TimeSpan.FromMinutes(10));
 
         var result = await _sut.GetAsync<int>("long-lived-key");
 
         result.Should().Be(42);
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetAsync_BeforeExpiration_ReturnsValue");
     }
 
     /// <summary>
@@ -96,12 +111,14 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task RemoveAsync_ExistingKey_RemovesEntry()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "RemoveAsync_ExistingKey_RemovesEntry");
         await _sut.SetAsync("remove-me", "here");
 
         await _sut.RemoveAsync("remove-me");
 
         var result = await _sut.GetAsync<string>("remove-me");
         result.Should().BeNull();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "RemoveAsync_ExistingKey_RemovesEntry");
     }
 
     /// <summary>
@@ -111,9 +128,11 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task RemoveAsync_NonExistentKey_DoesNotThrow()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "RemoveAsync_NonExistentKey_DoesNotThrow");
         var act = () => _sut.RemoveAsync("ghost-key");
 
         await act.Should().NotThrowAsync();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "RemoveAsync_NonExistentKey_DoesNotThrow");
     }
 
     /// <summary>
@@ -123,6 +142,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task RemoveAsync_MultipleKeys_RemovesAllSpecified()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "RemoveAsync_MultipleKeys_RemovesAllSpecified");
         await _sut.SetAsync("k1", "v1");
         await _sut.SetAsync("k2", "v2");
         await _sut.SetAsync("k3", "v3");
@@ -132,6 +152,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
         (await _sut.GetAsync<string>("k1")).Should().BeNull();
         (await _sut.GetAsync<string>("k2")).Should().BeNull();
         (await _sut.GetAsync<string>("k3")).Should().Be("v3");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "RemoveAsync_MultipleKeys_RemovesAllSpecified");
     }
 
     /// <summary>
@@ -141,11 +162,13 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task ExistsAsync_ExistingKey_ReturnsTrue()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "ExistsAsync_ExistingKey_ReturnsTrue");
         await _sut.SetAsync("exists-key", "present");
 
         var result = await _sut.ExistsAsync("exists-key");
 
         result.Should().BeTrue();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "ExistsAsync_ExistingKey_ReturnsTrue");
     }
 
     /// <summary>
@@ -155,9 +178,11 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task ExistsAsync_NonExistentKey_ReturnsFalse()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "ExistsAsync_NonExistentKey_ReturnsFalse");
         var result = await _sut.ExistsAsync("not-there");
 
         result.Should().BeFalse();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "ExistsAsync_NonExistentKey_ReturnsFalse");
     }
 
     /// <summary>
@@ -167,23 +192,26 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task ExistsAsync_ExpiredKey_ReturnsFalse()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "ExistsAsync_ExpiredKey_ReturnsFalse");
         await _sut.SetAsync("soon-gone", "bye", TimeSpan.FromMilliseconds(50));
         await Task.Delay(100);
 
         var result = await _sut.ExistsAsync("soon-gone");
 
         result.Should().BeFalse();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "ExistsAsync_ExpiredKey_ReturnsFalse");
     }
 
     /// <summary>
     /// Tests that getting or creating a key invokes the factory if the key does not exist.
-    /// </summary>
+    /// </>
     /// <param name="key">The key to get or create.</param>
     /// <param name="factory">The factory to invoke if the key does not exist.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Fact]
     public async Task GetOrCreateAsync_KeyDoesNotExist_InvokesFactory()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetOrCreateAsync_KeyDoesNotExist_InvokesFactory");
         var factoryInvoked = false;
 
         var result = await _sut.GetOrCreateAsync("new-key", () =>
@@ -194,6 +222,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
 
         factoryInvoked.Should().BeTrue();
         result.Should().Be("factory-value");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetOrCreateAsync_KeyDoesNotExist_InvokesFactory");
     }
 
     /// <summary>
@@ -205,6 +234,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetOrCreateAsync_KeyAlreadyExists_DoesNotInvokeFactory()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetOrCreateAsync_KeyAlreadyExists_DoesNotInvokeFactory");
         await _sut.SetAsync("cached-key", "existing");
         var factoryInvoked = false;
 
@@ -216,6 +246,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
 
         factoryInvoked.Should().BeFalse();
         result.Should().Be("existing");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetOrCreateAsync_KeyAlreadyExists_DoesNotInvokeFactory");
     }
 
     /// <summary>
@@ -225,6 +256,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task ClearAsync_RemovesAllEntries()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "ClearAsync_RemovesAllEntries");
         await _sut.SetAsync("a", 1);
         await _sut.SetAsync("b", 2);
         await _sut.SetAsync("c", 3);
@@ -234,6 +266,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
         (await _sut.ExistsAsync("a")).Should().BeFalse();
         (await _sut.ExistsAsync("b")).Should().BeFalse();
         (await _sut.ExistsAsync("c")).Should().BeFalse();
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "ClearAsync_RemovesAllEntries");
     }
 
     /// <summary>
@@ -244,6 +277,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetKeysAsync_ReturnsMatchingKeys()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetKeysAsync_ReturnsMatchingKeys");
         await _sut.SetAsync("config:app1", "v1");
         await _sut.SetAsync("config:app2", "v2");
         await _sut.SetAsync("version:1", "v3");
@@ -253,6 +287,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
         keys.Should().HaveCount(2);
         keys.Should().Contain("config:app1");
         keys.Should().Contain("config:app2");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetKeysAsync_ReturnsMatchingKeys");
     }
 
     /// <summary>
@@ -262,6 +297,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task GetStatsAsync_AfterOperations_ReflectsCorrectCounts()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "GetStatsAsync_AfterOperations_ReflectsCorrectCounts");
         await _sut.SetAsync("s1", "v1");
         await _sut.SetAsync("s2", "v2");
         await _sut.GetAsync<string>("s1");     // hit
@@ -274,6 +310,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
         stats.Hits.Should().BeGreaterThanOrEqualTo(1);
         stats.Misses.Should().BeGreaterThanOrEqualTo(1);
         stats.Deletes.Should().BeGreaterThanOrEqualTo(1);
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "GetStatsAsync_AfterOperations_ReflectsCorrectCounts");
     }
 
     /// <summary>
@@ -283,11 +320,13 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task SetAsync_OverwritesExistingKey()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "SetAsync_OverwritesExistingKey");
         await _sut.SetAsync("overwrite-key", "original");
         await _sut.SetAsync("overwrite-key", "updated");
 
         var result = await _sut.GetAsync<string>("overwrite-key");
         result.Should().Be("updated");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "SetAsync_OverwritesExistingKey");
     }
 
     /// <summary>
@@ -297,6 +336,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task SetAsync_StoresComplexTypes()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "SetAsync_StoresComplexTypes");
         var obj = new Dictionary<string, int> { ["alpha"] = 1, ["beta"] = 2 };
 
         await _sut.SetAsync("complex-key", obj);
@@ -305,6 +345,7 @@ public sealed class MemoryCacheServiceTests : IDisposable
         result.Should().NotBeNull();
         result!["alpha"].Should().Be(1);
         result["beta"].Should().Be(2);
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "SetAsync_StoresComplexTypes");
     }
 
     /// <summary>
@@ -314,10 +355,12 @@ public sealed class MemoryCacheServiceTests : IDisposable
     [Fact]
     public async Task SetAsync_WithNoExpiration_EntryDoesNotExpire()
     {
+        _loggerMock.Object.LogInformation("Entering {MethodName}", "SetAsync_WithNoExpiration_EntryDoesNotExpire");
         await _sut.SetAsync("no-expiry", "persistent");
         await Task.Delay(50);
 
         var result = await _sut.GetAsync<string>("no-expiry");
         result.Should().Be("persistent");
+        _loggerMock.Object.LogInformation("Exiting {MethodName}", "SetAsync_WithNoExpiration_EntryDoesNotExpire");
     }
 }
