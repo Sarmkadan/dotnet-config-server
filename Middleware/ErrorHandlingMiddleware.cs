@@ -32,7 +32,7 @@ public sealed class ErrorHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception in request processing");
+            _logger.LogError(ex, "Request processing failed with exception {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
