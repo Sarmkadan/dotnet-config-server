@@ -31,6 +31,7 @@ public sealed class ConfigurationWorkflowIntegrationTests
     private readonly Mock<ILogger<ConfigurationService>> _configLoggerMock;
     private readonly Mock<ILogger<VersioningService>> _versioningLoggerMock;
     private readonly Mock<ILogger<DiffService>> _diffLoggerMock;
+    private readonly Mock<ILogger<ConfigurationWorkflowIntegrationTests>> _loggerMock;
 
     private ConfigurationService _configService = null!;
     private VersioningService _versioningService = null!;
