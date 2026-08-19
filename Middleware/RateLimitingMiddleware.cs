@@ -65,13 +65,17 @@ public sealed class RateLimitingMiddleware
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        _logger.LogInformation("RateLimitingMiddleware.InvokeAsync started");
+
         if (!_options.EnableRateLimiting)
         {
+            _logger.LogInformation("RateLimitingMiddleware.InvokeAsync exiting early because rate limiting is disabled");
             await _next(context);
             return;
         }
 
         var clientKey = ResolveClientKey(context);
+        _logger.LogInformation("RateLimitingMiddleware resolved client key {ClientKey}", clientKey);
         var decision = await _store.EvaluateAsync(clientKey, _options.RequestsPerMinute, Window, context.RequestAborted);
 
         context.Response.Headers["X-RateLimit-Limit"] = decision.Limit.ToString();
@@ -83,6 +87,7 @@ public sealed class RateLimitingMiddleware
             var retryAfterSeconds = Math.Max(_options.RetryAfterSeconds, (int)Math.Ceiling(decision.RetryAfter.TotalSeconds));
 
             _logger.LogWarning("Rate limit exceeded for client {ClientKey}", clientKey);
+            _logger.LogInformation("RateLimitingMiddleware.InvokeAsync exiting early due to rate limit exceeded for client {ClientKey}", clientKey);
 
             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
             context.Response.Headers.RetryAfter = retryAfterSeconds.ToString();
@@ -91,6 +96,7 @@ public sealed class RateLimitingMiddleware
         }
 
         await _next(context);
+        _logger.LogInformation("RateLimitingMiddleware.InvokeAsync completed successfully for client {ClientKey}", clientKey);
     }
 
     /// <summary>
