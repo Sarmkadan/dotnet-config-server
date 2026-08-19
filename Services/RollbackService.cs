@@ -40,6 +40,7 @@ public sealed class RollbackService : IRollbackService
     /// <inheritdoc />
     public async Task<RollbackResult> ExecuteRollbackAsync(Guid configurationId, Guid targetVersionId, string reason, string userId)
     {
+        _logger.LogInformation("Executing rollback for configuration {ConfigurationId} to version {TargetVersionId} by {UserId}", configurationId, targetVersionId, userId);
         var targetVersion = await _versioningService.GetVersionAsync(targetVersionId);
         if (targetVersion is null || targetVersion.ConfigurationId != configurationId)
             throw new ConfigurationNotFoundException(targetVersionId.ToString());
