@@ -72,6 +72,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_ThenDecrypt_ReturnsOriginalPlainText()
     {
+        _loggerMock.Object.LogInformation("Running Encrypt_ThenDecrypt_ReturnsOriginalPlainText with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         var plainText = "Server=myserver;Database=mydb;User Id=sa;Password=secret;";
 
@@ -88,6 +89,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_SamePlainText_ProducesDistinctCipherTextDueToRandomIv()
     {
+        _loggerMock.Object.LogInformation("Starting Encrypt_SamePlainText_ProducesDistinctCipherTextDueToRandomIv with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         const string plainText = "static-value";
 
@@ -105,6 +107,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_PayloadIsValidBase64()
     {
+        _loggerMock.Object.LogInformation("Starting Encrypt_PayloadIsValidBase64 with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
 
         var cipherText = _sut.Encrypt("hello", key);
@@ -121,6 +124,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_NewCipherText_CarriesCurrentVersionTagAndKeyId()
     {
+        _loggerMock.Object.LogInformation("Starting Encrypt_NewCipherText_CarriesCurrentVersionTagAndKeyId with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
 
         var cipherText = _sut.Encrypt("hello", key);
@@ -135,6 +139,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Decrypt_LegacyUnversionedCipherText_StillSucceeds()
     {
+        _loggerMock.Object.LogInformation("Starting Decrypt_LegacyUnversionedCipherText_StillSucceeds with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         var plainText = "legacy-secret-value";
 
@@ -154,6 +159,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Decrypt_UnknownVersionTag_ThrowsEncryptionExceptionMentioningVersion()
     {
+        _loggerMock.Object.LogInformation("Starting Decrypt_UnknownVersionTag_ThrowsEncryptionExceptionMentioningVersion with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         var versionedCipherText = _sut.Encrypt("hello", key);
         var payload = versionedCipherText.Split(':', 3)[2];
@@ -172,6 +178,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void ValidateKey_InactiveKey_ThrowsEncryptionExceptionMentioningKeyId()
     {
+        _loggerMock.Object.LogInformation("Validating inactive key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         key.IsActive = false;
 
@@ -187,6 +194,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void ValidateKey_ExpiredKey_ThrowsEncryptionException()
     {
+        _loggerMock.Object.LogInformation("Validating expired key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         key.ExpiresAt = DateTime.UtcNow.AddSeconds(-1);
 
@@ -201,6 +209,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void GenerateNewKey_ReturnsKeyWithPopulatedCryptographicMaterial()
     {
+        _loggerMock.Object.LogInformation("Generating new key with name {KeyName}", "service-key");
         var key = _sut.GenerateNewKey("service-key");
 
         key.Name.Should().Be("service-key");
@@ -221,6 +230,7 @@ public sealed class EncryptionServiceTests
     public async Task EncryptAsync_WhenNoPrimaryKeyExistsForConfiguration_ThrowsConfigurationException()
     {
         var configId = Guid.NewGuid();
+        _loggerMock.Object.LogInformation("Encrypting for configuration {ConfigId} with no primary key", configId);
         _keyRepositoryMock
             .Setup(r => r.GetPrimaryKeyByConfigurationAsync(configId))
             .ReturnsAsync((EncryptionKey?)null);
@@ -240,6 +250,7 @@ public sealed class EncryptionServiceTests
     public async Task RotateKeyAsync_WhenKeyNotFound_ThrowsConfigurationNotFoundException()
     {
         const string keyId = "ghost-key-id";
+        _loggerMock.Object.LogInformation("Rotating key {KeyId} that does not exist", keyId);
         _keyRepositoryMock
             .Setup(r => r.GetByKeyIdAsync(keyId))
             .ReturnsAsync((EncryptionKey?)null);
@@ -261,6 +272,7 @@ public sealed class EncryptionServiceTests
         var key = CreateValidKey();
         key.KeyId = "active-key";
         key.IsPrimary = true;
+        _loggerMock.Object.LogInformation("Rotating existing key {KeyId}", key.KeyId);
 
         _keyRepositoryMock.Setup(r => r.GetByKeyIdAsync("active-key")).ReturnsAsync(key);
         _keyRepositoryMock.Setup(r => r.UpdateAsync(key)).Returns(Task.CompletedTask);
@@ -285,6 +297,7 @@ public sealed class EncryptionServiceTests
     {
         var key1 = CreateValidKey();
         var key2 = CreateValidKey();
+        _loggerMock.Object.LogInformation("Decrypting with key {KeyId} that differs from encryption key {EncryptionKeyId}", key2.KeyId, key1.KeyId);
 
         var plainText = "secret-password";
         var cipherText = _sut.Encrypt(plainText, key1);
@@ -301,6 +314,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_EmptyString_ThrowsArgumentException()
     {
+        _loggerMock.Object.LogInformation("Encrypting empty string with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         var act = () => _sut.Encrypt(string.Empty, key);
 
@@ -314,6 +328,7 @@ public sealed class EncryptionServiceTests
     [Fact]
     public void Encrypt_NullString_ThrowsArgumentNullException()
     {
+        _loggerMock.Object.LogInformation("Encrypting null string with key {KeyId}", CreateValidKey().KeyId);
         var key = CreateValidKey();
         var act = () => _sut.Encrypt(null!, key);
 
