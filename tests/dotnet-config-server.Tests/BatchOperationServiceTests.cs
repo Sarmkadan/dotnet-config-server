@@ -71,8 +71,11 @@ public sealed class BatchOperationServiceTests
 	[Fact]
 	public async Task UpdateKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
 	{
+		_loggerMock.Object.LogInformation("UpdateKeysAsync called with null input by user {UserId}", "user");
+
 		var result = await _sut.UpdateKeysAsync(null!, "user");
 
+		_loggerMock.Object.LogInformation("UpdateKeysAsync returned success {Success} with operation id {OperationId}", result.Success, result.OperationId);
 		result.Success.Should().BeTrue();
 		result.OperationId.Should().Be(Guid.Empty);
 	}
@@ -83,8 +86,11 @@ public sealed class BatchOperationServiceTests
 	[Fact]
 	public async Task UpdateKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
 	{
+		_loggerMock.Object.LogInformation("UpdateKeysAsync called with empty list by user {UserId}", "user");
+
 		var result = await _sut.UpdateKeysAsync(new List<KeyUpdateRequest>(), "user");
 
+		_loggerMock.Object.LogInformation("UpdateKeysAsync returned success {Success} with operation id {OperationId}", result.Success, result.OperationId);
 		result.Success.Should().BeTrue();
 		result.OperationId.Should().Be(Guid.Empty);
 	}
@@ -100,6 +106,8 @@ public sealed class BatchOperationServiceTests
 		var key1 = CreateKey(id1, "old1");
 		var key2 = CreateKey(id2, "old2");
 
+		_loggerMock.Object.LogInformation("UpdateKeysAsync called with {Count} updates by user {UserId}", 2, "operator");
+
 		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id1)).ReturnsAsync(key1);
 		_keyRepositoryMock.Setup(r => r.GetByIdAsync(id2)).ReturnsAsync(key2);
 		_keyRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ConfigurationKey>())).Returns(Task.CompletedTask);
@@ -113,6 +121,7 @@ public sealed class BatchOperationServiceTests
 
 		var result = await _sut.UpdateKeysAsync(updates, "operator");
 
+		_loggerMock.Object.LogInformation("UpdateKeysAsync completed with {SuccessCount} successes and {ErrorCount} errors", result.SuccessCount, result.ErrorCount);
 		result.Success.Should().BeTrue();
 		result.SuccessCount.Should().Be(2);
 		result.ErrorCount.Should().Be(0);
@@ -129,6 +138,7 @@ public sealed class BatchOperationServiceTests
 	[Fact]
 	public async Task UpdateKeysAsync_SomeKeysNotFound_RecordsErrors()
 	{
+		_loggerMock.Object.LogInformation("UpdateKeysAsync called with mixed existing and missing keys by user {UserId}", "user");
 		var existingId = Guid.NewGuid();
 		var missingId = Guid.NewGuid();
 		var key = CreateKey(existingId);
@@ -160,8 +170,10 @@ public sealed class BatchOperationServiceTests
 	[Fact]
 	public async Task DeleteKeysAsync_NullInput_ReturnsSuccessWithEmptyOperationId()
 	{
+		_loggerMock.Object.LogInformation("DeleteKeysAsync called with null input by user {UserId}", "user");
 		var result = await _sut.DeleteKeysAsync(null!, "user");
 
+		_loggerMock.Object.LogInformation("DeleteKeysAsync returned success {Success} with operation id {OperationId}", result.Success, result.OperationId);
 		result.Success.Should().BeTrue();
 		result.OperationId.Should().Be(Guid.Empty);
 	}
@@ -172,8 +184,10 @@ public sealed class BatchOperationServiceTests
 	[Fact]
 	public async Task DeleteKeysAsync_EmptyList_ReturnsSuccessWithEmptyOperationId()
 	{
+		_loggerMock.Object.LogInformation("DeleteKeysAsync called with empty list by user {UserId}", "user");
 		var result = await _sut.DeleteKeysAsync(new List<Guid>(), "user");
 
+		_loggerMock.Object.LogInformation("DeleteKeysAsync returned success {Success}", result.Success);
 		result.Success.Should().BeTrue();
 	}
 
