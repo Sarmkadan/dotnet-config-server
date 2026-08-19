@@ -76,6 +76,7 @@ public sealed class ChangeRequestServiceTests
 	[Fact]
 	public async Task SubmitAsync_WithValidRequest_SetsStatusToPendingAndSaves()
 	{
+		_loggerMock.Object.LogInformation("Submitting valid change request for {RequestedBy}", "developer");
 		var request = CreateValidRequest();
 
 		_repositoryMock.Setup(r => r.AddAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
@@ -83,6 +84,7 @@ public sealed class ChangeRequestServiceTests
 
 		var result = await _sut.SubmitAsync(request);
 
+		_loggerMock.Object.LogInformation("Change request submitted with status {Status}", result.Status);
 		result.Status.Should().Be(ChangeRequestStatus.Pending);
 		result.RequestedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
 		_repositoryMock.Verify(r => r.AddAsync(request), Times.Once);
@@ -95,6 +97,7 @@ public sealed class ChangeRequestServiceTests
 	[Fact]
 	public async Task SubmitAsync_WithEmptyRequestedBy_ThrowsValidationException()
 	{
+		_loggerMock.Object.LogInformation("Submitting change request with empty {Field}", nameof(ChangeRequest.RequestedBy));
 		var request = CreateValidRequest();
 		request.RequestedBy = string.Empty;
 
@@ -109,6 +112,7 @@ public sealed class ChangeRequestServiceTests
 	[Fact]
 	public async Task SubmitAsync_WithWhitespaceRequestedBy_ThrowsValidationException()
 	{
+		_loggerMock.Object.LogInformation("Submitting change request with whitespace {Field}", nameof(ChangeRequest.RequestedBy));
 		var request = CreateValidRequest();
 		request.RequestedBy = " ";
 
@@ -131,6 +135,7 @@ public sealed class ChangeRequestServiceTests
 
 		var result = await _sut.GetByIdAsync(id);
 
+		_loggerMock.Object.LogInformation("Retrieved change request with {Id}", id);
 		result.Should().NotBeNull();
 		result!.Id.Should().Be(id);
 	}
@@ -146,6 +151,7 @@ public sealed class ChangeRequestServiceTests
 
 		var result = await _sut.GetByIdAsync(id);
 
+		_loggerMock.Object.LogWarning("Change request with {Id} not found, returning null", id);
 		result.Should().BeNull();
 	}
 
@@ -158,6 +164,7 @@ public sealed class ChangeRequestServiceTests
 		var id = Guid.NewGuid();
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ChangeRequest?)null);
 
+		_loggerMock.Object.LogWarning("Approving non-existent change request with {Id}", id);
 		var act = () => _sut.ApproveAsync(id, "reviewer");
 
 		await act.Should().ThrowAsync<ConfigurationNotFoundException>();
@@ -176,6 +183,7 @@ public sealed class ChangeRequestServiceTests
 
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
 
+		_loggerMock.Object.LogWarning("Attempting to approve already approved request with {Id}", id);
 		var act = () => _sut.ApproveAsync(id, "reviewer");
 
 		await act.Should().ThrowAsync<ConfigurationException>();
@@ -200,8 +208,10 @@ public sealed class ChangeRequestServiceTests
 		_configServiceMock.Setup(s => s.UpdateKeyAsync(keyId, It.IsAny<string>(), It.IsAny<string>()))
 			.ReturnsAsync(new ConfigurationKey { Id = keyId, Key = "key", Value = "new-value", ConfigurationId = Guid.NewGuid(), VersionId = Guid.NewGuid(), CreatedBy = "admin" });
 
+		_loggerMock.Object.LogInformation("Approving pending change request {Id} with applyImmediately {ApplyImmediately}", id, true);
 		var result = await _sut.ApproveAsync(id, "reviewer", "Looks good", applyImmediately: true);
 
+		_loggerMock.Object.LogInformation("Change request {Id} approved with status {Status}", id, result.Status);
 		result.Status.Should().Be(ChangeRequestStatus.Applied);
 		result.ReviewedBy.Should().Be("reviewer");
 		result.ReviewComment.Should().Be("Looks good");
@@ -223,8 +233,10 @@ public sealed class ChangeRequestServiceTests
 		_repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
 		_repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
+		_loggerMock.Object.LogInformation("Approving pending change request {Id} with applyImmediately {ApplyImmediately}", id, false);
 		var result = await _sut.ApproveAsync(id, "reviewer", applyImmediately: false);
 
+		_loggerMock.Object.LogInformation("Change request {Id} approved without applying, status {Status}", id, result.Status);
 		result.Status.Should().Be(ChangeRequestStatus.Approved);
 		_configServiceMock.Verify(s => s.UpdateKeyAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
 	}
@@ -238,6 +250,7 @@ public sealed class ChangeRequestServiceTests
 		var id = Guid.NewGuid();
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ChangeRequest?)null);
 
+		_loggerMock.Object.LogWarning("Rejecting non-existent change request with {Id}", id);
 		var act = () => _sut.RejectAsync(id, "reviewer", "Security risk");
 
 		await act.Should().ThrowAsync<ConfigurationNotFoundException>();
@@ -258,8 +271,10 @@ public sealed class ChangeRequestServiceTests
 		_repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
 		_repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
+		_loggerMock.Object.LogInformation("Rejecting pending change request {Id}", id);
 		var result = await _sut.RejectAsync(id, "reviewer", "Does not meet standards");
 
+		_loggerMock.Object.LogInformation("Change request {Id} rejected with status {Status}", id, result.Status);
 		result.Status.Should().Be(ChangeRequestStatus.Rejected);
 		result.ReviewedBy.Should().Be("reviewer");
 		result.ReviewComment.Should().Be("Does not meet standards");
@@ -278,6 +293,7 @@ public sealed class ChangeRequestServiceTests
 
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
 
+		_loggerMock.Object.LogWarning("Attempting to reject non-pending request with {Id}", id);
 		var act = () => _sut.RejectAsync(id, "reviewer", "Invalid request");
 
 		await act.Should().ThrowAsync<ConfigurationException>();
@@ -292,6 +308,7 @@ public sealed class ChangeRequestServiceTests
 		var id = Guid.NewGuid();
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((ChangeRequest?)null);
 
+		_loggerMock.Object.LogWarning("Canceling non-existent change request with {Id}", id);
 		var act = () => _sut.CancelAsync(id, "user");
 
 		await act.Should().ThrowAsync<ConfigurationNotFoundException>();
@@ -312,8 +329,10 @@ public sealed class ChangeRequestServiceTests
 		_repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
 		_repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
+		_loggerMock.Object.LogInformation("Canceling pending change request {Id}", id);
 		var result = await _sut.CancelAsync(id, "requester");
 
+		_loggerMock.Object.LogInformation("Change request {Id} canceled with status {Status}", id, result.Status);
 		result.Status.Should().Be(ChangeRequestStatus.Cancelled);
 	}
 
@@ -330,6 +349,7 @@ public sealed class ChangeRequestServiceTests
 
 		_repositoryMock.Setup(r => r.GetByIdAsync(id)).ReturnsAsync(request);
 
+		_loggerMock.Object.LogWarning("Attempting to cancel non-pending request with {Id}", id);
 		var act = () => _sut.CancelAsync(id, "user");
 
 		await act.Should().ThrowAsync<ConfigurationException>();
@@ -341,6 +361,7 @@ public sealed class ChangeRequestServiceTests
 	[Fact]
 	public async Task GetPendingAsync_ReturnsPendingRequests()
 	{
+		_loggerMock.Object.LogInformation("Retrieving pending change requests");
 		var pending = new List<ChangeRequest>
 		{
 			CreateValidRequest(),
@@ -351,6 +372,7 @@ public sealed class ChangeRequestServiceTests
 
 		var result = await _sut.GetPendingAsync();
 
+		_loggerMock.Object.LogInformation("Retrieved {Count} pending change requests", result.Count);
 		result.Should().HaveCount(2);
 	}
 
@@ -438,6 +460,7 @@ public sealed class ChangeRequestServiceTests
             _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
+            _loggerMock.Object.LogWarning("Rejecting change request {Id} with empty comment", id);
             var act = () => _sut.RejectAsync(id, "reviewer", string.Empty);
 
             await act.Should().ThrowAsync<ValidationException>();
@@ -458,6 +481,7 @@ public sealed class ChangeRequestServiceTests
             _repositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ChangeRequest>())).Returns(Task.CompletedTask);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
+            _loggerMock.Object.LogWarning("Rejecting change request {Id} with whitespace comment", id);
             var act = () => _sut.RejectAsync(id, "reviewer", "   ");
 
             await act.Should().ThrowAsync<ValidationException>();
