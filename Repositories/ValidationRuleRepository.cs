@@ -22,11 +22,13 @@ public sealed class ValidationRuleRepository : BaseRepository<ValidationRule>, I
     public ValidationRuleRepository(ApplicationDbContext context, ILogger<ValidationRuleRepository> logger)
         : base(context, logger)
     {
+        _logger.LogInformation("ValidationRuleRepository initialized");
     }
 
     /// <inheritdoc />
     public async Task<List<ValidationRule>> GetByConfigurationAsync(Guid configurationId)
     {
+        _logger.LogInformation("GetByConfigurationAsync called with {ConfigurationId}", configurationId);
         return await _dbSet
             .Where(rule => rule.ConfigurationId == configurationId && rule.IsActive)
             .OrderBy(rule => rule.Name)
@@ -36,6 +38,7 @@ public sealed class ValidationRuleRepository : BaseRepository<ValidationRule>, I
     /// <inheritdoc />
     public async Task<List<ValidationRule>> GetGlobalRulesAsync()
     {
+        _logger.LogInformation("GetGlobalRulesAsync called");
         return await _dbSet
             .Where(rule => rule.ConfigurationId == null && rule.IsActive)
             .OrderBy(rule => rule.Name)
@@ -45,10 +48,19 @@ public sealed class ValidationRuleRepository : BaseRepository<ValidationRule>, I
     /// <inheritdoc />
     public async Task<List<ValidationRule>> GetApplicableRulesAsync(Guid configurationId)
     {
-        return await _dbSet
-            .Where(rule => rule.IsActive && (rule.ConfigurationId == null || rule.ConfigurationId == configurationId))
-            .OrderBy(rule => rule.Name)
-            .ToListAsync();
+        try
+        {
+            _logger.LogInformation("GetApplicableRulesAsync called with {ConfigurationId}", configurationId);
+            return await _dbSet
+                .Where(rule => rule.IsActive && (rule.ConfigurationId == null || rule.ConfigurationId == configurationId))
+                .OrderBy(rule => rule.Name)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get applicable rules");
+            throw;
+        }
     }
 }
 
