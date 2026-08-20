@@ -50,6 +50,8 @@ public sealed class DiffViewerService : IDiffViewerService
         if (toVersionId == Guid.Empty) throw new ArgumentException("To version ID cannot be empty.", nameof(toVersionId));
         cancellationToken.ThrowIfCancellationRequested();
 
+        _logger.LogInformation("GetEnrichedDiffAsync started for {FromVersionId} -> {ToVersionId}", fromVersionId, toVersionId);
+
         var fromVersion = await _versioningService.GetVersionAsync(fromVersionId);
         var toVersion = await _versioningService.GetVersionAsync(toVersionId);
 
@@ -83,6 +85,7 @@ public sealed class DiffViewerService : IDiffViewerService
             changes = cached.Changes;
             generatedAt = cached.CreatedAt;
             diffId = cached.Id;
+            _logger.LogInformation("Using cached diff for versions {From} → {To}", fromVersionId, toVersionId);
         }
         else
         {
@@ -91,11 +94,14 @@ public sealed class DiffViewerService : IDiffViewerService
             changes = ComputeChanges(fromKeys, toKeys, parentKeysDict); // Pass parentKeysDict
             generatedAt = DateTime.UtcNow;
             diffId = Guid.NewGuid();
+            _logger.LogInformation("Computing diff for versions {From} → {To}", fromVersionId, toVersionId);
         }
 
         _logger.LogInformation(
             "Enriched diff retrieved for versions {From} → {To} ({ConfigId})",
             fromVersion.VersionNumber, toVersion.VersionNumber, fromVersion.ConfigurationId);
+
+        _logger.LogInformation("GetEnrichedDiffAsync completed. DiffId: {DiffId}", diffId);
 
         return new EnrichedDiff
         {
