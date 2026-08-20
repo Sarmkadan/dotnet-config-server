@@ -22,10 +22,13 @@ public sealed class ChangeRequestRepository : BaseRepository<ChangeRequest>, ICh
 
     public async Task<List<ChangeRequest>> GetByConfigurationAsync(Guid configurationId, ChangeRequestStatus? status = null)
     {
+        _logger.LogInformation("GetByConfigurationAsync called with {ConfigurationId}", configurationId);
         var query = _dbSet.Where(r => r.ConfigurationId == configurationId);
         if (status.HasValue)
             query = query.Where(r => r.Status == status.Value);
-        return await query.OrderByDescending(r => r.RequestedAt).ToListAsync();
+        var result = await query.OrderByDescending(r => r.RequestedAt).ToListAsync();
+        _logger.LogInformation("GetByConfigurationAsync completed");
+        return result;
     }
 
     public async Task<List<ChangeRequest>> GetPendingAsync()
