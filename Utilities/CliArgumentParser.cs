@@ -18,6 +18,7 @@ public sealed class CliArgumentParser
     public CliArgumentParser(string[] args, ILogger<CliArgumentParser> logger)
     {
         _logger = logger;
+        _logger.LogInformation("Initializing CliArgumentParser with {ArgCount} arguments", args.Length);
         _arguments = ParseArguments(args);
     }
 
