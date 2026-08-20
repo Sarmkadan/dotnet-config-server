@@ -66,9 +66,19 @@ public sealed class DiffService : IDiffService
     /// </exception>
     public async Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId)
     {
-        ArgumentException.ThrowIfNullOrEmpty(userId);
-        // Preserve existing behaviour (exact comparison)
-        return await GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: false);
+        try
+        {
+            _logger.LogInformation("Entering {MethodName} with {FromVersionId}={FromVersionId}, {ToVersionId}={ToVersionId}, {UserId}={UserId}",
+                nameof(GenerateDiffAsync), fromVersionId, toVersionId, userId);
+            ArgumentException.ThrowIfNullOrEmpty(userId);
+            // Preserve existing behaviour (exact comparison)
+            return await GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in {MethodName}: {Message}", nameof(GenerateDiffAsync), ex.Message);
+            throw;
+        }
     }
 
     /// <summary>
