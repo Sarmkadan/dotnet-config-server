@@ -21,20 +21,29 @@ public sealed class ConfigurationKeyRepository : BaseRepository<ConfigurationKey
 
     public async Task<List<ConfigurationKey>> GetByConfigurationAsync(Guid configurationId)
     {
-        return await _dbSet.Where(k => k.ConfigurationId == configurationId && k.IsActive)
+        _logger.LogInformation("Getting configuration keys for configuration {ConfigurationId}", configurationId);
+        var result = await _dbSet.Where(k => k.ConfigurationId == configurationId && k.IsActive)
             .OrderBy(k => k.Key).ToListAsync();
+        _logger.LogInformation("Found {Count} configuration keys for configuration {ConfigurationId}", result.Count, configurationId);
+        return result;
     }
 
     public async Task<List<ConfigurationKey>> GetByVersionAsync(Guid versionId)
     {
-        return await _dbSet.Where(k => k.VersionId == versionId && k.IsActive)
+        _logger.LogInformation("Getting configuration keys by version {VersionId}", versionId);
+        var result = await _dbSet.Where(k => k.VersionId == versionId && k.IsActive)
             .OrderBy(k => k.Key).ToListAsync();
+        _logger.LogInformation("Found {Count} configuration keys for version {VersionId}", result.Count, versionId);
+        return result;
     }
 
     public async Task<ConfigurationKey?> GetByKeyNameAsync(Guid configurationId, string keyName)
     {
-        return await _dbSet.FirstOrDefaultAsync(k =>
+        _logger.LogInformation("Getting configuration key {KeyName} for configuration {ConfigurationId}", keyName, configurationId);
+        var result = await _dbSet.FirstOrDefaultAsync(k =>
             k.ConfigurationId == configurationId && k.Key == keyName && k.IsActive);
+        _logger.LogInformation("Found configuration key {KeyName} for configuration {ConfigurationId}: {Result}", keyName, configurationId, result);
+        return result;
     }
 
     public async Task<List<ConfigurationKey>> SearchAsync(string? query, string? prefix, Guid? configurationId)
