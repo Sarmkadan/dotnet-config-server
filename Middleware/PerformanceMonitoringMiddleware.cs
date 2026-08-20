@@ -38,9 +38,17 @@ public sealed class PerformanceMonitoringMiddleware
         var stopwatch = Stopwatch.StartNew();
         var initialMemory = GC.GetTotalMemory(false);
 
+        _logger.LogInformation("InvokeAsync started for {Method} {Path}", context.Request.Method, context.Request.Path);
+
         try
         {
             await _next(context);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred during request processing for {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+            throw;
         }
         finally
         {
@@ -70,6 +78,9 @@ public sealed class PerformanceMonitoringMiddleware
                     memoryUsed / (1024 * 1024)
                 );
             }
+
+            _logger.LogInformation("InvokeAsync finished for {Method} {Path} with StatusCode {StatusCode} in {DurationMs}ms",
+                context.Request.Method, context.Request.Path, context.Response.StatusCode, stopwatch.ElapsedMilliseconds);
         }
     }
 }
