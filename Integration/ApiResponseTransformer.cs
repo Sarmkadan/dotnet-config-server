@@ -48,6 +48,7 @@ public sealed class ApiResponseTransformer : IApiResponseTransformer
 
     public T Transform<T>(string json) where T : notnull
     {
+        ArgumentException.ThrowIfNullOrEmpty(json);
         try
         {
             var result = JsonSerializer.Deserialize<T>(json, _options);
@@ -62,6 +63,8 @@ public sealed class ApiResponseTransformer : IApiResponseTransformer
 
     public T TransformWithMapping<T>(string json, Dictionary<string, string> fieldMapping) where T : notnull, new()
     {
+        ArgumentException.ThrowIfNullOrEmpty(json);
+        ArgumentNullException.ThrowIfNull(fieldMapping);
         try
         {
             var doc = JsonDocument.Parse(json);
@@ -99,6 +102,8 @@ public sealed class ApiResponseTransformer : IApiResponseTransformer
 
     public Dictionary<string, object?> ExtractFields(string json, params string[] fields)
     {
+        ArgumentException.ThrowIfNullOrEmpty(json);
+        ArgumentNullException.ThrowIfNull(fields);
         try
         {
             var doc = JsonDocument.Parse(json);
@@ -121,6 +126,8 @@ public sealed class ApiResponseTransformer : IApiResponseTransformer
 
     public Dictionary<string, object?> Flatten(string json, string separator = ".")
     {
+        ArgumentException.ThrowIfNullOrEmpty(json);
+        ArgumentException.ThrowIfNullOrEmpty(separator);
         try
         {
             var doc = JsonDocument.Parse(json);
