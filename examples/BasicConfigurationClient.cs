@@ -23,6 +23,8 @@ namespace DotnetConfigServer.Examples
 
         public BasicConfigurationClient(string baseUrl)
         {
+            ArgumentException.ThrowIfNullOrEmpty(baseUrl);
+
             _baseUrl = baseUrl;
             _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
         }
@@ -32,6 +34,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<Configuration> GetConfigurationAsync(string configurationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+
             var response = await _httpClient.GetAsync($"/api/v1/configurations/{configurationId}");
             response.EnsureSuccessStatusCode();
 
@@ -45,6 +49,9 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<string> GetConfigurationKeyAsync(string configurationId, string keyName)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(keyName);
+
             var config = await GetConfigurationAsync(configurationId);
             return config.GetKeyValue(keyName);
         }
@@ -54,6 +61,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<IEnumerable<Configuration>> GetApplicationConfigurationsAsync(string applicationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(applicationId);
+
             var response = await _httpClient.GetAsync($"/api/v1/configurations?applicationId={applicationId}");
             response.EnsureSuccessStatusCode();
 
