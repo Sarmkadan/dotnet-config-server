@@ -51,6 +51,8 @@ public sealed class ConfigurationDiff
     /// </summary>
     public void AddChange(string key, ChangeType changeType, string? oldValue = null, string? newValue = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+
         var entry = new DiffEntry
         {
             Id = Guid.NewGuid(),
