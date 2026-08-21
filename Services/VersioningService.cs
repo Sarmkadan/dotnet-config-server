@@ -51,6 +51,7 @@ public sealed class VersioningService : IVersioningService
         string? expectedVersionNumber = null)
     {
         ArgumentNullException.ThrowIfNull(configurationId);
+        ArgumentException.ThrowIfNullOrEmpty(releaseNotes);
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var config = await _configRepository.GetByIdAsync(configurationId);
@@ -160,6 +161,8 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     public async Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var version = await _versionRepository.GetByIdAsync(versionId);
         if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
@@ -208,6 +211,8 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var version = await _versionRepository.GetByIdAsync(versionId);
         if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
@@ -225,6 +230,8 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     public async Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var version = await _versionRepository.GetByIdAsync(versionId);
         if (version is null)
             throw new ConfigurationNotFoundException(versionId.ToString());
@@ -242,6 +249,8 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var previousVersion = await _versionRepository.GetByIdAsync(previousVersionId);
         if (previousVersion is null)
             throw new ConfigurationNotFoundException(previousVersionId.ToString());
