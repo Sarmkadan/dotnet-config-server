@@ -29,6 +29,9 @@ namespace DotnetConfigServer.Examples
 
         public WebhookConfigurationReloader(ILogger<WebhookConfigurationReloader> logger, string webhookSecret)
         {
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentException.ThrowIfNullOrEmpty(webhookSecret);
+
             _logger = logger;
             _webhookSecret = webhookSecret;
             _configuration = new Dictionary<string, string>();
@@ -53,6 +56,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task HandleWebhookAsync(HttpContext context)
         {
+            ArgumentNullException.ThrowIfNull(context);
+
             if (context.Request.Method != HttpMethods.Post)
             {
                 context.Response.StatusCode = StatusCodes.Status405MethodNotAllowed;
@@ -142,11 +147,17 @@ namespace DotnetConfigServer.Examples
             await Task.CompletedTask;
         }
 
-        public string GetConfigurationValue(string key) =>
-            _configuration.TryGetValue(key, out var value) ? value : null;
+        public string GetConfigurationValue(string key)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(key);
+
+            return _configuration.TryGetValue(key, out var value) ? value : null;
+        }
 
         public void SetInitialConfiguration(Dictionary<string, string> configuration)
         {
+            ArgumentNullException.ThrowIfNull(configuration);
+
             _configuration = new Dictionary<string, string>(configuration);
             _logger.LogInformation("Initial configuration loaded with {KeyCount} keys", configuration.Count);
         }
