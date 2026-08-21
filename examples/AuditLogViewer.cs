@@ -23,6 +23,7 @@ namespace DotnetConfigServer.Examples
 
         public AuditLogViewer(string baseUrl)
         {
+            ArgumentException.ThrowIfNullOrEmpty(baseUrl);
             _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
         }
 
@@ -37,6 +38,7 @@ namespace DotnetConfigServer.Examples
             int pageSize = 50,
             int pageNumber = 1)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var query = $"/api/v1/configurations/{configurationId}/audit-logs?pageSize={pageSize}&pageNumber={pageNumber}";
 
             if (!string.IsNullOrEmpty(action))
@@ -65,6 +67,7 @@ namespace DotnetConfigServer.Examples
             string action = null,
             int pageSize = 20)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var logs = await GetAuditLogsAsync(configurationId, action, pageSize: pageSize);
 
             Console.WriteLine("\n=== Audit Log ===\n");
@@ -91,6 +94,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<List<AuditLog>> GetUserChangesAsync(string configurationId, string user)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(user);
             var logs = await GetAuditLogsAsync(configurationId, pageSize: 1000);
             return logs.Where(l => l.User == user).ToList();
         }
@@ -103,6 +108,7 @@ namespace DotnetConfigServer.Examples
             DateTime fromDate,
             DateTime toDate)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             return await GetAuditLogsAsync(configurationId, fromDate: fromDate, toDate: toDate, pageSize: 1000);
         }
 
@@ -111,6 +117,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task DisplayKeyChangeHistoryAsync(string configurationId, string keyName)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(keyName);
             var logs = await GetAuditLogsAsync(configurationId, pageSize: 1000);
             var keyChanges = logs.Where(l =>
                 l.Details?.Contains(keyName, StringComparison.OrdinalIgnoreCase) == true ||
@@ -141,6 +149,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task DisplayAuditReportAsync(string configurationId, int days = 30)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var fromDate = DateTime.UtcNow.AddDays(-days);
             var logs = await GetChangesInDateRangeAsync(configurationId, fromDate, DateTime.UtcNow);
 
@@ -202,12 +211,14 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task ExportAuditLogsAsync(string configurationId, string filePath)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(filePath);
             var logs = await GetAuditLogsAsync(configurationId, pageSize: 1000);
 
             var csv = new System.Text.StringBuilder();
             csv.AppendLine("Timestamp,Action,User,IpAddress,Details");
 
-            foreach (var log in logs.OrderByDescending(l => l.Timestamp))
+            foreach (var log in logs.OrderByDescending(l => log.Timestamp))
             {
                 var details = (log.Details ?? "").Replace(",", ";").Replace("\"", "'");
                 csv.AppendLine($"\"{log.Timestamp:yyyy-MM-dd HH:mm:ss}\",\"{log.Action}\",\"{log.User ?? ""}\",\"{log.IpAddress ?? ""}\",\"{details}\"");
@@ -222,6 +233,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task DetectAnomaliesAsync(string configurationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var logs = await GetAuditLogsAsync(configurationId, pageSize: 1000);
 
             Console.WriteLine("\n=== Anomaly Detection ===\n");
