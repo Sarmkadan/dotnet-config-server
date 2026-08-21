@@ -65,6 +65,7 @@ public sealed class ChangeRequest
     /// </summary>
     public void Approve(string reviewerId, string? comment = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(reviewerId);
         Status = ChangeRequestStatus.Approved;
         ReviewedBy = reviewerId;
         ReviewedAt = DateTime.UtcNow;
@@ -76,6 +77,7 @@ public sealed class ChangeRequest
     /// </summary>
     public void Reject(string reviewerId, string? comment = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(reviewerId);
         Status = ChangeRequestStatus.Rejected;
         ReviewedBy = reviewerId;
         ReviewedAt = DateTime.UtcNow;
@@ -87,6 +89,7 @@ public sealed class ChangeRequest
     /// </summary>
     public void MarkApplied(string appliedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(appliedBy);
         Status = ChangeRequestStatus.Applied;
         AppliedBy = appliedBy;
         AppliedAt = DateTime.UtcNow;
