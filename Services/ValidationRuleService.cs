@@ -40,6 +40,9 @@ public sealed class ValidationRuleService : IValidationRuleService
     /// <inheritdoc />
     public async Task<ValidationRule> CreateRuleAsync(ValidationRule rule, string userId)
     {
+        ArgumentNullException.ThrowIfNull(rule);
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         ValidateRuleDefinition(rule);
 
         rule.Id = rule.Id == Guid.Empty ? Guid.NewGuid() : rule.Id;
@@ -69,6 +72,9 @@ public sealed class ValidationRuleService : IValidationRuleService
     /// <inheritdoc />
     public async Task<ValidationRule> UpdateRuleAsync(Guid ruleId, ValidationRule updated, string userId)
     {
+        ArgumentNullException.ThrowIfNull(updated);
+        ArgumentException.ThrowIfNullOrEmpty(userId);
+
         var existing = await _validationRuleRepository.GetByIdAsync(ruleId);
         if (existing is null)
             throw new ConfigurationNotFoundException(ruleId.ToString());
