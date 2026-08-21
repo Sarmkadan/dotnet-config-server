@@ -84,6 +84,7 @@ public sealed class VersioningServiceTests_v2
     [Fact]
     public void IncrementVersion_WithDifferentTypes_ProducesCorrectVersions()
     {
+        _loggerMock.Object.LogInformation("Starting {MethodName}", nameof(IncrementVersion_WithDifferentTypes_ProducesCorrectVersions));
         // Test patch increment
         var patchVersion = ConfigurationVersion.IncrementVersion("1.0.0", VersionIncrementType.Patch);
         patchVersion.Should().Be("1.0.1");
@@ -106,11 +107,13 @@ public sealed class VersioningServiceTests_v2
         v2.Should().Be("1.1.0");
         v3.Should().Be("1.1.1");
         v4.Should().Be("2.0.0");
+        _loggerMock.Object.LogInformation("Completed {MethodName}", nameof(IncrementVersion_WithDifferentTypes_ProducesCorrectVersions));
     }
 
     [Fact]
     public async Task GetVersionAsync_ReturnsSpecificVersionById()
     {
+        _loggerMock.Object.LogInformation("Starting {MethodName}", nameof(GetVersionAsync_ReturnsSpecificVersionById));
         var versionId = Guid.NewGuid();
         var version = new ConfigurationVersion
         {
@@ -140,6 +143,7 @@ public sealed class VersioningServiceTests_v2
     [Fact]
     public async Task GetVersionHistoryAsync_ReturnsVersionsInDescendingOrder()
     {
+        _loggerMock.Object.LogInformation("Starting {MethodName}", nameof(GetVersionHistoryAsync_ReturnsVersionsInDescendingOrder));
         var configId = Guid.NewGuid();
         var config = new Configuration { Id = configId, Name = "test", ApplicationId = Guid.NewGuid(), CreatedBy = "admin" };
 
@@ -151,6 +155,7 @@ public sealed class VersioningServiceTests_v2
 
         // Create versions
         var v1 = await _sut.CreateVersionAsync(configId, "First version", "admin");
+        _loggerMock.Object.LogInformation("Created first version {VersionNumber}", v1.VersionNumber);
         var v2 = await _sut.CreateVersionAsync(configId, "Second version", "admin");
         var v3 = await _sut.CreateVersionAsync(configId, "Third version", "admin");
 
@@ -173,6 +178,7 @@ public sealed class VersioningServiceTests_v2
     [Fact]
     public async Task GetVersionsAsync_ReturnsAllVersionsWithoutOrdering()
     {
+        _loggerMock.Object.LogInformation("Starting {MethodName}", nameof(GetVersionsAsync_ReturnsAllVersionsWithoutOrdering));
         var configId = Guid.NewGuid();
         var config = new Configuration { Id = configId, Name = "test", ApplicationId = Guid.NewGuid(), CreatedBy = "admin" };
 
