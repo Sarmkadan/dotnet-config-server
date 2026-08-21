@@ -63,6 +63,7 @@ public sealed class RateLimitingMiddlewareTests
     [Fact]
     public async Task UnderLimit_AllowsRequest()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(UnderLimit_AllowsRequest));
         // Arrange
         var nextCalled = false;
         RequestDelegate next = ctx =>
@@ -81,11 +82,13 @@ public sealed class RateLimitingMiddlewareTests
         // Assert
         Assert.True(nextCalled, "Next delegate should have been invoked for a request under the limit.");
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(UnderLimit_AllowsRequest));
     }
 
     [Fact]
     public async Task OverLimit_Returns429WithErrorPayload()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(OverLimit_Returns429WithErrorPayload));
         // Arrange
         RequestDelegate next = ctx =>
         {
@@ -101,6 +104,7 @@ public sealed class RateLimitingMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Third request should be blocked
+        _loggerMock.Object.LogWarning("Testing blocked request for IP {IpAddress} (degraded path)", "10.0.0.1");
         var blockedContext = CreateContext("10.0.0.1");
         await middleware.InvokeAsync(blockedContext);
 
@@ -112,11 +116,13 @@ public sealed class RateLimitingMiddlewareTests
         var json = JsonDocument.Parse(body);
         Assert.True(json.RootElement.TryGetProperty("error", out var errorProp), "Response should contain an 'error' property.");
         Assert.Equal("Rate limit exceeded", errorProp.GetString());
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(OverLimit_Returns429WithErrorPayload));
     }
 
     [Fact]
     public async Task PerClient_Isolation_SeparateBuckets()
     {
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(PerClient_Isolation_SeparateBuckets));
         // Arrange
         RequestDelegate next = ctx =>
         {
@@ -139,6 +145,7 @@ public sealed class RateLimitingMiddlewareTests
         Assert.Equal(StatusCodes.Status200OK, clientB1.Response.StatusCode);
 
         // Client A third request -> blocked
+        _loggerMock.Object.LogWarning("Testing blocked request for IP {IpAddress} (degraded path)", "192.168.0.1");
         var clientA3 = CreateContext("192.168.0.1");
         await middleware.InvokeAsync(clientA3);
         Assert.Equal(StatusCodes.Status429TooManyRequests, clientA3.Response.StatusCode);
@@ -147,5 +154,6 @@ public sealed class RateLimitingMiddlewareTests
         var clientB2 = CreateContext("192.168.0.2");
         await middleware.InvokeAsync(clientB2);
         Assert.Equal(StatusCodes.Status200OK, clientB2.Response.StatusCode);
+        _loggerMock.Object.LogInformation("Finished test {TestName}", nameof(PerClient_Isolation_SeparateBuckets));
     }
 }
