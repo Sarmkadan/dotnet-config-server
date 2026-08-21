@@ -23,6 +23,7 @@ namespace DotnetConfigServer.Examples
 
         public VersioningAndRollback(string baseUrl)
         {
+            ArgumentException.ThrowIfNullOrEmpty(baseUrl);
             _httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
         }
 
@@ -34,6 +35,8 @@ namespace DotnetConfigServer.Examples
             string description,
             string changeNotes = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(description);
             var request = new
             {
                 description,
@@ -55,6 +58,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<List<ConfigurationVersion>> ListVersionsAsync(string configurationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var response = await _httpClient.GetAsync(
                 $"/api/v1/configurations/{configurationId}/versions");
 
@@ -70,6 +74,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task<ConfigurationVersion> GetActiveVersionAsync(string configurationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var response = await _httpClient.GetAsync(
                 $"/api/v1/configurations/{configurationId}/versions/active");
 
@@ -87,6 +92,8 @@ namespace DotnetConfigServer.Examples
             string versionId,
             string notes = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(versionId);
             var request = new { notes };
 
             var response = await _httpClient.PostAsJsonAsync(
@@ -107,6 +114,9 @@ namespace DotnetConfigServer.Examples
             string fromVersionId,
             string toVersionId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(fromVersionId);
+            ArgumentException.ThrowIfNullOrEmpty(toVersionId);
             var response = await _httpClient.GetAsync(
                 $"/api/v1/configurations/{configurationId}/versions/{fromVersionId}/diff/{toVersionId}");
 
@@ -124,6 +134,8 @@ namespace DotnetConfigServer.Examples
             string targetVersionId,
             string reason = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(targetVersionId);
             var request = new
             {
                 reason,
@@ -142,6 +154,8 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task ArchiveVersionAsync(string configurationId, string versionId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(versionId);
             var response = await _httpClient.PostAsync(
                 $"/api/v1/configurations/{configurationId}/versions/{versionId}/archive",
                 null);
@@ -154,6 +168,7 @@ namespace DotnetConfigServer.Examples
         /// </summary>
         public async Task DisplayVersionHistoryAsync(string configurationId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
             var versions = await ListVersionsAsync(configurationId);
 
             Console.WriteLine("\n=== Configuration Version History ===\n");
@@ -180,6 +195,9 @@ namespace DotnetConfigServer.Examples
             string fromVersionId,
             string toVersionId)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(fromVersionId);
+            ArgumentException.ThrowIfNullOrEmpty(toVersionId);
             var diffs = await CompareVersionsAsync(configurationId, fromVersionId, toVersionId);
 
             Console.WriteLine("\n=== Configuration Changes ===\n");
@@ -209,6 +227,8 @@ namespace DotnetConfigServer.Examples
             string changeDescription,
             Func<string, Task<bool>> validateAsync = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(changeDescription);
             // 1. Get current active version (Blue)
             var blueVersion = await GetActiveVersionAsync(configurationId);
             Console.WriteLine($"Current active version: {blueVersion.Version}");
@@ -251,6 +271,8 @@ namespace DotnetConfigServer.Examples
             string changeDescription,
             Func<string, int, Task<bool>> validateAsync = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(configurationId);
+            ArgumentException.ThrowIfNullOrEmpty(changeDescription);
             // Create new version
             var canaryVersion = await CreateVersionAsync(configurationId, changeDescription);
             Console.WriteLine($"Created canary version: {canaryVersion.Version}");
