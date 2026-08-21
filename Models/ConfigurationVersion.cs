@@ -62,6 +62,8 @@ public sealed class ConfigurationVersion
     /// </summary>
     public void Publish(string publishedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(publishedBy);
+
         if (Status == ConfigurationVersionStatus.Active)
             throw new Exceptions.ConfigurationException(
                 "This version is already published", "VERSION_ALREADY_ACTIVE");
@@ -76,6 +78,8 @@ public sealed class ConfigurationVersion
     /// </summary>
     public void Archive(string archivedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(archivedBy);
+
         if (Status == ConfigurationVersionStatus.Archived)
             throw new Exceptions.ConfigurationException(
                 "This version is already archived", "VERSION_ALREADY_ARCHIVED");
@@ -102,6 +106,8 @@ public sealed class ConfigurationVersion
     /// </summary>
     public static string IncrementVersion(string currentVersion, VersionIncrementType incrementType)
     {
+        ArgumentException.ThrowIfNullOrEmpty(currentVersion);
+
         var parts = currentVersion.Split('.');
         if (parts.Length != 3 || !int.TryParse(parts[0], out var major) ||
             !int.TryParse(parts[1], out var minor) || !int.TryParse(parts[2], out var patch))
