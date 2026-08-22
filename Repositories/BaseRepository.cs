@@ -47,6 +47,8 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
     /// </summary>
     public virtual async Task AddAsync(T entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
         try
         {
             await _dbSet.AddAsync(entity);
@@ -63,6 +65,8 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
     /// </summary>
     public virtual async Task UpdateAsync(T entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
         try
         {
             _dbSet.Update(entity);
@@ -80,6 +84,8 @@ public abstract class BaseRepository<T> : IRepository<T> where T : class
     /// </summary>
     public virtual async Task DeleteAsync(T entity)
     {
+        ArgumentNullException.ThrowIfNull(entity);
+
         try
         {
             _dbSet.Remove(entity);
