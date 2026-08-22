@@ -39,6 +39,7 @@ public sealed class ConfigurationKeyRepository : BaseRepository<ConfigurationKey
 
     public async Task<ConfigurationKey?> GetByKeyNameAsync(Guid configurationId, string keyName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(keyName);
         _logger.LogInformation("Getting configuration key {KeyName} for configuration {ConfigurationId}", keyName, configurationId);
         var result = await _dbSet.FirstOrDefaultAsync(k =>
             k.ConfigurationId == configurationId && k.Key == keyName && k.IsActive);
@@ -86,6 +87,7 @@ public sealed class ConfigurationVersionRepository : BaseRepository<Configuratio
 
     public async Task<ConfigurationVersion?> GetByVersionNumberAsync(Guid configurationId, string versionNumber)
     {
+        ArgumentException.ThrowIfNullOrEmpty(versionNumber);
         return await _dbSet.FirstOrDefaultAsync(v =>
             v.ConfigurationId == configurationId && v.VersionNumber == versionNumber);
     }
@@ -215,18 +217,22 @@ public sealed class AuditLogRepository : BaseRepository<AuditLog>, IAuditLogRepo
 
     public async Task<List<AuditLog>> GetByUserAsync(string userId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
         return await _dbSet.Where(a => a.UserId == userId)
             .OrderByDescending(a => a.Timestamp).ToListAsync();
     }
 
     public async Task<List<AuditLog>> GetByEntityAsync(string entityType, string entityId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(entityType);
+        ArgumentException.ThrowIfNullOrEmpty(entityId);
         return await _dbSet.Where(a => a.EntityType == entityType && a.EntityId == entityId)
             .OrderByDescending(a => a.Timestamp).ToListAsync();
     }
 
     public async Task<List<AuditLog>> GetByEntityIdAsync(string entityId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(entityId);
         return await _dbSet.Where(a => a.EntityId == entityId)
             .OrderByDescending(a => a.Timestamp).ToListAsync();
     }
@@ -242,6 +248,7 @@ public sealed class EncryptionKeyRepository : BaseRepository<EncryptionKey>, IEn
 
     public async Task<EncryptionKey?> GetByKeyIdAsync(string keyId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(keyId);
         return await _dbSet.FirstOrDefaultAsync(k => k.KeyId == keyId && k.IsActive);
     }
 
@@ -275,11 +282,13 @@ public sealed class ApplicationRepository : BaseRepository<Application>, IApplic
 
     public async Task<Application?> GetBySlugAsync(string slug)
     {
+        ArgumentException.ThrowIfNullOrEmpty(slug);
         return await _dbSet.FirstOrDefaultAsync(a => a.Slug == slug && a.IsActive);
     }
 
     public async Task<Application?> GetByApiKeyAsync(string apiKey)
     {
+        ArgumentException.ThrowIfNullOrEmpty(apiKey);
         return await _dbSet.FirstOrDefaultAsync(a => a.ApiKey == apiKey && a.IsActive);
     }
 
