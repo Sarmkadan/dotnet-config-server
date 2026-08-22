@@ -58,6 +58,11 @@ public sealed class ValidationRuleServiceTests
         var configurationId = Guid.NewGuid();
         var versionId = Guid.NewGuid();
         var ruleId = Guid.NewGuid();
+        _loggerMock.Object.LogInformation(
+            "Validating configuration {ConfigurationId} version {VersionId} against regex rule {RuleId}",
+            configurationId,
+            versionId,
+            ruleId);
         var keys = new List<ConfigurationKey>
         {
             new()
@@ -96,10 +101,19 @@ public sealed class ValidationRuleServiceTests
 
         var result = await _sut.ValidateConfigurationAsync(configurationId, null);
 
+        _loggerMock.Object.LogWarning(
+            "Configuration {ConfigurationId} violated regex rule {RuleId} for key {KeyName}",
+            configurationId,
+            ruleId,
+            "ApiKey");
         result.IsValid.Should().BeFalse();
         result.Violations.Should().ContainSingle();
         result.Violations[0].RuleId.Should().Be(ruleId);
         result.Violations[0].KeyName.Should().Be("ApiKey");
+        _loggerMock.Object.LogInformation(
+            "Completed validation for configuration {ConfigurationId}: detected {ViolationCount} violation(s)",
+            configurationId,
+            result.Violations.Count);
     }
 
     /// <summary>
@@ -113,6 +127,10 @@ public sealed class ValidationRuleServiceTests
     {
         var configurationId = Guid.NewGuid();
         var versionId = Guid.NewGuid();
+        _loggerMock.Object.LogInformation(
+            "Validating configuration {ConfigurationId} version {VersionId} expecting all keys to satisfy rules",
+            configurationId,
+            versionId);
         var keys = new List<ConfigurationKey>
         {
             new()
@@ -145,6 +163,9 @@ public sealed class ValidationRuleServiceTests
 
         result.IsValid.Should().BeTrue();
         result.Violations.Should().BeEmpty();
+        _loggerMock.Object.LogInformation(
+            "Completed validation for configuration {ConfigurationId}: no violations detected",
+            configurationId);
     }
 
     /// <summary>
@@ -165,6 +186,12 @@ public sealed class ValidationRuleServiceTests
             TargetKeyPattern = "^ServiceUrl$"
         };
 
+        _loggerMock.Object.LogInformation(
+            "Creating validation rule {RuleName} for configuration {ConfigurationId} by {CreatedBy}",
+            rule.Name,
+            configurationId,
+            "admin");
+
         _validationRuleRepositoryMock.Setup(r => r.AddAsync(It.IsAny<ValidationRule>())).Returns(Task.CompletedTask);
         _validationRuleRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
@@ -175,6 +202,10 @@ public sealed class ValidationRuleServiceTests
         result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         _validationRuleRepositoryMock.Verify(r => r.AddAsync(It.Is<ValidationRule>(created => created.Name == "URL validation")), Times.Once);
         _validationRuleRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _loggerMock.Object.LogInformation(
+            "Created validation rule {RuleName} for configuration {ConfigurationId}",
+            result.Name,
+            result.ConfigurationId);
     }
 
     /// <summary>
@@ -187,6 +218,10 @@ public sealed class ValidationRuleServiceTests
     {
         var configurationId = Guid.NewGuid();
         var versionId = Guid.NewGuid();
+        _loggerMock.Object.LogInformation(
+            "Validating configuration {ConfigurationId} version {VersionId} expecting missing required key",
+            configurationId,
+            versionId);
         var keys = new List<ConfigurationKey>();
         var rules = new List<ValidationRule>
         {
@@ -204,10 +239,17 @@ public sealed class ValidationRuleServiceTests
 
         var result = await _sut.ValidateConfigurationAsync(configurationId, versionId);
 
+        _loggerMock.Object.LogWarning(
+            "Configuration {ConfigurationId} is missing required key matching pattern {TargetKeyPattern}",
+            configurationId,
+            "^ApiKey$");
         result.IsValid.Should().BeFalse();
         result.Violations.Should().ContainSingle();
         result.Violations[0].KeyName.Should().Be("^ApiKey$");
         result.Violations[0].Message.Should().Be("Required key is missing.");
+        _loggerMock.Object.LogInformation(
+            "Completed validation for configuration {ConfigurationId}: missing required key reported",
+            configurationId);
     }
 
     /// <summary>
@@ -244,13 +286,27 @@ public sealed class ValidationRuleServiceTests
             }
         };
 
+        _loggerMock.Object.LogInformation(
+            "Validating configuration {ConfigurationId} version {VersionId} against {RuleCount} rules",
+            configurationId,
+            versionId,
+            rules.Count);
+
         _configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(keys);
         _validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(rules);
 
         var result = await _sut.ValidateConfigurationAsync(configurationId, versionId);
 
+        _loggerMock.Object.LogWarning(
+            "Configuration {ConfigurationId} produced {ViolationCount} violations across multiple rules",
+            configurationId,
+            result.Violations.Count);
         result.IsValid.Should().BeFalse();
         result.Violations.Should().HaveCount(2);
+        _loggerMock.Object.LogInformation(
+            "Completed validation for configuration {ConfigurationId}: aggregated {ViolationCount} violations",
+            configurationId,
+            result.Violations.Count);
     }
 
     /// <summary>
@@ -284,6 +340,12 @@ public sealed class ValidationRuleServiceTests
             IsActive = false
         };
 
+        _loggerMock.Object.LogInformation(
+            "Updating validation rule {RuleId} from {OldName} to {NewName}",
+            ruleId,
+            existingRule.Name,
+            updatedRule.Name);
+
         _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync(existingRule);
         _validationRuleRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<ValidationRule>())).Returns(Task.CompletedTask);
         _validationRuleRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
@@ -296,6 +358,11 @@ public sealed class ValidationRuleServiceTests
         result.TargetKeyPattern.Should().Be("^newKey$");
         result.IsActive.Should().BeFalse();
         result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        _loggerMock.Object.LogInformation(
+            "Updated validation rule {RuleId}; new type {RuleType}, active {IsActive}",
+            ruleId,
+            result.RuleType,
+            result.IsActive);
     }
 
     /// <summary>
@@ -308,8 +375,15 @@ public sealed class ValidationRuleServiceTests
         var ruleId = Guid.NewGuid();
         var updatedRule = new ValidationRule { Id = ruleId, Name = "Test" };
 
+        _loggerMock.Object.LogInformation(
+            "Attempting to update validation rule {RuleId} that may not exist",
+            ruleId);
+
         _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync((ValidationRule?)null);
 
+        _loggerMock.Object.LogWarning(
+            "Update aborted: validation rule {RuleId} was not found",
+            ruleId);
         await Assert.ThrowsAsync<DotnetConfigServer.Exceptions.ConfigurationNotFoundException>(
             () => _sut.UpdateRuleAsync(ruleId, updatedRule, "admin"));
     }
@@ -324,6 +398,10 @@ public sealed class ValidationRuleServiceTests
         var ruleId = Guid.NewGuid();
         var existingRule = new ValidationRule { Id = ruleId, Name = "Test" };
 
+        _loggerMock.Object.LogInformation(
+            "Deleting validation rule {RuleId}",
+            ruleId);
+
         _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync(existingRule);
         _validationRuleRepositoryMock.Setup(r => r.DeleteAsync(It.IsAny<ValidationRule>())).Returns(Task.CompletedTask);
         _validationRuleRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
@@ -332,6 +410,9 @@ public sealed class ValidationRuleServiceTests
 
         _validationRuleRepositoryMock.Verify(r => r.DeleteAsync(It.Is<ValidationRule>(r => r.Id == ruleId)), Times.Once);
         _validationRuleRepositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _loggerMock.Object.LogInformation(
+            "Deleted validation rule {RuleId}",
+            ruleId);
     }
 
     /// <summary>
@@ -343,8 +424,15 @@ public sealed class ValidationRuleServiceTests
     {
         var ruleId = Guid.NewGuid();
 
+        _loggerMock.Object.LogInformation(
+            "Attempting to delete validation rule {RuleId} that may not exist",
+            ruleId);
+
         _validationRuleRepositoryMock.Setup(r => r.GetByIdAsync(ruleId)).ReturnsAsync((ValidationRule?)null);
 
+        _loggerMock.Object.LogWarning(
+            "Delete aborted: validation rule {RuleId} was not found",
+            ruleId);
         await Assert.ThrowsAsync<DotnetConfigServer.Exceptions.ConfigurationNotFoundException>(
             () => _sut.DeleteRuleAsync(ruleId));
     }
@@ -360,6 +448,11 @@ public sealed class ValidationRuleServiceTests
         var configurationId = Guid.NewGuid();
         var versionId = Guid.NewGuid();
 
+        _loggerMock.Object.LogInformation(
+            "Validating configuration {ConfigurationId} version {VersionId} with no applicable rules",
+            configurationId,
+            versionId);
+
         _configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(new List<ConfigurationKey>());
         _validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(new List<ValidationRule>());
 
@@ -367,5 +460,8 @@ public sealed class ValidationRuleServiceTests
 
         result.IsValid.Should().BeTrue();
         result.Violations.Should().BeEmpty();
+        _loggerMock.Object.LogInformation(
+            "Completed validation for configuration {ConfigurationId}: valid with no rules applied",
+            configurationId);
     }
 }
