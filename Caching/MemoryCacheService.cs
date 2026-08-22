@@ -22,6 +22,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public MemoryCacheService(ILogger<MemoryCacheService> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _cache = new ConcurrentDictionary<string, CacheEntry>();
         _logger = logger;
         _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
@@ -29,6 +30,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<T?> GetAsync<T>(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if (_cache.TryGetValue(key, out var entry))
         {
             if (entry.IsExpired)
@@ -48,6 +50,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         var entry = new CacheEntry(value, expiration);
         _cache[key] = entry;
         RecordSet();
@@ -56,6 +59,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task RemoveAsync(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         _cache.TryRemove(key, out _);
         RecordDelete();
         await Task.CompletedTask;
@@ -63,6 +67,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task RemoveAsync(IEnumerable<string> keys)
     {
+        ArgumentNullException.ThrowIfNull(keys);
         foreach (var key in keys)
         {
             _cache.TryRemove(key, out _);
@@ -74,6 +79,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<bool> ExistsAsync(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         if (_cache.TryGetValue(key, out var entry))
         {
             if (!entry.IsExpired)
@@ -87,6 +93,8 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(factory);
         var cached = await GetAsync<T>(key);
         if (cached is not null)
             return cached;
@@ -104,6 +112,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<IEnumerable<string>> GetKeysAsync(string pattern)
     {
+        ArgumentException.ThrowIfNullOrEmpty(pattern);
         return await Task.FromResult(
             _cache.Keys.Where(k => k.Contains(pattern, StringComparison.OrdinalIgnoreCase))
         );
