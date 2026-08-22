@@ -18,12 +18,16 @@ namespace DotnetConfigServer.Tests
     public sealed class ConfigurationImportServiceTests
     {
         private readonly ConfigurationImportService _service;
+        private readonly ILogger<ConfigurationImportServiceTests> _logger;
         private readonly Guid _testConfigurationId = Guid.NewGuid();
 
         public ConfigurationImportServiceTests()
         {
             var loggerMock = new Mock<ILogger<ConfigurationImportService>>();
             _service = new ConfigurationImportService(loggerMock.Object);
+
+            var testLoggerMock = new Mock<ILogger<ConfigurationImportServiceTests>>();
+            _logger = testLoggerMock.Object;
         }
 
         // ====================================================================
@@ -37,9 +41,9 @@ namespace DotnetConfigServer.Tests
             var json = "{\r\n    \"database.host\": \"localhost\",\r\n    \"database.port\": \"5432\",\r\n    \"api.key\": \"secret123\"\r\n}";
 
             // Act
-                        _logger.LogInformation("Starting JSON import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId} ({PayloadLength} characters)", "json", _testConfigurationId, json.Length);
             var result = await _service.ImportFromJsonAsync(json, _testConfigurationId);
-            _logger.LogInformation("Finished JSON import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "json", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().NotBeNull();
@@ -70,9 +74,10 @@ namespace DotnetConfigServer.Tests
             var json = "{}";
 
             // Act
-                        _logger.LogInformation("Starting JSON import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "json", _testConfigurationId);
             var result = await _service.ImportFromJsonAsync(json, _testConfigurationId);
-            _logger.LogInformation("Finished JSON import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "json", _testConfigurationId, result.Count);
+            _logger.LogWarning("Degraded path exercised: {Format} import yielded no keys for configuration {ConfigurationId}", "json", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -86,7 +91,19 @@ namespace DotnetConfigServer.Tests
             var malformedJson = "{ invalid";
 
             // Act & Assert
-            var act = async () => await _service.ImportFromJsonAsync(malformedJson, _testConfigurationId);
+            _logger.LogWarning("Degraded path exercised: rejecting malformed {Format} payload for configuration {ConfigurationId}", "json", _testConfigurationId);
+            var act = async () =>
+            {
+                try
+                {
+                    await _service.ImportFromJsonAsync(malformedJson, _testConfigurationId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Format} import failed for configuration {ConfigurationId}: {ErrorMessage}", "json", _testConfigurationId, ex.Message);
+                    throw;
+                }
+            };
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Invalid JSON format*");
         }
@@ -98,7 +115,19 @@ namespace DotnetConfigServer.Tests
             string? nullJson = null;
 
             // Act & Assert
-            var act = async () => await _service.ImportFromJsonAsync(nullJson!, _testConfigurationId);
+            _logger.LogWarning("Degraded path exercised: rejecting null {Format} payload for configuration {ConfigurationId}", "json", _testConfigurationId);
+            var act = async () =>
+            {
+                try
+                {
+                    await _service.ImportFromJsonAsync(nullJson!, _testConfigurationId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Format} import failed for configuration {ConfigurationId}: {ErrorMessage}", "json", _testConfigurationId, ex.Message);
+                    throw;
+                }
+            };
             await act.Should().ThrowAsync<ArgumentNullException>();
         }
 
@@ -109,7 +138,10 @@ namespace DotnetConfigServer.Tests
             var jsonArray = "[\"item1\", \"item2\"]";
 
             // Act
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "json", _testConfigurationId);
             var result = await _service.ImportFromJsonAsync(jsonArray, _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "json", _testConfigurationId, result.Count);
+            _logger.LogWarning("Degraded path exercised: unsupported {Format} payload shape yielded no keys for configuration {ConfigurationId}", "json", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -131,9 +163,9 @@ namespace DotnetConfigServer.Tests
                      "api.key,secret123\n";
 
             // Act
-                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId} ({RowCount} rows)", "csv", _testConfigurationId, 4);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
-            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "csv", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().NotBeNull();
@@ -156,9 +188,10 @@ namespace DotnetConfigServer.Tests
             var csv = string.Empty;
 
             // Act
-                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
-            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "csv", _testConfigurationId, result.Count);
+            _logger.LogWarning("Degraded path exercised: empty {Format} payload yielded no keys for configuration {ConfigurationId}", "csv", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -172,9 +205,10 @@ namespace DotnetConfigServer.Tests
             var csv = "Key,Value";
 
             // Act
-                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
-            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "csv", _testConfigurationId, result.Count);
+            _logger.LogWarning("Degraded path exercised: header-only {Format} payload yielded no keys for configuration {ConfigurationId}", "csv", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -188,7 +222,19 @@ namespace DotnetConfigServer.Tests
             var csv = "Column1,Column2\nvalue1,value2\n";
 
             // Act & Assert
-            var act = async () => await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogWarning("Degraded path exercised: rejecting {Format} payload with missing required columns for configuration {ConfigurationId}", "csv", _testConfigurationId);
+            var act = async () =>
+            {
+                try
+                {
+                    await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "{Format} import failed for configuration {ConfigurationId}: {ErrorMessage}", "csv", _testConfigurationId, ex.Message);
+                    throw;
+                }
+            };
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("CSV must contain 'Key' and 'Value' columns*");
         }
@@ -200,9 +246,9 @@ namespace DotnetConfigServer.Tests
             var csv = "Key,Value\n  database.host  ,  localhost  \n";
 
             // Act
-                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
-            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "csv", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().HaveCount(1);
@@ -218,9 +264,9 @@ namespace DotnetConfigServer.Tests
                      "database.host,localhost,Database host,string\n";
 
             // Act
-                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
-            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "csv", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().HaveCount(1);
@@ -242,7 +288,9 @@ namespace DotnetConfigServer.Tests
                            "API_KEY=secret123\n";
 
             // Act
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "env", _testConfigurationId);
             var result = await _service.ImportFromEnvAsync(envContent, _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "env", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().NotBeNull();
@@ -265,7 +313,10 @@ namespace DotnetConfigServer.Tests
             var envContent = string.Empty;
 
             // Act
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "env", _testConfigurationId);
             var result = await _service.ImportFromEnvAsync(envContent, _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "env", _testConfigurationId, result.Count);
+            _logger.LogWarning("Degraded path exercised: empty {Format} payload yielded no keys for configuration {ConfigurationId}", "env", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -284,7 +335,9 @@ namespace DotnetConfigServer.Tests
                            "KEY2=value2\n";
 
             // Act
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "env", _testConfigurationId);
             var result = await _service.ImportFromEnvAsync(envContent, _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "env", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().HaveCount(2);
@@ -301,7 +354,10 @@ namespace DotnetConfigServer.Tests
                            "KEY2=value2\n";
 
             // Act
+            _logger.LogInformation("Starting {Format} import for configuration {ConfigurationId}", "env", _testConfigurationId);
+            _logger.LogWarning("Degraded path exercised: {Format} payload contains lines without '=' which will be skipped for configuration {ConfigurationId}", "env", _testConfigurationId);
             var result = await _service.ImportFromEnvAsync(envContent, _testConfigurationId);
+            _logger.LogInformation("Finished {Format} import for configuration {ConfigurationId} with {ResultCount} keys parsed", "env", _testConfigurationId, result.Count);
 
             // Assert
             result.Should().HaveCount(2);
@@ -320,7 +376,9 @@ namespace DotnetConfigServer.Tests
             var validJson = "{\r\n    \"key1\": \"value1\",\r\n    \"key2\": \"value2\"\r\n}";
 
             // Act
+            _logger.LogInformation("Validating {Format} payload for configuration {ConfigurationId}", "json", _testConfigurationId);
             var result = await _service.ValidateAsync(validJson, "json");
+            _logger.LogInformation("Validation completed for {Format} payload: {IsValid}", "json", result.IsValid);
 
             // Assert
             result.Should().NotBeNull();
@@ -335,7 +393,9 @@ namespace DotnetConfigServer.Tests
             var invalidJson = "{ invalid";
 
             // Act
+            _logger.LogInformation("Validating {Format} payload for configuration {ConfigurationId}", "json", _testConfigurationId);
             var result = await _service.ValidateAsync(invalidJson, "json");
+            _logger.LogWarning("Degraded path exercised: validation rejected malformed {Format} payload with {ErrorCount} errors", "json", result.Errors.Count);
 
             // Assert
             result.Should().NotBeNull();
@@ -350,7 +410,9 @@ namespace DotnetConfigServer.Tests
             var validCsv = "Key,Value\nkey1,value1\n";
 
             // Act
+            _logger.LogInformation("Validating {Format} payload for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ValidateAsync(validCsv, "csv");
+            _logger.LogInformation("Validation completed for {Format} payload: {IsValid}", "csv", result.IsValid);
 
             // Assert
             result.Should().NotBeNull();
@@ -365,7 +427,9 @@ namespace DotnetConfigServer.Tests
             var invalidCsv = "invalid";
 
             // Act
+            _logger.LogInformation("Validating {Format} payload for configuration {ConfigurationId}", "csv", _testConfigurationId);
             var result = await _service.ValidateAsync(invalidCsv, "csv");
+            _logger.LogWarning("Degraded path exercised: validation rejected malformed {Format} payload with {ErrorCount} errors", "csv", result.Errors.Count);
 
             // Assert
             result.Should().NotBeNull();
@@ -380,7 +444,9 @@ namespace DotnetConfigServer.Tests
             var validEnv = "KEY1=value1\nKEY2=value2\n";
 
             // Act
+            _logger.LogInformation("Validating {Format} payload for configuration {ConfigurationId}", "env", _testConfigurationId);
             var result = await _service.ValidateAsync(validEnv, "env");
+            _logger.LogInformation("Validation completed for {Format} payload: {IsValid}", "env", result.IsValid);
 
             // Assert
             result.Should().NotBeNull();
@@ -395,7 +461,9 @@ namespace DotnetConfigServer.Tests
             var data = "some data";
 
             // Act
+            _logger.LogWarning("Degraded path exercised: validating payload with unknown format {Format}", "invalid_format");
             var result = await _service.ValidateAsync(data, "invalid_format");
+            _logger.LogWarning("Unknown format {Format} fell back to invalid result with {ErrorCount} errors", "invalid_format", result.Errors.Count);
 
             // Assert
             result.Should().NotBeNull();
