@@ -17,10 +17,12 @@ namespace DotnetConfigServer.Tests.Events;
 public class EventBusTests
 {
     private readonly EventBus _eventBus;
+    private readonly ILogger<EventBusTests> _logger;
 
     public EventBusTests()
     {
         _eventBus = new EventBus(new NullLogger<EventBus>());
+        _logger = new NullLogger<EventBusTests>();
     }
 
     private sealed class NullLogger<T> : ILogger<T>
