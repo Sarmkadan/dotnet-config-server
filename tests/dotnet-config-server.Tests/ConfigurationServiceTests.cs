@@ -52,6 +52,7 @@ public class ConfigurationServiceTests
         string userId = "user1";
 
         // Act
+        _loggerMock.Object.LogInformation("Creating configuration {ConfigId} for user {UserId}", config.Id, userId);
         var result = await _service.CreateAsync(config, userId);
 
         // Assert
@@ -75,6 +76,7 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Setup(x => x.GetByIdAsync(config.ParentConfigurationId.Value)).ReturnsAsync((Configuration?)null);
 
         // Act
+        _loggerMock.Object.LogInformation("Creating configuration {ConfigId} with parent {ParentConfigId}", config.Id, config.ParentConfigurationId);
         Func<Task> act = () => _service.CreateAsync(config, "user1");
 
         // Assert
@@ -95,6 +97,7 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(existingConfig);
 
         // Act
+        _loggerMock.Object.LogInformation("Updating configuration {ConfigId} for user {UserId}", id, "user1");
         var result = await _service.UpdateAsync(id, newConfig, "user1");
 
         // Assert
@@ -115,6 +118,7 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Setup(x => x.GetByIdAsync(id)).ReturnsAsync(config);
 
         // Act
+        _loggerMock.Object.LogInformation("Deleting configuration {ConfigId} for user {UserId}", id, "user1");
         await _service.DeleteAsync(id, "user1");
 
         // Assert
@@ -136,6 +140,7 @@ public class ConfigurationServiceTests
         _configRepositoryMock.Setup(x => x.GetByIdAsync(configId)).ReturnsAsync(config);
 
         // Act
+        _loggerMock.Object.LogInformation("Adding key {Key} to configuration {ConfigId}", key.Key, configId);
         var result = await _service.AddKeyAsync(configId, key, "user1");
 
         // Assert
