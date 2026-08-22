@@ -37,7 +37,9 @@ namespace DotnetConfigServer.Tests
             var json = "{\r\n    \"database.host\": \"localhost\",\r\n    \"database.port\": \"5432\",\r\n    \"api.key\": \"secret123\"\r\n}";
 
             // Act
+                        _logger.LogInformation("Starting JSON import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromJsonAsync(json, _testConfigurationId);
+            _logger.LogInformation("Finished JSON import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -68,7 +70,9 @@ namespace DotnetConfigServer.Tests
             var json = "{}";
 
             // Act
+                        _logger.LogInformation("Starting JSON import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromJsonAsync(json, _testConfigurationId);
+            _logger.LogInformation("Finished JSON import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -127,7 +131,9 @@ namespace DotnetConfigServer.Tests
                      "api.key,secret123\n";
 
             // Act
+                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -150,7 +156,9 @@ namespace DotnetConfigServer.Tests
             var csv = string.Empty;
 
             // Act
+                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -164,7 +172,9 @@ namespace DotnetConfigServer.Tests
             var csv = "Key,Value";
 
             // Act
+                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().NotBeNull();
@@ -190,7 +200,9 @@ namespace DotnetConfigServer.Tests
             var csv = "Key,Value\n  database.host  ,  localhost  \n";
 
             // Act
+                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().HaveCount(1);
@@ -206,7 +218,9 @@ namespace DotnetConfigServer.Tests
                      "database.host,localhost,Database host,string\n";
 
             // Act
+                        _logger.LogInformation("Starting CSV import for configuration {ConfigurationId}", _testConfigurationId);
             var result = await _service.ImportFromCsvAsync(csv, _testConfigurationId);
+            _logger.LogInformation("Finished CSV import for configuration {ConfigurationId}", _testConfigurationId);
 
             // Assert
             result.Should().HaveCount(1);
