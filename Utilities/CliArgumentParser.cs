@@ -17,6 +17,8 @@ public sealed class CliArgumentParser
 
     public CliArgumentParser(string[] args, ILogger<CliArgumentParser> logger)
     {
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
         _logger.LogInformation("Initializing CliArgumentParser with {ArgCount} arguments", args.Length);
         _arguments = ParseArguments(args);
@@ -27,6 +29,7 @@ public sealed class CliArgumentParser
     /// </summary>
     public string? GetValue(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         return _arguments.TryGetValue(NormalizeKey(key), out var value) ? value : null;
     }
 
@@ -35,6 +38,8 @@ public sealed class CliArgumentParser
     /// </summary>
     public string GetValue(string key, string defaultValue)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentException.ThrowIfNullOrEmpty(defaultValue);
         return GetValue(key) ?? defaultValue;
     }
 
@@ -43,6 +48,7 @@ public sealed class CliArgumentParser
     /// </summary>
     public bool HasFlag(string flag)
     {
+        ArgumentException.ThrowIfNullOrEmpty(flag);
         return _arguments.ContainsKey(NormalizeKey(flag));
     }
 
@@ -51,6 +57,7 @@ public sealed class CliArgumentParser
     /// </summary>
     public int? GetIntValue(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         var value = GetValue(key);
         return int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var result) ? result : null;
     }
@@ -60,6 +67,7 @@ public sealed class CliArgumentParser
     /// </summary>
     public bool GetBoolValue(string key, bool defaultValue = false)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         var value = GetValue(key);
         return value is null ? defaultValue : bool.TryParse(value, out var result) ? result : defaultValue;
     }
@@ -94,6 +102,7 @@ Examples:
     /// </summary>
     public bool ValidateRequired(params string[] requiredArgs)
     {
+        ArgumentNullException.ThrowIfNull(requiredArgs);
         var missing = requiredArgs.Where(arg => !HasFlag(arg) && GetValue(arg) is null).ToList();
 
         if (missing.Count > 0)
