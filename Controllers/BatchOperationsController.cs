@@ -25,6 +25,9 @@ public sealed class BatchOperationsController : ControllerBase
         IBatchOperationService batchService,
         ILogger<BatchOperationsController> logger)
     {
+        ArgumentNullException.ThrowIfNull(batchService);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _batchService = batchService;
         _logger = logger;
     }
