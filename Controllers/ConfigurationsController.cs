@@ -44,6 +44,7 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] Configuration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
         try
         {
             var userId = User.Identity?.Name ?? "system";
@@ -111,6 +112,7 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] Configuration configuration)
     {
+        ArgumentNullException.ThrowIfNull(configuration);
         try
         {
             var userId = User.Identity?.Name ?? "system";
@@ -183,6 +185,7 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(typeof(ConfigurationKey), StatusCodes.Status201Created)]
     public async Task<IActionResult> AddKey([FromRoute] Guid configurationId, [FromBody] ConfigurationKey key)
     {
+        ArgumentNullException.ThrowIfNull(key);
         try
         {
             var userId = User.Identity?.Name ?? "system";
@@ -211,6 +214,7 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(typeof(List<Configuration>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Search([FromQuery] string query, [FromQuery] Guid? applicationId = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(query);
         try
         {
             var results = await _configurationService.SearchAsync(query, applicationId);
