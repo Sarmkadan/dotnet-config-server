@@ -24,6 +24,8 @@ public sealed class AuditLogsController : ControllerBase
 
     public AuditLogsController(IAuditLogRepository repository, ILogger<AuditLogsController> logger)
     {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(logger);
         _repository = repository;
         _logger = logger;
     }
@@ -38,6 +40,7 @@ public sealed class AuditLogsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
+        ArgumentException.ThrowIfNullOrEmpty(entityId);
         try
         {
             var logs = await _repository.GetByEntityIdAsync(entityId);
@@ -75,6 +78,7 @@ public sealed class AuditLogsController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
+        ArgumentException.ThrowIfNullOrEmpty(userId);
         try
         {
             var logs = await _repository.GetByUserAsync(userId);
