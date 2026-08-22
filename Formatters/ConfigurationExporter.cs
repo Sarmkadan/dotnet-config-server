@@ -148,6 +148,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportAsCsv(IEnumerable<Configuration> configurations)
     {
+        ArgumentNullException.ThrowIfNull(configurations);
+
         using var sw = new StringWriter();
         WriteAsCsv(sw, configurations);
         return sw.ToString();
@@ -180,6 +182,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportKeysAsCsv(IEnumerable<ConfigurationKey> keys)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+
         using var sw = new StringWriter();
         WriteKeysAsCsv(sw, keys);
         return sw.ToString();
@@ -216,6 +220,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportAsXml(IEnumerable<Configuration> configurations)
     {
+        ArgumentNullException.ThrowIfNull(configurations);
+
         using var sw = new StringWriter();
         WriteAsXml(sw, configurations);
         return sw.ToString();
@@ -247,6 +253,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportKeysAsXml(IEnumerable<ConfigurationKey> keys)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+
         using var sw = new StringWriter();
         WriteKeysAsXml(sw, keys);
         return sw.ToString();
@@ -269,6 +277,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportAsEnvFormat(IEnumerable<ConfigurationKey> keys)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+
         using var sw = new StringWriter();
         WriteAsEnvFormat(sw, keys);
         return sw.ToString();
@@ -299,6 +309,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportAsYaml(IEnumerable<Configuration> configurations)
     {
+        ArgumentNullException.ThrowIfNull(configurations);
+
         using var sw = new StringWriter();
         WriteAsYaml(sw, configurations);
         return sw.ToString();
@@ -324,6 +336,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportKeysAsYaml(IEnumerable<ConfigurationKey> keys)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+
         using var sw = new StringWriter();
         WriteKeysAsYaml(sw, keys);
         return sw.ToString();
@@ -334,6 +348,8 @@ public sealed class ConfigurationExporter
     // ------------------------------------------------------------------------
     public static string ExportAsJson(IEnumerable<Configuration> configurations, bool pretty = true)
     {
+        ArgumentNullException.ThrowIfNull(configurations);
+
         var data = configurations.Select(c => new
         {
             c.Id,
@@ -359,6 +375,8 @@ public sealed class ConfigurationExporter
 
     public static string ExportKeysAsJson(IEnumerable<ConfigurationKey> keys, bool pretty = true)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+
         var data = keys.Select(k => new
         {
             k.Id,
