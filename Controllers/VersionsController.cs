@@ -106,6 +106,7 @@ public sealed class VersionsController : ControllerBase
     [ProducesResponseType(typeof(ConfigurationVersion), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateVersion([FromRoute] Guid configurationId, [FromBody] CreateVersionRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
         try
         {
             var userId = User.Identity?.Name ?? "system";
