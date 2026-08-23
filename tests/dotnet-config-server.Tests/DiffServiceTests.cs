@@ -95,6 +95,8 @@ public sealed class DiffServiceTests
         var userId = "test-user";
         var configurationId = Guid.NewGuid();
 
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_FromVersionNotFound_ThrowsConfigurationNotFoundException));
+
         _versionRepositoryMock
             .Setup(v => v.GetByIdAsync(fromVersionId))
             .ReturnsAsync((ConfigurationVersion)null!);
@@ -103,10 +105,12 @@ public sealed class DiffServiceTests
             .ReturnsAsync(CreateVersion(toVersionId, configurationId));
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff with missing from version");
         var act = () => _diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_FromVersionNotFound_ThrowsConfigurationNotFoundException));
     }
 
     /// <summary>
@@ -121,6 +125,8 @@ public sealed class DiffServiceTests
         var userId = "test-user";
         var configurationId = Guid.NewGuid();
 
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_ToVersionNotFound_ThrowsConfigurationNotFoundException));
+
         _versionRepositoryMock
             .Setup(v => v.GetByIdAsync(fromVersionId))
             .ReturnsAsync(CreateVersion(fromVersionId, configurationId));
@@ -129,10 +135,12 @@ public sealed class DiffServiceTests
             .ReturnsAsync((ConfigurationVersion)null!);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff with missing to version");
         var act = () => _diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
         await act.Should().ThrowAsync<ConfigurationNotFoundException>();
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_ToVersionNotFound_ThrowsConfigurationNotFoundException));
     }
 
     /// <summary>
@@ -146,6 +154,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_IdenticalVersions_ReturnsEmptyDiff));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -179,6 +189,7 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff for identical versions");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
@@ -191,6 +202,7 @@ public sealed class DiffServiceTests
         result.DeletedCount.Should().Be(0);
         result.TotalChanges.Should().Be(0);
         result.Changes.Should().BeEmpty();
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_IdenticalVersions_ReturnsEmptyDiff));
     }
 
     /// <summary>
@@ -204,6 +216,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_AddsKeys_DetectsAddedKeys));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -256,6 +270,7 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff with added keys");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
@@ -266,6 +281,7 @@ public sealed class DiffServiceTests
         result.Changes.Should().HaveCount(2);
         result.Changes.Should().ContainSingle(c => c.Key == "key3" && c.ChangeType == ChangeType.Added);
         result.Changes.Should().ContainSingle(c => c.Key == "key4" && c.ChangeType == ChangeType.Added);
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_AddsKeys_DetectsAddedKeys));
     }
 
     /// <summary>
@@ -279,6 +295,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_RemovesKeys_DetectsDeletedKeys));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -331,6 +349,7 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff with removed keys");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
@@ -341,6 +360,7 @@ public sealed class DiffServiceTests
         result.Changes.Should().HaveCount(2);
         result.Changes.Should().ContainSingle(c => c.Key == "key3" && c.ChangeType == ChangeType.Deleted);
         result.Changes.Should().ContainSingle(c => c.Key == "key4" && c.ChangeType == ChangeType.Deleted);
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_RemovesKeys_DetectsDeletedKeys));
     }
 
     /// <summary>
@@ -354,6 +374,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_ChangesValues_DetectsModifiedKeys));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -406,6 +428,7 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff with modified keys");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
         // Assert
@@ -418,6 +441,7 @@ public sealed class DiffServiceTests
         result.Changes[0].ChangeType.Should().Be(ChangeType.Modified);
         result.Changes[0].OldValue.Should().Be("old-value");
         result.Changes[0].NewValue.Should().Be("new-value");
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_ChangesValues_DetectsModifiedKeys));
     }
 
     /// <summary>
@@ -431,6 +455,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_IgnoreWhitespace_WhitespaceChangesNotDetected));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -483,11 +509,13 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff ignoring whitespace");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: true);
 
         // Assert
         result.TotalChanges.Should().Be(0);
         result.Changes.Should().BeEmpty();
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_IgnoreWhitespace_WhitespaceChangesNotDetected));
     }
 
     /// <summary>
@@ -501,6 +529,8 @@ public sealed class DiffServiceTests
         var fromVersionId = Guid.NewGuid();
         var toVersionId = Guid.NewGuid();
         var userId = "test-user";
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(GenerateDiffAsync_IgnoreWhitespace_ActualChangesStillDetected));
 
         var fromVersion = CreateVersion(fromVersionId, configurationId);
         var toVersion = CreateVersion(toVersionId, configurationId);
@@ -551,12 +581,14 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Generate diff ignoring whitespace but expecting changes");
         var result = await service.GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: true);
 
         // Assert
         result.TotalChanges.Should().Be(1);
         result.ModifiedCount.Should().Be(1);
         result.Changes.Should().HaveCount(1);
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(GenerateDiffAsync_IgnoreWhitespace_ActualChangesStillDetected));
     }
 
     /// <summary>
@@ -569,6 +601,8 @@ public sealed class DiffServiceTests
         var configurationId = Guid.NewGuid();
         var version1Id = Guid.NewGuid();
         var version2Id = Guid.NewGuid();
+
+        _loggerMock.Object.LogInformation("Starting test {TestName}", nameof(ComparVersionsAsync_WithChanges_ReturnsCorrectSummary));
 
         var version1 = CreateVersion(version1Id, configurationId);
         var version2 = CreateVersion(version2Id, configurationId);
@@ -610,6 +644,7 @@ public sealed class DiffServiceTests
             _loggerMock.Object);
 
         // Act
+        _loggerMock.Object.LogInformation("Act: Compare versions with changes");
         var result = await service.ComparVersionsAsync(version1Id, version2Id);
 
         // Assert
@@ -617,6 +652,7 @@ public sealed class DiffServiceTests
         result.AddedCount.Should().Be(1);
         result.ModifiedCount.Should().Be(1);
         result.DeletedCount.Should().Be(1);
+        _loggerMock.Object.LogInformation("Completed test {TestName} successfully", nameof(ComparVersionsAsync_WithChanges_ReturnsCorrectSummary));
     }
 
     /// <summary>
