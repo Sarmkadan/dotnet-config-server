@@ -22,6 +22,14 @@ public sealed class VersioningService : IVersioningService
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly ILogger<VersioningService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VersioningService"/> class
+    /// </summary>
+    /// <param name="versionRepository">Repository for configuration versions</param>
+    /// <param name="configRepository">Repository for configurations</param>
+    /// <param name="keyRepository">Repository for configuration keys</param>
+    /// <param name="auditLogRepository">Repository for audit log entries</param>
+    /// <param name="logger">Logger for diagnostic messages</param>
     public VersioningService(
         IConfigurationVersionRepository versionRepository,
         IConfigurationRepository configRepository,
@@ -43,6 +51,9 @@ public sealed class VersioningService : IVersioningService
     /// <param name="releaseNotes">Release notes for the version</param>
     /// <param name="userId">User ID creating the version</param>
     /// <param name="expectedVersionNumber">Optional: Expected current version number for optimistic concurrency check</param>
+    /// <returns>The newly created configuration version</returns>
+    /// <exception cref="ArgumentException">Thrown when release notes or user ID are null or empty</exception>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the configuration does not exist</exception>
     /// <exception cref="OptimisticConcurrencyException">Thrown when the expected version doesn't match the actual current version</exception>
     public async Task<ConfigurationVersion> CreateVersionAsync(
         Guid configurationId,
@@ -133,8 +144,10 @@ public sealed class VersioningService : IVersioningService
     }
 
     /// <summary>
-    /// Gets a configuration version
+    /// Gets a configuration version by its unique identifier
     /// </summary>
+    /// <param name="versionId">The version ID</param>
+    /// <returns>The configuration version, or null if not found</returns>
     public async Task<ConfigurationVersion?> GetVersionAsync(Guid versionId)
     {
         return await _versionRepository.GetByIdAsync(versionId);
@@ -143,6 +156,8 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Gets all versions of a configuration
     /// </summary>
+    /// <param name="configurationId">The configuration ID</param>
+    /// <returns>A list of all versions for the configuration</returns>
     public async Task<List<ConfigurationVersion>> GetVersionsAsync(Guid configurationId)
     {
         return await _versionRepository.GetByConfigurationAsync(configurationId);
@@ -151,6 +166,8 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Gets the active version
     /// </summary>
+    /// <param name="configurationId">The configuration ID</param>
+    /// <returns>The active configuration version, or null if none exists</returns>
     public async Task<ConfigurationVersion?> GetActiveVersionAsync(Guid configurationId)
     {
         return await _versionRepository.GetActiveVersionAsync(configurationId);
@@ -159,6 +176,11 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Publishes a version
     /// </summary>
+    /// <param name="versionId">The version ID</param>
+    /// <param name="userId">User ID publishing the version</param>
+    /// <returns>The published configuration version</returns>
+    /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
     public async Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId)
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
@@ -209,6 +231,11 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Archives a version
     /// </summary>
+    /// <param name="versionId">The version ID</param>
+    /// <param name="userId">User ID archiving the version</param>
+    /// <returns>The archived configuration version</returns>
+    /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
     public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId)
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
@@ -228,6 +255,11 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Deprecates a version
     /// </summary>
+    /// <param name="versionId">The version ID</param>
+    /// <param name="userId">User ID deprecating the version</param>
+    /// <returns>The deprecated configuration version</returns>
+    /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
     public async Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId)
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
@@ -247,6 +279,12 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Rolls back to a previous version
     /// </summary>
+    /// <param name="configurationId">The configuration ID</param>
+    /// <param name="previousVersionId">The ID of the version to roll back to</param>
+    /// <param name="userId">User ID performing the rollback</param>
+    /// <returns>The newly created rollback version</returns>
+    /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
+    /// <exception cref="ConfigurationNotFoundException">Thrown when the previous version does not exist</exception>
     public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId)
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
@@ -296,6 +334,8 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Gets version history
     /// </summary>
+    /// <param name="configurationId">The configuration ID</param>
+    /// <returns>A list of version summaries ordered by creation date, newest first</returns>
     public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)
     {
         var versions = await GetVersionsAsync(configurationId);
@@ -307,6 +347,9 @@ public sealed class VersioningService : IVersioningService
     /// <summary>
     /// Cleans up old versions
     /// </summary>
+    /// <param name="configurationId">The configuration ID</param>
+    /// <param name="maxVersions">Maximum number of versions to retain</param>
+    /// <returns>The number of versions archived during cleanup</returns>
     public async Task<int> CleanupOldVersionsAsync(Guid configurationId, int maxVersions)
     {
         var versions = await GetVersionsAsync(configurationId);
