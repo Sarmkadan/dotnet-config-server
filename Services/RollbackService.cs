@@ -95,19 +95,34 @@ public sealed class RollbackService : IRollbackService
     /// <inheritdoc />
     public async Task<List<RollbackRecord>> GetRollbackHistoryAsync(Guid configurationId)
     {
+        _logger.LogInformation("GetRollbackHistoryAsync called with {ConfigurationId}", configurationId);
+
         var logs = await _auditLogRepository.GetByConfigurationAsync(configurationId);
 
-        return logs
-        .Where(log => string.Equals(log.EntityType, "Rollback", StringComparison.OrdinalIgnoreCase))
-        .Select(MapRecord)
-        .OrderByDescending(record => record.PerformedAt)
-        .ToList();
+        var records = logs
+            .Where(log => string.Equals(log.EntityType, "Rollback", StringComparison.OrdinalIgnoreCase))
+            .Select(MapRecord)
+            .OrderByDescending(record => record.PerformedAt)
+            .ToList();
+
+        _logger.LogInformation(
+            "Retrieved {RecordCount} rollback records for configuration {ConfigurationId}",
+            records.Count,
+            configurationId);
+
+        return records;
     }
 
     /// <inheritdoc />
     public async Task<RollbackPreview> PreviewRollbackAsync(Guid configurationId, Guid targetVersionId, string userId)
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
+
+        _logger.LogInformation(
+            "PreviewRollbackAsync called with {ConfigurationId}, {TargetVersionId}, {UserId}",
+            configurationId,
+            targetVersionId,
+            userId);
 
         var targetVersion = await _versioningService.GetVersionAsync(targetVersionId);
         if (targetVersion is null || targetVersion.ConfigurationId != configurationId)
@@ -189,6 +204,11 @@ public sealed class RollbackService : IRollbackService
             preview.WarningMessages = requiredKeysToDelete
                 .Select(k => $"Required key '{k.Key}' would be deleted by this rollback")
                 .ToList();
+
+            _logger.LogWarning(
+                "Rollback preview for configuration {ConfigurationId} marked unsafe because {RequiredKeyCount} required key(s) would be deleted",
+                configurationId,
+                requiredKeysToDelete.Count);
         }
 
         _logger.LogInformation(
