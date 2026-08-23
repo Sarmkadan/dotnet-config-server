@@ -104,9 +104,7 @@ public sealed class ConfigurationService : IConfigurationService
         return await _configRepository.GetByApplicationIdAsync(applicationId);
     }
 
-    /// <summary>
-    /// Updates a configuration
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<Configuration> UpdateAsync(Guid id, Configuration configuration, string userId)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -182,9 +180,7 @@ public sealed class ConfigurationService : IConfigurationService
         }
     }
 
-    /// <summary>
-    /// Deletes a configuration (soft delete)
-    /// </summary>
+    /// <inheritdoc/>
     public async Task DeleteAsync(Guid id, string userId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
@@ -214,9 +210,7 @@ public sealed class ConfigurationService : IConfigurationService
         _logger.LogInformation("Configuration {ConfigId} deleted by {UserId}", id, userId);
     }
 
-    /// <summary>
-    /// Adds a key to a configuration version
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKey key, string userId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
@@ -245,9 +239,7 @@ public sealed class ConfigurationService : IConfigurationService
         return key;
     }
 
-    /// <summary>
-    /// Updates a configuration key value
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ConfigurationKey> UpdateKeyAsync(Guid keyId, string value, string userId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
@@ -288,9 +280,7 @@ public sealed class ConfigurationService : IConfigurationService
         return key;
     }
 
-    /// <summary>
-    /// Gets all keys for a configuration version, optionally resolving inheritance.
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null, bool resolveInheritance = true)
     {
         return await GetKeysInternalAsync(configurationId, versionId, resolveInheritance, new HashSet<Guid>());
@@ -403,17 +393,13 @@ public sealed class ConfigurationService : IConfigurationService
                .ToList();
     }
 
-    /// <summary>
-    /// Gets a specific configuration key
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<ConfigurationKey?> GetKeyAsync(Guid keyId)
     {
         return await _keyRepository.GetByIdAsync(keyId);
     }
 
-    /// <summary>
-    /// Deletes a configuration key
-    /// </summary>
+    /// <inheritdoc/>
     public async Task DeleteKeyAsync(Guid keyId, string userId)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
@@ -430,9 +416,7 @@ public sealed class ConfigurationService : IConfigurationService
         _logger.LogInformation("Configuration key {KeyId} deleted by {UserId}", keyId, userId);
     }
 
-    /// <summary>
-    /// Searches for configurations
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
@@ -440,17 +424,13 @@ public sealed class ConfigurationService : IConfigurationService
         return await _configRepository.SearchAsync(query, applicationId);
     }
 
-    /// <summary>
-    /// Searches for configuration keys by text and/or prefix
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> SearchKeysAsync(string? query, string? prefix, Guid? configurationId)
     {
         return await _keyRepository.SearchAsync(query, prefix, configurationId);
     }
 
-    /// <summary>
-    /// Gets configuration count for an application
-    /// </summary>
+    /// <inheritdoc/>
     public async Task<int> GetConfigurationCountAsync(Guid applicationId)
     {
         return await _configRepository.GetCountByApplicationAsync(applicationId);
