@@ -50,17 +50,27 @@ public sealed class ConfigurationDiffController : ControllerBase
     {
         try
         {
+            _logger.LogInformation(
+                "GetConfigurationDiff called with {ConfigurationId}, {FromVersionId}, {ToVersionId}",
+                configurationId, fromVersionId, toVersionId);
+
             // Validate that both versions belong to the specified configuration
             var fromVersion = await _versioningService.GetVersionAsync(fromVersionId);
             var toVersion = await _versioningService.GetVersionAsync(toVersionId);
 
             if (fromVersion is null || toVersion is null)
             {
+                _logger.LogWarning(
+                    "GetConfigurationDiff: one or both versions not found for {ConfigurationId} ({FromVersionId}, {ToVersionId})",
+                    configurationId, fromVersionId, toVersionId);
                 return NotFound(new { error = "One or both versions not found" });
             }
 
             if (fromVersion.ConfigurationId != configurationId || toVersion.ConfigurationId != configurationId)
             {
+                _logger.LogWarning(
+                    "GetConfigurationDiff: versions {FromVersionId} and {ToVersionId} do not belong to configuration {ConfigurationId}",
+                    fromVersionId, toVersionId, configurationId);
                 return NotFound(new { error = "Versions do not belong to the specified configuration" });
             }
 
@@ -70,15 +80,26 @@ public sealed class ConfigurationDiffController : ControllerBase
             // Generate the diff using DiffService
             var diff = await _diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId);
 
+            _logger.LogInformation(
+                "GetConfigurationDiff completed successfully for {ConfigurationId} between {FromVersionId} and {ToVersionId}",
+                configurationId, fromVersionId, toVersionId);
+
             return Ok(diff);
         }
-        catch (ConfigurationNotFoundException)
+        catch (ConfigurationNotFoundException ex)
         {
+            _logger.LogError(
+                ex,
+                "Failed to generate configuration diff for {ConfigurationId}: configuration or version not found",
+                configurationId);
             return NotFound(new { error = "Configuration or version not found" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating configuration diff");
+            _logger.LogError(
+                ex,
+                "Failed to generate configuration diff for {ConfigurationId} between {FromVersionId} and {ToVersionId}",
+                configurationId, fromVersionId, toVersionId);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
@@ -100,32 +121,53 @@ public sealed class ConfigurationDiffController : ControllerBase
     {
         try
         {
+            _logger.LogInformation(
+                "GetConfigurationDiffSummary called with {ConfigurationId}, {Version1Id}, {Version2Id}",
+                configurationId, version1Id, version2Id);
+
             // Validate that both versions belong to the specified configuration
             var version1 = await _versioningService.GetVersionAsync(version1Id);
             var version2 = await _versioningService.GetVersionAsync(version2Id);
 
             if (version1 is null || version2 is null)
             {
+                _logger.LogWarning(
+                    "GetConfigurationDiffSummary: one or both versions not found for {ConfigurationId} ({Version1Id}, {Version2Id})",
+                    configurationId, version1Id, version2Id);
                 return NotFound(new { error = "One or both versions not found" });
             }
 
             if (version1.ConfigurationId != configurationId || version2.ConfigurationId != configurationId)
             {
+                _logger.LogWarning(
+                    "GetConfigurationDiffSummary: versions {Version1Id} and {Version2Id} do not belong to configuration {ConfigurationId}",
+                    version1Id, version2Id, configurationId);
                 return NotFound(new { error = "Versions do not belong to the specified configuration" });
             }
 
             // Get the diff summary using DiffService
             var summary = await _diffService.ComparVersionsAsync(version1Id, version2Id);
 
+            _logger.LogInformation(
+                "GetConfigurationDiffSummary completed successfully for {ConfigurationId} between {Version1Id} and {Version2Id}",
+                configurationId, version1Id, version2Id);
+
             return Ok(summary);
         }
-        catch (ConfigurationNotFoundException)
+        catch (ConfigurationNotFoundException ex)
         {
+            _logger.LogError(
+                ex,
+                "Failed to generate configuration diff summary for {ConfigurationId}: configuration or version not found",
+                configurationId);
             return NotFound(new { error = "Configuration or version not found" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating configuration diff summary");
+            _logger.LogError(
+                ex,
+                "Failed to generate configuration diff summary for {ConfigurationId} between {Version1Id} and {Version2Id}",
+                configurationId, version1Id, version2Id);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
