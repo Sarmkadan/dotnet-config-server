@@ -16,7 +16,22 @@ namespace DotnetConfigServer.Repositories;
 /// </summary>
 public sealed class ConfigurationSnapshotRepository : BaseRepository<ConfigurationSnapshot>, IConfigurationSnapshotRepository
 {
-    public ConfigurationSnapshotRepository(ApplicationDbContext context, ILogger<ConfigurationSnapshotRepository> logger)
+    public ConfigurationSnapshotRepository(ApplicationDbContext context, ILogger<ConfigurationSnapshotRepository> logger) : base(context, logger)
+        {
+            _logger.LogInformation("Initializing ConfigurationSnapshotRepository");
+        }
+        {
+            _logger.LogInformation("Initializing ConfigurationSnapshotRepository");
+        }
+        {
+            _logger.LogInformation("Initializing ConfigurationSnapshotRepository");
+        }
+        {
+            _logger.LogInformation("Initializing ConfigurationSnapshotRepository");
+        }
+        {
+            _logger.LogInformation("Initializing ConfigurationSnapshotRepository", configurationId);
+        }
         : base(context, logger) { }
 
     public async Task<List<ConfigurationSnapshot>> GetByConfigurationAsync(Guid configurationId)
