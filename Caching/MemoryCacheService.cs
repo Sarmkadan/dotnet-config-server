@@ -113,6 +113,7 @@ public sealed class MemoryCacheService : ICacheService
     public async Task<IEnumerable<string>> GetKeysAsync(string pattern)
     {
         ArgumentException.ThrowIfNullOrEmpty(pattern);
+        _logger.LogInformation("GetKeysAsync called with {Pattern}", pattern);
         return await Task.FromResult(
             _cache.Keys.Where(k => k.Contains(pattern, StringComparison.OrdinalIgnoreCase))
         );
