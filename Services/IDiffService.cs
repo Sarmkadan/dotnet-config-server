@@ -9,7 +9,8 @@ using DotnetConfigServer.Models;
 namespace DotnetConfigServer.Services;
 
 /// <summary>
-/// Service interface for configuration version diffing
+/// Defines the contract for services that generate and manage configuration version diffs.
+/// Provides methods for diff generation, retrieval, and version comparison.
 /// </summary>
 public interface IDiffService
 {

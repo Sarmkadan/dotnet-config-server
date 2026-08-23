@@ -13,7 +13,7 @@ using DotnetConfigServer.Exceptions;
 namespace DotnetConfigServer.Services;
 
 /// <summary>
-/// Service for generating and managing configuration version diffs
+/// Service for generating and managing configuration version diffs. Implements core diff generation and retrieval operations.
 /// </summary>
 public sealed class DiffService : IDiffService
 {
