@@ -119,6 +119,8 @@ public sealed class EncryptionKey
         IsPrimary = true;
     }
 
+    public override string ToString() => $"EncryptionKey {{ Id = {Id}, Name = {Name}, KeyId = {KeyId}, Algorithm = {Algorithm}, EncryptedKey = {Convert.ToBase64String(EncryptedKey)}, Salt = {Convert.ToBase64String(Salt)} }}";
+
     /// <summary>
     /// Validates the encryption key
     /// </summary>
