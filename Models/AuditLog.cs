@@ -57,6 +57,8 @@ public sealed class AuditLog
     [Required]
     public Guid ConfigurationId { get; set; }
 
+    public override string ToString() => $"AuditLog {{ Id = {Id}, ActionType = {ActionType}, EntityType = {EntityType}, EntityId = {EntityId}, EntityName = {EntityName}, Timestamp = {Timestamp} }}";
+
     /// <summary>
     /// Creates an audit log entry for a create action
     /// </summary>
