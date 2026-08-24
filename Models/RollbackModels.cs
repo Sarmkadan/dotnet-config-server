@@ -31,6 +31,8 @@ public sealed class RollbackResult
 
     /// <summary>Gets or sets the number of keys restored into the new version.</summary>
     public int KeysRestored { get; set; }
+
+    public override string ToString() => $"RollbackResult {{ ConfigurationId = {ConfigurationId}, NewVersion = {NewVersion}, RestoredFromVersion = {RestoredFromVersion}, Reason = {Reason}, PerformedBy = {PerformedBy}, PerformedAt = {PerformedAt} }}";
 }
 
 /// <summary>
