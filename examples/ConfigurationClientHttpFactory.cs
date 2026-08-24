@@ -39,6 +39,12 @@ namespace DotnetConfigServer.Examples
         }
 
         /// <summary>
+        /// Returns a concise, informative representation of this factory.
+        /// </summary>
+        public override string ToString()
+            => $"ConfigurationClientFactory {{ BaseUrl = {_baseUrl}, ApiKey = {(string.IsNullOrEmpty(_apiKey) ? "<not set>" : "***")}, TimeoutSeconds = {_timeoutSeconds}, MaxRetries = {_maxRetries} }}";
+
+        /// <summary>
         /// Create a configured HTTP client for Config Server.
         /// </summary>
         public HttpClient CreateClient()
