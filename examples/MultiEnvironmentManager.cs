@@ -31,6 +31,12 @@ namespace DotnetConfigServer.Examples
         }
 
         /// <summary>
+        /// Returns a concise, informative representation of this manager.
+        /// </summary>
+        public override string ToString() =>
+            $"MultiEnvironmentManager {{ ApplicationId = {_applicationId}, BaseAddress = {_httpClient.BaseAddress} }}";
+
+        /// <summary>
         /// Get or create a configuration for a specific environment.
         /// </summary>
         public async Task<string> GetOrCreateEnvironmentConfigAsync(
