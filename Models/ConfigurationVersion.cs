@@ -167,6 +167,8 @@ public sealed class ConfigurationVersion
             CreatedBy = CreatedBy
         };
     }
+
+    public override string ToString() => $"ConfigurationVersion {{ Id = {Id}, ConfigurationId = {ConfigurationId}, VersionNumber = {VersionNumber}, Status = {Status}, ReleaseNotes = {ReleaseNotes}, CreatedAt = {CreatedAt} }}";
 }
 
 /// <summary>
