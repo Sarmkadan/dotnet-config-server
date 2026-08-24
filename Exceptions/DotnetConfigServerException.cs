@@ -1,9 +1,3 @@
-#nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
-
 namespace DotnetConfigServer.Exceptions;
 
 /// <summary>
@@ -27,4 +21,6 @@ public class DotnetConfigServerException : Exception
         ErrorCode = errorCode;
         Details = details;
     }
+
+    public override string ToString() => $"DotnetConfigServerException {{ ErrorCode = {ErrorCode}, Details = {Details} }}";
 }
