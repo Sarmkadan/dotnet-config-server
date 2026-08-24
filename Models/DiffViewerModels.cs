@@ -41,6 +41,9 @@ public sealed class EnrichedDiff
     /// <summary>Gets the sum of all added, modified, and deleted changes.</summary>
     public int TotalChanges => AddedCount + ModifiedCount + DeletedCount;
 
+    /// <summary>Returns a concise representation of this diff for logging and diagnostics.</summary>
+    public override string ToString() => $"EnrichedDiff {{ DiffId = {DiffId}, ConfigurationId = {ConfigurationId}, FromVersion = {FromVersion}, ToVersion = {ToVersion}, Changes = {Changes.Count}, AddedCount = {AddedCount} }}";
+
     /// <summary>Gets or sets the UTC timestamp when the diff was computed or retrieved.</summary>
     public DateTime GeneratedAt { get; set; }
 
