@@ -16,6 +16,10 @@ public abstract class DomainEvent
     public DateTime OccurredAt { get; set; } = DateTime.UtcNow;
     public string? Source { get; set; }
     public string? UserId { get; set; }
+    public Guid ConfigurationId { get; set; }
+    public Guid ApplicationId { get; set; }
+
+    public override string ToString() => $"DomainEvent {{ Id = {Id}, OccurredAt = {OccurredAt}, Source = {Source}, UserId = {UserId}, ConfigurationId = {ConfigurationId}, ApplicationId = {ApplicationId} }}";
 }
 
 /// <summary>
