@@ -37,4 +37,6 @@ public sealed class ConfigurationSnapshotOptions
     /// Gets or sets whether to skip snapshots when nothing has changed since the last snapshot
     /// </summary>
     public bool SkipIfUnchanged { get; set; } = true;
+
+    public override string ToString() => $"ConfigurationSnapshotOptions {{ Enabled = {Enabled}, IntervalMinutes = {IntervalMinutes}, DefaultUserId = {DefaultUserId}, DefaultReason = {DefaultReason}, SkipIfUnchanged = {SkipIfUnchanged} }}";
 }
