@@ -60,6 +60,8 @@ public sealed class ChangeRequest
 
     public string? AppliedBy { get; set; }
 
+    public override string ToString() => $"ChangeRequest {{ Id = {Id}, ConfigurationId = {ConfigurationId}, ConfigurationKeyId = {ConfigurationKeyId}, Operation = {Operation}, Status = {Status}, Payload = {Payload} }}";
+
     /// <summary>
     /// Approve this change request.
     /// </summary>
