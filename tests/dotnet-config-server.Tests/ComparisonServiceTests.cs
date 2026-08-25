@@ -20,6 +20,12 @@ public sealed class ComparisonServiceTests
         _sut = new ComparisonService(new KeyValueConfigDiffer(), _loggerMock.Object);
     }
 
+    public override string ToString()
+    {
+        var sample = new TestObject();
+        return $"ComparisonServiceTests {{ Id = {sample.Id}, Name = {sample.Name} }}";
+    }
+
     [Fact]
     public void Compare_DifferentObjects_ReturnsChanges()
     {
