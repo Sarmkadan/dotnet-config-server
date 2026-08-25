@@ -69,6 +69,15 @@ public sealed class ValidationRule
 
     /// <summary>Gets or sets the regex pattern that selects matching keys.</summary>
     public string? TargetKeyPattern { get; set; }
+
+    /// <summary>
+    /// Returns a string representation of the validation rule.
+    /// </summary>
+    /// <returns>A string containing the Id, Name, Description, ConfigurationId, RuleType, and Parameters.</returns>
+    public override string ToString()
+    {
+        return $"ValidationRule {{ Id = {Id}, Name = {Name}, Description = {Description}, ConfigurationId = {ConfigurationId}, RuleType = {RuleType}, Parameters = {Parameters} }}";
+    }
 }
 
 /// <summary>
