@@ -27,6 +27,8 @@ public sealed class ExternalApiClient
         _httpClient.Timeout = _options.Timeout;
     }
 
+    public override string ToString() => $"ExternalApiClient {{ Timeout = {_options.Timeout}, MaxRetries = {_options.MaxRetries}, RetryDelay = {_options.RetryDelay} }}";
+
     /// <summary>
     /// Makes a GET request to an external API.
     /// </summary>
