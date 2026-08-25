@@ -55,6 +55,7 @@ public sealed class WebhookDelivery
     public string? Url { get; set; }
 
     public DateTime? NextRetryAt { get; set; }
+    public override string ToString() => $"WebhookDelivery {{ Id = {Id}, WebhookSubscriptionId = {WebhookSubscriptionId}, ConfigurationVersionId = {ConfigurationVersionId}, Status = {Status}, EventId = {EventId}, CreatedAt = {CreatedAt} }}";
 
     /// <summary>
     /// Marks the delivery as successful
