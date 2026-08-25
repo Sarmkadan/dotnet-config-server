@@ -31,6 +31,8 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<ChangeRequest> ChangeRequests { get; set; } = null!;
     public DbSet<ValidationRule> ValidationRules { get; set; } = null!;
 
+    public override string ToString() => $"ApplicationDbContext {{ Applications = {Applications}, Configurations = {Configurations}, ConfigurationKeys = {ConfigurationKeys}, ConfigurationVersions = {ConfigurationVersions}, WebhookSubscriptions = {WebhookSubscriptions}, WebhookDeliveries = {WebhookDeliveries} }}";
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
