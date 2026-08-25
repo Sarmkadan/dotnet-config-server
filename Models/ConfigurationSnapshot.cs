@@ -48,4 +48,6 @@ public sealed class ConfigurationSnapshot
     /// </summary>
     [JsonIgnore]
     public Configuration? Configuration { get; set; }
+
+    public override string ToString() => $"ConfigurationSnapshot {{ Id = {Id}, ConfigurationId = {ConfigurationId}, ConfigurationState = {ConfigurationState}, KeysState = {KeysState}, CreatedAt = {CreatedAt}, CreatedBy = {CreatedBy} }}";
 }
