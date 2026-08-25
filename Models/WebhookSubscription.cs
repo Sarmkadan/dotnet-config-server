@@ -180,6 +180,11 @@ public sealed class WebhookSubscription
             LastDeliveryAt = LastDeliveryAt
         };
     }
+
+    public override string ToString()
+    {
+        return $"WebhookSubscription {{ Id = {Id}, Name = {Name}, Url = {Url}, Description = {Description}, ConfigurationId = {ConfigurationId}, Status = {Status} }}";
+    }
 }
 
 /// <summary>
