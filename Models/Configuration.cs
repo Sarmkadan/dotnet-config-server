@@ -64,6 +64,7 @@ public sealed class Configuration
 
     public Guid? ParentConfigurationId { get; set; } // Added for hierarchical inheritance
 
+    public override string ToString() => $"Configuration {{ Id = {Id}, Name = {Name}, Description = {Description}, Environment = {Environment}, ApplicationId = {ApplicationId}, CreatedAt = {CreatedAt} }}";
 
     /// <summary>
     /// Validates the configuration data
