@@ -9,8 +9,17 @@ using Xunit;
 
 namespace DotnetConfigServer.Tests.Formatters;
 
+/// <summary>
+/// Unit tests for <see cref="ConfigurationExporter"/> covering its JSON, CSV, XML,
+/// environment variable (.env), and YAML export formats for configurations and configuration keys.
+/// </summary>
 public sealed class ConfigurationExporterTests
 {
+    /// <summary>
+    /// Verifies that exporting a fully populated configuration produces non-empty JSON that
+    /// contains the configuration name ("TestConfig"), the creator ("testuser"), an
+    /// "environment" property, and is wrapped in a top-level JSON array.
+    /// </summary>
     [Fact]
     public void ExportAsJson_WithConfigurations_ReturnsValidJson()
     {
@@ -44,6 +53,10 @@ public sealed class ConfigurationExporterTests
         result.Should().EndWith("]");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration collection serializes to the literal
+    /// empty JSON array string "[]".
+    /// </summary>
     [Fact]
     public void ExportAsJson_WithEmptyCollection_ReturnsEmptyArray()
     {
@@ -57,6 +70,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Be("[]");
     }
 
+    /// <summary>
+    /// Verifies that enabling pretty printing indents the JSON output so the result spans
+    /// multiple lines (contains newline characters).
+    /// </summary>
     [Fact]
     public void ExportAsJson_PrettyPrintEnabled_ReturnsFormattedJson()
     {
@@ -80,6 +97,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("\n");
     }
 
+    /// <summary>
+    /// Verifies that disabling pretty printing produces compact single-line JSON with no
+    /// newline characters while retaining the configuration name and creator values.
+    /// </summary>
     [Fact]
     public void ExportAsJson_PrettyPrintDisabled_ReturnsCompactJson()
     {
@@ -106,6 +127,10 @@ public sealed class ConfigurationExporterTests
         result.Should().EndWith("]");
     }
 
+    /// <summary>
+    /// Verifies that exporting a configuration key produces non-empty JSON containing the
+    /// key name ("ConnectionString") and its value ("Server=localhost").
+    /// </summary>
     [Fact]
     public void ExportKeysAsJson_WithKeys_ReturnsValidJson()
     {
@@ -134,6 +159,11 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("Server=localhost");
     }
 
+    /// <summary>
+    /// Verifies that exporting configurations as CSV emits the expected column header row
+    /// (Id,ApplicationId,Name,Description,Environment,IsActive,IsEncrypted,CreatedAt,CreatedBy)
+    /// followed by data rows containing the configuration name and creator.
+    /// </summary>
     [Fact]
     public void ExportAsCsv_WithConfigurations_ReturnsCsvWithHeader()
     {
@@ -164,6 +194,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("admin");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration collection as CSV still emits the
+    /// column header row followed by a newline and no data rows.
+    /// </summary>
     [Fact]
     public void ExportAsCsv_WithEmptyCollection_ReturnsOnlyHeader()
     {
@@ -178,6 +212,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("\n");
     }
 
+    /// <summary>
+    /// Verifies that a configuration name containing a comma ("Test,Config") is enclosed in
+    /// double quotes in the CSV output so embedded commas do not break the field structure.
+    /// </summary>
     [Fact]
     public void ExportAsCsv_WithCommaInName_EscapesProperly()
     {
@@ -206,6 +244,11 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("quotes");
     }
 
+    /// <summary>
+    /// Verifies that exporting configuration keys as CSV emits the expected column header row
+    /// (Id,ConfigurationId,Key,Value,Description,IsEncrypted,IsActive,CreatedAt)
+    /// followed by data rows containing the key name and value.
+    /// </summary>
     [Fact]
     public void ExportKeysAsCsv_WithKeys_ReturnsCsvWithHeader()
     {
@@ -235,6 +278,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("secret123");
     }
 
+    /// <summary>
+    /// Verifies that exporting configurations as XML wraps the data in a &lt;Configurations&gt;
+    /// root element with child elements carrying the configuration name and creator.
+    /// </summary>
     [Fact]
     public void ExportAsXml_WithConfigurations_ReturnsValidXml()
     {
@@ -267,6 +314,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("<CreatedBy>devuser</CreatedBy>");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration collection as XML serializes to the
+    /// self-closing empty root element "&lt;Configurations /&gt;".
+    /// </summary>
     [Fact]
     public void ExportAsXml_WithEmptyCollection_ReturnsEmptyRootElement()
     {
@@ -280,6 +331,11 @@ public sealed class ConfigurationExporterTests
         result.Should().Be("<Configurations />");
     }
 
+    /// <summary>
+    /// Verifies that exporting configuration keys as XML wraps the data in a
+    /// &lt;ConfigurationKeys&gt; root element with &lt;KeyName&gt; and &lt;Value&gt;
+    /// child elements holding the key name and value.
+    /// </summary>
     [Fact]
     public void ExportKeysAsXml_WithKeys_ReturnsValidXml()
     {
@@ -310,6 +366,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("<Value>postgres://localhost:5432/mydb</Value>");
     }
 
+    /// <summary>
+    /// Verifies that exporting active configuration keys in .env format produces one
+    /// KEY=VALUE pair per line containing API_KEY/secret123 and DATABASE_URL/postgres://localhost/db.
+    /// </summary>
     [Fact]
     public void ExportAsEnvFormat_WithKeys_ReturnsKeyValuePairs()
     {
@@ -346,6 +406,10 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("\n");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration key collection in .env format
+    /// returns an empty string.
+    /// </summary>
     [Fact]
     public void ExportAsEnvFormat_WithEmptyCollection_ReturnsEmptyString()
     {
@@ -359,6 +423,10 @@ public sealed class ConfigurationExporterTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that exporting configurations as YAML produces a sequence item containing the
+    /// configuration Id, Name, and boolean IsActive/IsEncrypted properties rendered as true/false.
+    /// </summary>
     [Fact]
     public void ExportAsYaml_WithConfigurations_ReturnsValidYaml()
     {
@@ -391,6 +459,9 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("IsEncrypted: false");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration collection as YAML returns an empty string.
+    /// </summary>
     [Fact]
     public void ExportAsYaml_WithEmptyCollection_ReturnsEmptyString()
     {
@@ -404,6 +475,10 @@ public sealed class ConfigurationExporterTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that exporting configuration keys as YAML produces a sequence item containing
+    /// the key Id, Key name, and Value fields.
+    /// </summary>
     [Fact]
     public void ExportKeysAsYaml_WithKeys_ReturnsValidYaml()
     {
@@ -433,6 +508,9 @@ public sealed class ConfigurationExporterTests
         result.Should().Contain("Value: Server=localhost;Database=test");
     }
 
+    /// <summary>
+    /// Verifies that exporting an empty configuration key collection as YAML returns an empty string.
+    /// </summary>
     [Fact]
     public void ExportKeysAsYaml_WithEmptyCollection_ReturnsEmptyString()
     {
@@ -446,6 +524,10 @@ public sealed class ConfigurationExporterTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Verifies that a configuration name containing colons ("Config:With:Colons") is preserved
+    /// verbatim in the YAML output instead of being altered or dropped.
+    /// </summary>
     [Fact]
     public void ExportAsYaml_WithSpecialCharactersInName_EscapesProperly()
     {
