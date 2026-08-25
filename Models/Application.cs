@@ -158,6 +158,9 @@ public sealed class Application
             LastAccessedAt = LastAccessedAt
         };
     }
+
+    public override string ToString() => $"Application {{ Id = {Id}, Name = {Name}, Description = {Description}, Slug = {Slug}, CreatedAt = {CreatedAt}, UpdatedAt = {UpdatedAt} }}";
+
 }
 
 /// <summary>
