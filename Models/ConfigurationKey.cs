@@ -251,6 +251,7 @@ public sealed class ConfigurationKey
             UpdatedAt = UpdatedAt
         };
     }
+    public override string ToString() => $"ConfigurationKey {{ Id = {Id}, Key = {Key}, Value = {Value}, DefaultValue = {DefaultValue}, Description = {Description}, ValueType = {ValueType} }}";
 }
 
 /// <summary>
