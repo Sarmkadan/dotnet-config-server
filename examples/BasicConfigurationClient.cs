@@ -99,6 +99,11 @@ namespace DotnetConfigServer.Examples
         public DateTime CreatedAt { get; set; }
         public DateTime LastModifiedAt { get; set; }
 
+        public override string ToString()
+        {
+            return $"Configuration {{ Id = {Id}, ApplicationId = {ApplicationId}, Environment = {Environment}, Description = {Description}, Keys = {Keys}, CreatedAt = {CreatedAt} }}";
+        }
+
         public string GetKeyValue(string keyName) =>
             Keys.Find(k => k.Key == keyName)?.Value ?? throw new KeyNotFoundException($"Key '{keyName}' not found");
     }
