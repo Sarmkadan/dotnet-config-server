@@ -33,6 +33,12 @@ public sealed class ConfigurationDiffController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Source version identifier associated with this controller</summary>
+    public Guid FromVersionId { get; } = Guid.Empty;
+
+    /// <summary>Target version identifier associated with this controller</summary>
+    public Guid ToVersionId { get; } = Guid.Empty;
+
     /// <summary>
     /// Gets the diff between two configuration versions
     /// </summary>
@@ -171,6 +177,12 @@ public sealed class ConfigurationDiffController : ControllerBase
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
+
+    /// <summary>
+    /// Returns a concise, informative representation of this controller
+    /// </summary>
+    public override string ToString() =>
+        $"ConfigurationDiffController {{ FromVersionId = {FromVersionId}, ToVersionId = {ToVersionId} }}";
 }
 
 /// <summary>
