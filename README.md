@@ -2499,6 +2499,60 @@ public class RollbackClient
 }
 ```
 
+## ConfigurationDiffController
+
+The `ConfigurationDiffController` exposes API endpoints for comparing two versions of a configuration and inspecting what changed between them. The version range under comparison is selected through the `FromVersionId` and `ToVersionId` properties, which are bound from the incoming request. It offers two operations: `GetConfigurationDiff`, which returns the detailed differences between the two versions, and `GetConfigurationDiffSummary`, which returns an aggregated summary of those changes.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Threading.Tasks;
+
+// Example: Invoking ConfigurationDiffController through dependency injection
+public class ConfigurationDiffService
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public ConfigurationDiffService(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public async Task<IActionResult> CompareVersionsAsync(
+        Guid configurationId,
+        Guid fromVersionId,
+        Guid toVersionId)
+    {
+        var controller = _serviceProvider.GetRequiredService<ConfigurationDiffController>();
+
+        // Select the version range to compare
+        controller.FromVersionId = fromVersionId;
+        controller.ToVersionId = toVersionId;
+
+        // Return the detailed diff between the two versions
+        return await controller.GetConfigurationDiff(configurationId);
+    }
+
+    public async Task<IActionResult> SummarizeChangesAsync(
+        Guid configurationId,
+        Guid fromVersionId,
+        Guid toVersionId)
+    {
+        var controller = _serviceProvider.GetRequiredService<ConfigurationDiffController>();
+
+        controller.FromVersionId = fromVersionId;
+        controller.ToVersionId = toVersionId;
+
+        // Return an aggregated summary of the changes between the two versions
+        return await controller.GetConfigurationDiffSummary(configurationId);
+    }
+}
+```
+
 ## ValidationRulesController
 
 The `ValidationRulesController` provides RESTful API endpoints for managing configuration validation rules. Validation rules define constraints that configurations must satisfy, enabling automated validation of configuration data before deployment. This controller supports CRUD operations for validation rules and provides endpoints to validate configurations against defined rules.
