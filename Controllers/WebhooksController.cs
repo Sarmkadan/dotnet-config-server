@@ -34,6 +34,8 @@ public sealed class WebhooksController : ControllerBase
         _logger = logger;
     }
 
+    public override string ToString() => $"WebhooksController";
+
     /// <summary>
     /// Creates a new webhook subscription.
     /// </summary>
@@ -229,4 +231,6 @@ public sealed class WebhookTestResult
     public bool Success { get; set; }
     public DateTime Timestamp { get; set; }
     public string Message { get; set; } = string.Empty;
+
+    public override string ToString() => $"WebhookTestResult {{ Success = {Success}, Timestamp = {Timestamp}, Message = {Message} }}";
 }
