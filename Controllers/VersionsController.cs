@@ -242,6 +242,11 @@ public sealed class VersionsController : ControllerBase
             return StatusCode(500, new { error = "Internal server error" });
         }
     }
+
+    /// <summary>
+    /// Returns a concise, informative representation of this controller
+    /// </summary>
+    public override string ToString() => $"VersionsController {{ ReleaseNotes = {string.Empty}, ArchivedCount = {0} }}";
 }
 
 /// <summary>
