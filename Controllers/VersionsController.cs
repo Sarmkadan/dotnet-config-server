@@ -24,6 +24,9 @@ public sealed class VersionsController : ControllerBase
     private readonly IDiffViewerService _diffViewerService; // Add IDiffViewerService
     private readonly ILogger<VersionsController> _logger;
 
+    public string? ReleaseNotes { get; set; }
+    public int ArchivedCount { get; set; }
+
     public VersionsController(
         IVersioningService versioningService,
         IDiffService diffService,
@@ -246,7 +249,7 @@ public sealed class VersionsController : ControllerBase
     /// <summary>
     /// Returns a concise, informative representation of this controller
     /// </summary>
-    public override string ToString() => $"VersionsController {{ ReleaseNotes = {string.Empty}, ArchivedCount = {0} }}";
+    public override string ToString() => $"VersionsController {{ ReleaseNotes = {ReleaseNotes}, ArchivedCount = {ArchivedCount} }}";
 }
 
 /// <summary>
