@@ -3733,3 +3733,42 @@ public class AuditLogClient
     }
 }
 ```
+
+## EventBusTests
+
+The `EventBusTests` class (defined in `tests/dotnet-config-server.Tests/Events/EventBusTests.cs`) verifies the behavior of the in-process event bus that dispatches domain events to subscribed handlers. It covers publishing scenarios—delivery to a single handler, fan-out to multiple handlers running in parallel, no-op publishes when no handlers are registered, and graceful containment of handler exceptions—together with subscription management such as adding handlers, removing specific handlers, and safely unsubscribing non-existent ones. Since the class also implements `ILogger` through its `IsEnabled`, `Log<TState>`, and `BeginScope<TState>` members, it can double as a lightweight logger while exercising the bus.
+
+### Usage Example
+
+```csharp
+// Run the full suite from the repository root:
+//   dotnet test tests/dotnet-config-server.Tests --filter "FullyQualifiedName~EventBusTests"
+
+// Or drive the scenarios directly - each public method is an independent xUnit test case.
+var tests = new EventBusTests();
+
+// Construction with a logger must succeed
+tests.CreatesInstanceWithLogger();
+
+// Publishing must deliver events to registered handlers,
+// tolerate missing handlers, and contain handler exceptions
+await tests.PublishesEventToSingleHandler();
+await tests.PublishesEventToMultipleHandlers();
+await tests.PublishesEventToHandlersInParallel();
+await tests.DoesNotThrowWhenNoHandlersRegistered();
+await tests.HandlesHandlerExceptionsGracefully();
+await tests.PublishesCorrectEventTypeToHandlers();
+
+// Subscription management must add, remove, and unsubscribe safely
+tests.AddsHandlerForEventType();
+tests.AddsMultipleHandlersForSameEventType();
+tests.RemovesSpecificHandler();
+tests.RemoveAllHandlersWhenLastOneUnsubscribed();
+tests.DoesNotThrowWhenUnsubscribingNonExistentHandler();
+tests.DoesNotThrowWhenUnsubscribingFromEmptyEventType();
+
+// Subscriber enumeration must scope results to each event type
+tests.ReturnsEmptyEnumerableWhenNoHandlers();
+tests.ReturnsAllSubscribersForEventType();
+tests.ReturnsSubscribersForDifferentEventTypesSeparately();
+```
