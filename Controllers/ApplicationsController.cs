@@ -33,6 +33,11 @@ public sealed class ApplicationsController : ControllerBase
         _logger = logger;
     }
 
+    public override string ToString()
+    {
+        return $"ApplicationsController {{ Items = 0, Page = 1, PageSize = 10, TotalCount = 0 }}";
+    }
+
     /// <summary>
     /// Creates a new application.
     /// </summary>
@@ -199,4 +204,9 @@ public sealed class PaginatedResult<T>
     public int PageSize { get; set; }
     public int TotalCount { get; set; }
     public int TotalPages => (TotalCount + PageSize - 1) / PageSize;
+
+    public override string ToString()
+    {
+        return $"PaginatedResult {{ Items = {Items}, Page = {Page}, PageSize = {PageSize}, TotalCount = {TotalCount} }}";
+    }
 }
