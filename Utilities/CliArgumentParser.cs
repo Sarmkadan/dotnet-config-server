@@ -144,6 +144,11 @@ Examples:
     {
         return key.TrimStart('-').ToLowerInvariant();
     }
+
+    public override string ToString()
+    {
+        return $"CliArgumentParser {{ Port = {GetIntValue("port") ?? 5000}, Environment = {GetValue("environment") ?? "Development"}, DatabaseConnection = {GetValue("database")}, LogLevel = {GetValue("log-level") ?? "Information"}, EnableSwagger = {GetBoolValue("enable-swagger", true)}, InitializeDatabase = {HasFlag("init-db")} }}";
+    }
 }
 
 /// <summary>
@@ -172,5 +177,10 @@ public sealed class CliConfig
             EnableSwagger = parser.GetBoolValue("enable-swagger", true),
             InitializeDatabase = parser.HasFlag("init-db")
         };
+    }
+
+    public override string ToString()
+    {
+        return $"CliConfig {{ Port = {Port}, Environment = {Environment}, DatabaseConnection = {DatabaseConnection}, LogLevel = {LogLevel}, EnableSwagger = {EnableSwagger}, InitializeDatabase = {InitializeDatabase} }}";
     }
 }
