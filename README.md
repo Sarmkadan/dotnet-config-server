@@ -144,7 +144,7 @@ public class ConfigurationService
 
     public ConfigurationService(ApplicationDbContext context)
     {
-        _context = context;
+        _context = _context;
     }
 
     public async Task<Application> GetApplicationBySlugAsync(string slug)
@@ -3771,4 +3771,47 @@ tests.DoesNotThrowWhenUnsubscribingFromEmptyEventType();
 tests.ReturnsEmptyEnumerableWhenNoHandlers();
 tests.ReturnsAllSubscribersForEventType();
 tests.ReturnsSubscribersForDifferentEventTypesSeparately();
+```
+
+## ConfigurationExporterTests
+
+The `ConfigurationExporterTests` class (defined in `tests/dotnet-config-server.Tests/Formatters/ConfigurationExporterTests.cs`) validates the configuration export functionality across multiple formats including JSON, CSV, XML, environment variables, and YAML. It ensures that configurations and keys are correctly serialized, handles edge cases like empty collections and special characters, and verifies that formatting options such as pretty-printing and escaping work as expected.
+
+### Usage Example
+
+```csharp
+// Run the full suite from the repository root:
+//   dotnet test tests/dotnet-config-server.Tests --filter "FullyQualifiedName~ConfigurationExporterTests"
+
+// Or drive the scenarios directly - each public method is an independent xUnit test case.
+var tests = new ConfigurationExporterTests();
+
+// JSON export scenarios
+tests.ExportAsJson_WithConfigurations_ReturnsValidJson();
+tests.ExportAsJson_WithEmptyCollection_ReturnsEmptyArray();
+tests.ExportAsJson_PrettyPrintEnabled_ReturnsFormattedJson();
+tests.ExportAsJson_PrettyPrintDisabled_ReturnsCompactJson();
+tests.ExportKeysAsJson_WithKeys_ReturnsValidJson();
+
+// CSV export scenarios
+tests.ExportAsCsv_WithConfigurations_ReturnsCsvWithHeader();
+tests.ExportAsCsv_WithEmptyCollection_ReturnsOnlyHeader();
+tests.ExportAsCsv_WithCommaInName_EscapesProperly();
+tests.ExportKeysAsCsv_WithKeys_ReturnsCsvWithHeader();
+
+// XML export scenarios
+tests.ExportAsXml_WithConfigurations_ReturnsValidXml();
+tests.ExportAsXml_WithEmptyCollection_ReturnsEmptyRootElement();
+tests.ExportKeysAsXml_WithKeys_ReturnsValidXml();
+
+// Environment variable format scenarios
+tests.ExportAsEnvFormat_WithKeys_ReturnsKeyValuePairs();
+tests.ExportAsEnvFormat_WithEmptyCollection_ReturnsEmptyString();
+
+// YAML export scenarios
+tests.ExportAsYaml_WithConfigurations_ReturnsValidYaml();
+tests.ExportAsYaml_WithEmptyCollection_ReturnsEmptyString();
+tests.ExportKeysAsYaml_WithKeys_ReturnsValidYaml();
+tests.ExportKeysAsYaml_WithEmptyCollection_ReturnsEmptyString();
+tests.ExportAsYaml_WithSpecialCharactersInName_EscapesProperly();
 ```
