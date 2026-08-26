@@ -153,4 +153,6 @@ public sealed class RequestMetric
     public long DurationMs { get; set; }
     public long MemoryUsedBytes { get; set; }
     public DateTime Timestamp { get; set; }
+
+    public override string ToString() => $"PerformanceMonitoringMiddleware {{ Path = {Path}, Method = {Method}, StatusCode = {StatusCode}, DurationMs = {DurationMs}, MemoryUsedBytes = {MemoryUsedBytes}, Timestamp = {Timestamp} }}";
 }
