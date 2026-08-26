@@ -2499,6 +2499,37 @@ public class RollbackClient
 }
 ```
 
+## RollbackServiceTests
+
+The `RollbackServiceTests` class (defined in `tests/dotnet-config-server.Tests/RollbackServiceTests.cs`) exercises the rollback workflow end to end. It verifies that executing a rollback for a version that does not exist throws `ConfigurationNotFoundException`, that a valid rollback returns a `RollbackResult`, and that rolling back to a previous version creates an audit entry with metadata. It also checks that rollback history queries return the recorded `RollbackRecord`s and that previews surface the pending changes while detecting unsafe rollbacks, such as when a required key would be deleted.
+
+### Usage Example
+
+```csharp
+// Run the full suite from the repository root:
+//   dotnet test tests/dotnet-config-server.Tests --filter "FullyQualifiedName~RollbackServiceTests"
+
+// Or drive the scenarios directly - each public method is an independent xUnit test case.
+var tests = new RollbackServiceTests();
+
+// Rolling back to a version that does not exist must throw ConfigurationNotFoundException
+await tests.ExecuteRollbackAsync_VersionNotFound_ThrowsConfigurationNotFoundException();
+
+// A valid rollback must complete and return a RollbackResult
+await tests.ExecuteRollbackAsync_ValidRollback_ReturnsRollbackResult();
+
+// Rolling back to a previous version must create an audit entry with metadata
+await tests.ExecuteRollbackAsync_ToPreviousVersion_CreatesAuditEntryWithMetadata();
+
+// History lookups must return the recorded RollbackRecords
+await tests.GetRollbackHistoryAsync_ReturnsRollbackRecords();
+
+// Previews must return the pending changes and detect unsafe rollbacks,
+// including the case where a required key would be deleted
+await tests.PreviewRollbackAsync_ReturnsChangesAndDetectsUnsafeRollbacks();
+await tests.PreviewRollbackAsync_DetectsUnsafeRollback_WhenRequiredKeyWouldBeDeleted();
+```
+
 ## ConfigurationDiffController
 
 The `ConfigurationDiffController` exposes API endpoints for comparing two versions of a configuration and inspecting what changed between them. The version range under comparison is selected through the `FromVersionId` and `ToVersionId` properties, which are bound from the incoming request. It offers two operations: `GetConfigurationDiff`, which returns the detailed differences between the two versions, and `GetConfigurationDiffSummary`, which returns an aggregated summary of those changes.
