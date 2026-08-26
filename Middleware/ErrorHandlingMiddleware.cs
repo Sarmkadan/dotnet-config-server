@@ -76,4 +76,6 @@ public sealed class ErrorResponse
     public DateTime Timestamp { get; set; }
     public string TraceId { get; set; } = string.Empty;
     public Dictionary<string, List<string>>? Errors { get; set; }
+
+    public override string ToString() => $"ErrorHandlingMiddleware {{ Message = {Message}, Timestamp = {Timestamp}, TraceId = {TraceId}, Errors = {Errors} }}";
 }
