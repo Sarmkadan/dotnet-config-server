@@ -2530,6 +2530,53 @@ await tests.PreviewRollbackAsync_ReturnsChangesAndDetectsUnsafeRollbacks();
 await tests.PreviewRollbackAsync_DetectsUnsafeRollback_WhenRequiredKeyWouldBeDeleted();
 ```
 
+## DiffServiceTests
+
+The `DiffServiceTests` class (defined in `tests/dotnet-config-server.Tests/DiffServiceTests.cs`) exercises the diff engine that compares two versions of a configuration. It verifies that generating a diff for a missing source or target version throws `ConfigurationNotFoundException`, that identical versions produce an empty diff, and that added, removed, and modified keys are all detected correctly. It also validates the `IgnoreWhitespace` option so whitespace-only changes are ignored while real changes still surface, and confirms that version summaries calculate the correct change counts through the public API.
+
+### Usage Example
+
+```csharp
+// Run the full suite from the repository root:
+//   dotnet test tests/dotnet-config-server.Tests --filter "FullyQualifiedName~DiffServiceTests"
+
+// Or drive the scenarios directly - each public method is an independent xUnit test case.
+var tests = new DiffServiceTests();
+
+// Generating a diff whose source version does not exist must throw ConfigurationNotFoundException
+await tests.GenerateDiffAsync_FromVersionNotFound_ThrowsConfigurationNotFoundException();
+
+// Generating a diff whose target version does not exist must throw ConfigurationNotFoundException
+await tests.GenerateDiffAsync_ToVersionNotFound_ThrowsConfigurationNotFoundException();
+
+// Two identical versions must produce an empty diff
+await tests.GenerateDiffAsync_IdenticalVersions_ReturnsEmptyDiff();
+
+// Newly added keys must be detected as additions
+await tests.GenerateDiffAsync_AddsKeys_DetectsAddedKeys();
+
+// Removed keys must be detected as deletions
+await tests.GenerateDiffAsync_RemovesKeys_DetectsDeletedKeys();
+
+// Changed values must be detected as modifications
+await tests.GenerateDiffAsync_ChangesValues_DetectsModifiedKeys();
+
+// With IgnoreWhitespace enabled, whitespace-only edits must not be reported
+await tests.GenerateDiffAsync_IgnoreWhitespace_WhitespaceChangesNotDetected();
+
+// ...while genuine value changes must still be detected
+await tests.GenerateDiffAsync_IgnoreWhitespace_ActualChangesStillDetected();
+
+// Version summaries must report the correct change counts
+await tests.ComparVersionsAsync_WithChanges_ReturnsCorrectSummary();
+
+// Summary calculations must honor the IgnoreWhitespace option as well
+await tests.ComparVersionsAsync_IgnoreWhitespace_CalculatesCorrectly();
+
+// Added keys must also be detectable through the public API surface
+await tests.GenerateDiffAsync_DetectsAddedKeys_ThroughPublicAPI();
+```
+
 ## ConfigurationDiffController
 
 The `ConfigurationDiffController` exposes API endpoints for comparing two versions of a configuration and inspecting what changed between them. The version range under comparison is selected through the `FromVersionId` and `ToVersionId` properties, which are bound from the incoming request. It offers two operations: `GetConfigurationDiff`, which returns the detailed differences between the two versions, and `GetConfigurationDiffSummary`, which returns an aggregated summary of those changes.
