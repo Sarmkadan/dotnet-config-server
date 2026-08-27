@@ -3815,3 +3815,29 @@ tests.ExportKeysAsYaml_WithKeys_ReturnsValidYaml();
 tests.ExportKeysAsYaml_WithEmptyCollection_ReturnsEmptyString();
 tests.ExportAsYaml_WithSpecialCharactersInName_EscapesProperly();
 ```
+
+## ConfigurationSnapshotOptions
+
+The `ConfigurationSnapshotOptions` class controls automatic snapshot creation for configurations in the Dotnet Config Server. It enables scheduled snapshots with configurable intervals, default metadata, and change detection to optimize storage usage.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Models;
+
+// Configure automatic snapshot options
+var snapshotOptions = new ConfigurationSnapshotOptions
+{
+    Enabled = true,
+    IntervalMinutes = 30, // Take snapshots every 30 minutes
+    DefaultUserId = "backup-system",
+    DefaultReason = "Scheduled backup snapshot",
+    SkipIfUnchanged = true // Skip if no changes since last snapshot
+};
+
+// Validate the configuration
+snapshotOptions.Validate(); // Uses data annotations for validation
+
+Console.WriteLine($"Snapshot options: {snapshotOptions.ToString()}");
+// Output: ConfigurationSnapshotOptions { Enabled = True, IntervalMinutes = 30, DefaultUserId = backup-system, DefaultReason = Scheduled backup snapshot, SkipIfUnchanged = True }
+```
