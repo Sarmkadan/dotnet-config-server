@@ -3840,4 +3840,43 @@ snapshotOptions.Validate(); // Uses data annotations for validation
 
 Console.WriteLine($"Snapshot options: {snapshotOptions.ToString()}");
 // Output: ConfigurationSnapshotOptions { Enabled = True, IntervalMinutes = 30, DefaultUserId = backup-system, DefaultReason = Scheduled backup snapshot, SkipIfUnchanged = True }
+
+## VersioningServiceTests_v2
+
+The `VersioningServiceTests_v2` class contains unit tests for the `VersioningService` class, which provides versioning functionality for configuration management. It tests the creation of versions with correct version number increments, retrieving specific versions by their identifier, and obtaining version history in both ordered and unordered formats.
+
+### Usage Example
+
+```csharp
+using FluentAssertions;
+using DotnetConfigServer.Common;
+
+public class VersioningServiceTestsExample
+{
+    public void IncrementVersion_WithDifferentTypes_ProducesCorrectVersions()
+    {
+        // Test patch increment
+        var patchVersion = ConfigurationVersion.IncrementVersion("1.0.0", VersionIncrementType.Patch);
+        patchVersion.Should().Be("1.0.1");
+
+        // Test minor increment
+        var minorVersion = ConfigurationVersion.IncrementVersion("1.0.0", VersionIncrementType.Minor);
+        minorVersion.Should().Be("1.1.0");
+
+        // Test major increment
+        var majorVersion = ConfigurationVersion.IncrementVersion("1.0.0", VersionIncrementType.Major);
+        majorVersion.Should().Be("2.0.0");
+
+        // Test chained increments
+        var v1 = ConfigurationVersion.IncrementVersion("1.0.0", VersionIncrementType.Patch); // 1.0.1
+        var v2 = ConfigurationVersion.IncrementVersion(v1, VersionIncrementType.Minor); // 1.1.0
+        var v3 = ConfigurationVersion.IncrementVersion(v2, VersionIncrementType.Patch); // 1.1.1
+        var v4 = ConfigurationVersion.IncrementVersion(v3, VersionIncrementType.Major); // 2.0.0
+
+        v1.Should().Be("1.0.1");
+        v2.Should().Be("1.1.0");
+        v3.Should().Be("1.1.1");
+        v4.Should().Be("2.0.0");
+    }
+}
 ```
