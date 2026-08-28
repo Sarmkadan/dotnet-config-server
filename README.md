@@ -3880,3 +3880,37 @@ public class VersioningServiceTestsExample
     }
 }
 ```
+
+## ConfigurationImportServiceTests
+
+The `ConfigurationImportServiceTests` class contains unit tests for the `ConfigurationImportService` class, which provides functionality to import configuration data from JSON, CSV, and environment variable formats. It validates that valid input formats are correctly parsed into configuration key-value pairs, and that malformed or invalid inputs are properly rejected with appropriate exceptions.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+// Example: Using ConfigurationImportService to import configuration data
+var loggerMock = new Mock<ILogger<ConfigurationImportService>>();
+var importService = new ConfigurationImportService(loggerMock.Object);
+
+// Import from JSON
+var json = "{ \"database.host\": \"localhost\", \"database.port\": \"5432\" }";
+var jsonResult = await importService.ImportFromJsonAsync(json, Guid.NewGuid());
+// jsonResult contains 2 ConfigurationKey objects
+
+// Import from CSV
+var csv = "Key,Value\ncache.enabled,true\ncache.size,100\n";
+var csvResult = await importService.ImportFromCsvAsync(csv, Guid.NewGuid());
+// csvResult contains 2 ConfigurationKey objects
+
+// Import from environment variables
+var env = "# App settings\nAPI_ENDPOINT=https://api.example.com\nTIMEOUT=30\n";
+var envResult = await importService.ImportFromEnvAsync(env, Guid.NewGuid());
+// envResult contains 2 ConfigurationKey objects
+```
