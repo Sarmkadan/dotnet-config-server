@@ -3914,3 +3914,78 @@ var env = "# App settings\nAPI_ENDPOINT=https://api.example.com\nTIMEOUT=30\n";
 var envResult = await importService.ImportFromEnvAsync(env, Guid.NewGuid());
 // envResult contains 2 ConfigurationKey objects
 ```
+
+## ValidationRuleServiceTests
+
+The `ValidationRuleServiceTests` class contains unit tests for the `ValidationRuleService` class, which handles validation rule processing for configurations. It verifies that validation rules are correctly created, updated, deleted, and applied to detect configuration violations based on various rule types including regex, required, min/max length, and URL validation.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Services;
+using DotnetConfigServer.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
+using FluentAssertions;
+
+// Example: Using ValidationRuleService to validate configurations
+var validationRuleRepositoryMock = new Mock<IValidationRuleRepository>();
+var configurationServiceMock = new Mock<IConfigurationService>();
+var versioningServiceMock = new Mock<IVersioningService>();
+var loggerMock = new Mock<ILogger<ValidationRuleService>>();
+var validationRuleService = new ValidationRuleService(
+    validationRuleRepositoryMock.Object,
+    configurationServiceMock.Object,
+    versioningServiceMock.Object,
+    loggerMock.Object);
+
+// Test validating a configuration with a regex rule that detects a violation
+var configurationId = Guid.NewGuid();
+var versionId = Guid.NewGuid();
+var ruleId = Guid.NewGuid();
+var keys = new List<ConfigurationKey>
+{
+    new()
+    {
+        Key = "ApiKey",
+        Value = "invalid-key",
+        ConfigurationId = configurationId,
+        VersionId = versionId,
+        CreatedBy = "admin",
+        ValueType = ConfigurationValueType.String
+    }
+};
+var rules = new List<ValidationRule>
+{
+    new()
+    {
+        Id = ruleId,
+        Name = "API key format",
+        ConfigurationId = configurationId,
+        RuleType = ValidationRuleType.Regex,
+        Parameters = "^[A-Z]{3}-\\d{3}$",
+        TargetKeyPattern = "^ApiKey$",
+        CreatedBy = "admin"
+    }
+};
+
+versioningServiceMock.Setup(s => s.GetActiveVersionAsync(configurationId)).ReturnsAsync(new ConfigurationVersion
+{
+    Id = versionId,
+    ConfigurationId = configurationId,
+    VersionNumber = "1.0.0",
+    CreatedBy = "admin"
+});
+configurationServiceMock.Setup(s => s.GetKeysAsync(configurationId, versionId, true)).ReturnsAsync(keys);
+validationRuleRepositoryMock.Setup(r => r.GetApplicableRulesAsync(configurationId)).ReturnsAsync(rules);
+
+var result = await validationRuleService.ValidateConfigurationAsync(configurationId, null);
+
+result.IsValid.Should().BeFalse();
+result.Violations.Should().ContainSingle();
+result.Violations[0].RuleId.Should().Be(ruleId);
+result.Violations[0].KeyName.Should().Be("ApiKey");
+```
