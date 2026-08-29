@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text;
 
@@ -34,6 +35,9 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null)
     {
+        _logger.LogDebug("Starting GET request to {Url}", url);
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             using var response = await ExecuteWithRetryAsync(async () =>
@@ -41,8 +45,9 @@ public sealed class ExternalApiClient
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 AddHeaders(request, headers);
                 return await _httpClient.SendAsync(request);
-            });
+            }, url);
             response.EnsureSuccessStatusCode();
+            _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Get, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
             return await response.Content.ReadFromJsonAsync<T>();
         }
@@ -58,6 +63,9 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
+        _logger.LogDebug("Starting POST request to {Url}", url);
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             using var response = await ExecuteWithRetryAsync(async () =>
@@ -68,8 +76,9 @@ public sealed class ExternalApiClient
                 };
                 AddHeaders(request, headers);
                 return await _httpClient.SendAsync(request);
-            });
+            }, url);
             response.EnsureSuccessStatusCode();
+            _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Post, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
@@ -85,6 +94,9 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
+        _logger.LogDebug("Starting PUT request to {Url}", url);
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             using var response = await ExecuteWithRetryAsync(async () =>
@@ -95,8 +107,9 @@ public sealed class ExternalApiClient
                 };
                 AddHeaders(request, headers);
                 return await _httpClient.SendAsync(request);
-            });
+            }, url);
             response.EnsureSuccessStatusCode();
+            _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Put, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
@@ -112,6 +125,9 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task DeleteAsync(string url, Dictionary<string, string>? headers = null)
     {
+        _logger.LogDebug("Starting DELETE request to {Url}", url);
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
             using var response = await ExecuteWithRetryAsync(async () =>
@@ -119,8 +135,9 @@ public sealed class ExternalApiClient
                 using var request = new HttpRequestMessage(HttpMethod.Delete, url);
                 AddHeaders(request, headers);
                 return await _httpClient.SendAsync(request);
-            });
+            }, url);
             response.EnsureSuccessStatusCode();
+            _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Delete, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
@@ -133,7 +150,7 @@ public sealed class ExternalApiClient
     /// Makes a request with automatic retry logic.
     /// The operation must create a fresh request per attempt because a request message cannot be resent.
     /// </summary>
-    private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<Task<HttpResponseMessage>> operation)
+    private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<Task<HttpResponseMessage>> operation, string url)
     {
         int attempt = 0;
 
@@ -147,7 +164,7 @@ public sealed class ExternalApiClient
             {
                 attempt++;
                 var delay = _options.RetryDelay * (int)Math.Pow(2, attempt - 1);
-                _logger.LogWarning("Request failed (attempt {Attempt}), retrying in {Delay}ms: {Error}", attempt, delay, ex.Message);
+                _logger.LogWarning("Request failed (attempt {Attempt} of {MaxRetries}) for {Url}, retrying in {Delay}ms: {Error}", attempt, _options.MaxRetries, url, delay, ex.Message);
                 await Task.Delay(delay);
             }
         }
