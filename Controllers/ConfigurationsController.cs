@@ -24,6 +24,10 @@ public sealed class ConfigurationsController : ControllerBase
     private readonly IWebhookService _webhookService;
     private readonly ILogger<ConfigurationsController> _logger;
 
+    private const string SystemUserId = "system";
+    private const string ConfigurationNotFoundMessage = "Configuration not found";
+    private const string InternalServerErrorMessage = "Internal server error";
+
     public ConfigurationsController(
         IConfigurationService configurationService,
         IVersioningService versioningService,
@@ -47,7 +51,7 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(configuration);
         try
         {
-            var userId = User.Identity?.Name ?? "system";
+            var userId = User.Identity?.Name ?? SystemUserId;
             var created = await _configurationService.CreateAsync(configuration, userId);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
@@ -58,7 +62,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating configuration");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -74,14 +78,14 @@ public sealed class ConfigurationsController : ControllerBase
         {
             var config = await _configurationService.GetByIdAsync(id);
             if (config is null)
-                return NotFound(new { error = "Configuration not found" });
+                return NotFound(new { error = ConfigurationNotFoundMessage });
 
             return Ok(config);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving configuration {ConfigId}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -100,7 +104,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving configurations for application {AppId}", applicationId);
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -115,13 +119,13 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(configuration);
         try
         {
-            var userId = User.Identity?.Name ?? "system";
+            var userId = User.Identity?.Name ?? SystemUserId;
             var updated = await _configurationService.UpdateAsync(id, configuration, userId);
             return Ok(updated);
         }
         catch (ConfigurationNotFoundException)
         {
-            return NotFound(new { error = "Configuration not found" });
+            return NotFound(new { error = ConfigurationNotFoundMessage });
         }
         catch (ValidationException ex)
         {
@@ -130,7 +134,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating configuration {ConfigId}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -144,18 +148,18 @@ public sealed class ConfigurationsController : ControllerBase
     {
         try
         {
-            var userId = User.Identity?.Name ?? "system";
+            var userId = User.Identity?.Name ?? SystemUserId;
             await _configurationService.DeleteAsync(id, userId);
             return NoContent();
         }
         catch (ConfigurationNotFoundException)
         {
-            return NotFound(new { error = "Configuration not found" });
+            return NotFound(new { error = ConfigurationNotFoundMessage });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting configuration {ConfigId}", id);
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -174,7 +178,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving configuration keys");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -188,13 +192,13 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(key);
         try
         {
-            var userId = User.Identity?.Name ?? "system";
+            var userId = User.Identity?.Name ?? SystemUserId;
             var created = await _configurationService.AddKeyAsync(configurationId, key, userId);
             return CreatedAtAction(nameof(GetKeys), new { configurationId }, created);
         }
         catch (ConfigurationNotFoundException)
         {
-            return NotFound(new { error = "Configuration not found" });
+            return NotFound(new { error = ConfigurationNotFoundMessage });
         }
         catch (ValidationException ex)
         {
@@ -203,7 +207,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error adding configuration key");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -223,7 +227,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching configurations");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 
@@ -245,7 +249,7 @@ public sealed class ConfigurationsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error searching configuration keys");
-            return StatusCode(500, new { error = "Internal server error" });
+            return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
 }
