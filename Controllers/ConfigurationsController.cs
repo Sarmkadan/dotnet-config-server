@@ -28,6 +28,8 @@ public sealed class ConfigurationsController : ControllerBase
     private const string ConfigurationNotFoundMessage = "Configuration not found";
     private const string InternalServerErrorMessage = "Internal server error";
 
+    private string CurrentUserId => User.Identity?.Name ?? SystemUserId;
+
     public ConfigurationsController(
         IConfigurationService configurationService,
         IVersioningService versioningService,
@@ -49,21 +51,11 @@ public sealed class ConfigurationsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] Configuration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        try
+        return await ExecuteAsync(async () =>
         {
-            var userId = User.Identity?.Name ?? SystemUserId;
-            var created = await _configurationService.CreateAsync(configuration, userId);
+            var created = await _configurationService.CreateAsync(configuration, CurrentUserId);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message, details = ex.Errors });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating configuration");
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, "Error creating configuration");
     }
 
     /// <summary>
@@ -74,19 +66,14 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetById([FromRoute] Guid id)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
             var config = await _configurationService.GetByIdAsync(id);
             if (config is null)
                 return NotFound(new { error = ConfigurationNotFoundMessage });
 
             return Ok(config);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving configuration {ConfigId}", id);
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, $"Error retrieving configuration {id}");
     }
 
     /// <summary>
@@ -96,16 +83,11 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(typeof(List<Configuration>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetByApplication([FromRoute] Guid applicationId)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
             var configs = await _configurationService.GetByApplicationAsync(applicationId);
             return Ok(configs);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving configurations for application {AppId}", applicationId);
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, $"Error retrieving configurations for application {applicationId}");
     }
 
     /// <summary>
@@ -117,25 +99,11 @@ public sealed class ConfigurationsController : ControllerBase
     public async Task<IActionResult> Update([FromRoute] Guid id, [FromBody] Configuration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-        try
+        return await ExecuteAsync(async () =>
         {
-            var userId = User.Identity?.Name ?? SystemUserId;
-            var updated = await _configurationService.UpdateAsync(id, configuration, userId);
+            var updated = await _configurationService.UpdateAsync(id, configuration, CurrentUserId);
             return Ok(updated);
-        }
-        catch (ConfigurationNotFoundException)
-        {
-            return NotFound(new { error = ConfigurationNotFoundMessage });
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message, details = ex.Errors });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating configuration {ConfigId}", id);
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, $"Error updating configuration {id}");
     }
 
     /// <summary>
@@ -146,21 +114,11 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] Guid id)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
-            var userId = User.Identity?.Name ?? SystemUserId;
-            await _configurationService.DeleteAsync(id, userId);
+            await _configurationService.DeleteAsync(id, CurrentUserId);
             return NoContent();
-        }
-        catch (ConfigurationNotFoundException)
-        {
-            return NotFound(new { error = ConfigurationNotFoundMessage });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting configuration {ConfigId}", id);
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, $"Error deleting configuration {id}");
     }
 
     /// <summary>
@@ -170,16 +128,11 @@ public sealed class ConfigurationsController : ControllerBase
     [ProducesResponseType(typeof(List<ConfigurationKey>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetKeys([FromRoute] Guid configurationId)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
             var keys = await _configurationService.GetKeysAsync(configurationId);
             return Ok(keys);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving configuration keys");
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, "Error retrieving configuration keys");
     }
 
     /// <summary>
@@ -190,25 +143,11 @@ public sealed class ConfigurationsController : ControllerBase
     public async Task<IActionResult> AddKey([FromRoute] Guid configurationId, [FromBody] ConfigurationKey key)
     {
         ArgumentNullException.ThrowIfNull(key);
-        try
+        return await ExecuteAsync(async () =>
         {
-            var userId = User.Identity?.Name ?? SystemUserId;
-            var created = await _configurationService.AddKeyAsync(configurationId, key, userId);
+            var created = await _configurationService.AddKeyAsync(configurationId, key, CurrentUserId);
             return CreatedAtAction(nameof(GetKeys), new { configurationId }, created);
-        }
-        catch (ConfigurationNotFoundException)
-        {
-            return NotFound(new { error = ConfigurationNotFoundMessage });
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message, details = ex.Errors });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding configuration key");
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, "Error adding configuration key");
     }
 
     /// <summary>
@@ -219,16 +158,11 @@ public sealed class ConfigurationsController : ControllerBase
     public async Task<IActionResult> Search([FromQuery] string query, [FromQuery] Guid? applicationId = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(query);
-        try
+        return await ExecuteAsync(async () =>
         {
             var results = await _configurationService.SearchAsync(query, applicationId);
             return Ok(results);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error searching configurations");
-            return StatusCode(500, new { error = InternalServerErrorMessage });
-        }
+        }, "Error searching configurations");
     }
 
     /// <summary>
@@ -241,14 +175,30 @@ public sealed class ConfigurationsController : ControllerBase
         [FromQuery] string? prefix = null,
         [FromQuery] Guid? configurationId = null)
     {
-        try
+        return await ExecuteAsync(async () =>
         {
             var results = await _configurationService.SearchKeysAsync(q, prefix, configurationId);
             return Ok(results);
+        }, "Error searching configuration keys");
+    }
+
+    private async Task<IActionResult> ExecuteAsync(Func<Task<IActionResult>> action, string errorContext)
+    {
+        try
+        {
+            return await action();
+        }
+        catch (ConfigurationNotFoundException)
+        {
+            return NotFound(new { error = ConfigurationNotFoundMessage });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message, details = ex.Errors });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error searching configuration keys");
+            _logger.LogError(ex, errorContext);
             return StatusCode(500, new { error = InternalServerErrorMessage });
         }
     }
