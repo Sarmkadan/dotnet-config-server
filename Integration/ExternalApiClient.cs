@@ -22,6 +22,11 @@ public sealed class ExternalApiClient
 
     public ExternalApiClient(HttpClient httpClient, ILogger<ExternalApiClient> logger, ExternalApiClientOptions options)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(options);
+        options.Validate();
+
         _httpClient = httpClient;
         _logger = logger;
         _options = options;
@@ -35,6 +40,8 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
         _logger.LogDebug("Starting GET request to {Url}", url);
         var stopwatch = Stopwatch.StartNew();
 
@@ -63,6 +70,8 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
         _logger.LogDebug("Starting POST request to {Url}", url);
         var stopwatch = Stopwatch.StartNew();
 
@@ -94,6 +103,8 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task<TResponse?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
         _logger.LogDebug("Starting PUT request to {Url}", url);
         var stopwatch = Stopwatch.StartNew();
 
@@ -125,6 +136,8 @@ public sealed class ExternalApiClient
     /// </summary>
     public async Task DeleteAsync(string url, Dictionary<string, string>? headers = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(url);
+
         _logger.LogDebug("Starting DELETE request to {Url}", url);
         var stopwatch = Stopwatch.StartNew();
 
@@ -182,7 +195,7 @@ public sealed class ExternalApiClient
 
         foreach (var kvp in headers)
         {
-            request.Headers.Add(kvp.Key, kvp.Value);
+            request.Headers.TryAddWithoutValidation(kvp.Key, kvp.Value);
         }
     }
 }
@@ -192,4 +205,16 @@ public sealed class ExternalApiClientOptions
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
     public int MaxRetries { get; set; } = 3;
     public int RetryDelay { get; set; } = 1000;
+
+    public void Validate()
+    {
+        if (MaxRetries < 1)
+            throw new ArgumentOutOfRangeException(nameof(MaxRetries), MaxRetries, "MaxRetries must be at least 1.");
+
+        if (RetryDelay < 0)
+            throw new ArgumentOutOfRangeException(nameof(RetryDelay), RetryDelay, "RetryDelay cannot be negative.");
+
+        if (Timeout <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(Timeout), Timeout, "Timeout must be positive.");
+    }
 }
