@@ -38,7 +38,7 @@ public sealed class ExternalApiClient
     /// <summary>
     /// Makes a GET request to an external API.
     /// </summary>
-    public async Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null)
+    public async Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
@@ -47,16 +47,16 @@ public sealed class ExternalApiClient
 
         try
         {
-            using var response = await ExecuteWithRetryAsync(async () =>
+            using var response = await ExecuteWithRetryAsync(async token =>
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
                 AddHeaders(request, headers);
-                return await _httpClient.SendAsync(request);
-            }, url);
+                return await _httpClient.SendAsync(request, token);
+            }, url, cancellationToken);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Get, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
-            return await response.Content.ReadFromJsonAsync<T>();
+            return await response.Content.ReadFromJsonAsync<T>(cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -68,7 +68,7 @@ public sealed class ExternalApiClient
     /// <summary>
     /// Makes a POST request to an external API.
     /// </summary>
-    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
+    public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
@@ -77,19 +77,19 @@ public sealed class ExternalApiClient
 
         try
         {
-            using var response = await ExecuteWithRetryAsync(async () =>
+            using var response = await ExecuteWithRetryAsync(async token =>
             {
                 using var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = JsonContent.Create(data)
                 };
                 AddHeaders(request, headers);
-                return await _httpClient.SendAsync(request);
-            }, url);
+                return await _httpClient.SendAsync(request, token);
+            }, url, cancellationToken);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Post, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
-            return await response.Content.ReadFromJsonAsync<TResponse>();
+            return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -101,7 +101,7 @@ public sealed class ExternalApiClient
     /// <summary>
     /// Makes a PUT request to an external API.
     /// </summary>
-    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null)
+    public async Task<TResponse?> PutAsync<TRequest, TResponse>(string url, TRequest data, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
@@ -110,19 +110,19 @@ public sealed class ExternalApiClient
 
         try
         {
-            using var response = await ExecuteWithRetryAsync(async () =>
+            using var response = await ExecuteWithRetryAsync(async token =>
             {
                 using var request = new HttpRequestMessage(HttpMethod.Put, url)
                 {
                     Content = JsonContent.Create(data)
                 };
                 AddHeaders(request, headers);
-                return await _httpClient.SendAsync(request);
-            }, url);
+                return await _httpClient.SendAsync(request, token);
+            }, url, cancellationToken);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Put, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
 
-            return await response.Content.ReadFromJsonAsync<TResponse>();
+            return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -134,7 +134,7 @@ public sealed class ExternalApiClient
     /// <summary>
     /// Makes a DELETE request to an external API.
     /// </summary>
-    public async Task DeleteAsync(string url, Dictionary<string, string>? headers = null)
+    public async Task DeleteAsync(string url, Dictionary<string, string>? headers = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(url);
 
@@ -143,12 +143,12 @@ public sealed class ExternalApiClient
 
         try
         {
-            using var response = await ExecuteWithRetryAsync(async () =>
+            using var response = await ExecuteWithRetryAsync(async token =>
             {
                 using var request = new HttpRequestMessage(HttpMethod.Delete, url);
                 AddHeaders(request, headers);
-                return await _httpClient.SendAsync(request);
-            }, url);
+                return await _httpClient.SendAsync(request, token);
+            }, url, cancellationToken);
             response.EnsureSuccessStatusCode();
             _logger.LogInformation("{Method} request to {Url} succeeded with status code {StatusCode} in {ElapsedMs}ms", HttpMethod.Delete, url, response.StatusCode, stopwatch.ElapsedMilliseconds);
         }
@@ -163,7 +163,7 @@ public sealed class ExternalApiClient
     /// Makes a request with automatic retry logic.
     /// The operation must create a fresh request per attempt because a request message cannot be resent.
     /// </summary>
-    private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<Task<HttpResponseMessage>> operation, string url)
+    private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<CancellationToken, Task<HttpResponseMessage>> operation, string url, CancellationToken cancellationToken)
     {
         int attempt = 0;
 
@@ -171,18 +171,18 @@ public sealed class ExternalApiClient
         {
             try
             {
-                return await operation();
+                return await operation(cancellationToken);
             }
             catch (HttpRequestException ex) when (attempt < _options.MaxRetries - 1)
             {
                 attempt++;
                 var delay = _options.RetryDelay * (int)Math.Pow(2, attempt - 1);
                 _logger.LogWarning("Request failed (attempt {Attempt} of {MaxRetries}) for {Url}, retrying in {Delay}ms: {Error}", attempt, _options.MaxRetries, url, delay, ex.Message);
-                await Task.Delay(delay);
+                await Task.Delay(delay, cancellationToken);
             }
         }
 
-        return await operation();
+        return await operation(cancellationToken);
     }
 
     /// <summary>
