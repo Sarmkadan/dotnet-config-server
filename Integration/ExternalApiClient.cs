@@ -165,24 +165,22 @@ public sealed class ExternalApiClient
     /// </summary>
     private async Task<HttpResponseMessage> ExecuteWithRetryAsync(Func<CancellationToken, Task<HttpResponseMessage>> operation, string url, CancellationToken cancellationToken)
     {
-        int attempt = 0;
-
-        while (attempt < _options.MaxRetries)
+        for (var attemptIndex = 0; ; attemptIndex++)
         {
             try
             {
                 return await operation(cancellationToken);
             }
-            catch (HttpRequestException ex) when (attempt < _options.MaxRetries - 1)
+            catch (HttpRequestException ex)
             {
-                attempt++;
-                var delay = _options.RetryDelay * (int)Math.Pow(2, attempt - 1);
-                _logger.LogWarning("Request failed (attempt {Attempt} of {MaxRetries}) for {Url}, retrying in {Delay}ms: {Error}", attempt, _options.MaxRetries, url, delay, ex.Message);
+                if (attemptIndex == _options.MaxRetries - 1)
+                    throw;
+
+                var delay = _options.RetryDelay * (int)Math.Pow(2, attemptIndex);
+                _logger.LogWarning("Request failed (attempt {Attempt} of {MaxRetries}) for {Url}, retrying in {Delay}ms: {Error}", attemptIndex + 1, _options.MaxRetries, url, delay, ex.Message);
                 await Task.Delay(delay, cancellationToken);
             }
         }
-
-        return await operation(cancellationToken);
     }
 
     /// <summary>
