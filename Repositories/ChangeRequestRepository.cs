@@ -18,7 +18,13 @@ namespace DotnetConfigServer.Repositories;
 public sealed class ChangeRequestRepository : BaseRepository<ChangeRequest>, IChangeRequestRepository
 {
     public ChangeRequestRepository(ApplicationDbContext context, ILogger<ChangeRequestRepository> logger)
-        : base(context, logger) { }
+        : base(EnsureNotNull(context, nameof(context)), EnsureNotNull(logger, nameof(logger))) { }
+
+    private static T EnsureNotNull<T>(T value, string paramName) where T : class
+    {
+        ArgumentNullException.ThrowIfNull(value, paramName);
+        return value;
+    }
 
     public async Task<List<ChangeRequest>> GetByConfigurationAsync(Guid configurationId, ChangeRequestStatus? status = null)
     {
