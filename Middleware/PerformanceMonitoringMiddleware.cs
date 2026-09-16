@@ -27,6 +27,11 @@ public sealed class PerformanceMonitoringMiddleware
         PerformanceMetrics metrics,
         IOptions<PerformanceMonitoringOptions> options)
     {
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(metrics);
+        ArgumentNullException.ThrowIfNull(options);
+
         _next = next;
         _logger = logger;
         _metrics = metrics;
@@ -35,6 +40,8 @@ public sealed class PerformanceMonitoringMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         var stopwatch = Stopwatch.StartNew();
         var initialMemory = GC.GetTotalMemory(false);
 
@@ -95,6 +102,9 @@ public sealed class PerformanceMetrics
         ILogger<PerformanceMetrics> logger,
         IOptions<PerformanceMonitoringOptions> options)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(options);
+
         _logger = logger;
         _options = options.Value;
     }
