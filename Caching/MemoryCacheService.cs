@@ -51,6 +51,7 @@ public sealed class MemoryCacheService : ICacheService
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
     {
         ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(value);
         var entry = new CacheEntry(value, expiration);
         _cache[key] = entry;
         RecordSet();
