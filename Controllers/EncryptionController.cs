@@ -51,6 +51,9 @@ public sealed class EncryptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RotateKey([FromRoute] string oldKeyId, [FromQuery] string userId)
     {
+        ArgumentNullException.ThrowIfNull(oldKeyId);
+        ArgumentNullException.ThrowIfNull(userId);
+
         try
         {
             await _encryptionService.RotateKeyAsync(oldKeyId, userId);
@@ -78,6 +81,8 @@ public sealed class EncryptionController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ReEncryptConfiguration([FromRoute] Guid configurationId, [FromQuery] string userId)
     {
+        ArgumentNullException.ThrowIfNull(userId);
+
         try
         {
             var keys = await _keyRepository.GetByConfigurationAsync(configurationId);
