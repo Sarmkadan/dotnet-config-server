@@ -31,6 +31,7 @@ public sealed class InMemoryRateLimitStore : IRateLimitStore
     /// <exception cref="ArgumentException">Thrown when <paramref name="clientKey"/> is null/empty or <paramref name="limit"/> is not positive.</exception>
     public Task<RateLimitDecision> EvaluateAsync(string clientKey, int limit, TimeSpan window, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(clientKey);
         ArgumentException.ThrowIfNullOrEmpty(clientKey);
         if (limit <= 0)
             throw new ArgumentException("Limit must be a positive number.", nameof(limit));
