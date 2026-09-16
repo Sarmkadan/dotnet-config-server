@@ -30,7 +30,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<T?> GetAsync<T>(string key)
     {
-        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(key);
         if (_cache.TryGetValue(key, out var entry))
         {
             if (entry.IsExpired)
@@ -50,7 +50,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(key);
         var entry = new CacheEntry(value, expiration);
         _cache[key] = entry;
         RecordSet();
@@ -59,7 +59,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task RemoveAsync(string key)
     {
-        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(key);
         _cache.TryRemove(key, out _);
         RecordDelete();
         await Task.CompletedTask;
@@ -79,7 +79,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<bool> ExistsAsync(string key)
     {
-        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(key);
         if (_cache.TryGetValue(key, out var entry))
         {
             if (!entry.IsExpired)
@@ -93,7 +93,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null)
     {
-        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(key);
         ArgumentNullException.ThrowIfNull(factory);
         var cached = await GetAsync<T>(key);
         if (cached is not null)
@@ -112,7 +112,7 @@ public sealed class MemoryCacheService : ICacheService
 
     public async Task<IEnumerable<string>> GetKeysAsync(string pattern)
     {
-        ArgumentException.ThrowIfNullOrEmpty(pattern);
+        ArgumentNullException.ThrowIfNull(pattern);
         _logger.LogInformation("GetKeysAsync called with {Pattern}", pattern);
         return await Task.FromResult(
             _cache.Keys.Where(k => k.Contains(pattern, StringComparison.OrdinalIgnoreCase))
