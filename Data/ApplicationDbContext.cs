@@ -16,6 +16,7 @@ public sealed class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
+        ArgumentNullException.ThrowIfNull(options);
     }
 
     public DbSet<Application> Applications { get; set; } = null!;
