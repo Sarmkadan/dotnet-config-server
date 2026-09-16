@@ -28,6 +28,10 @@ public sealed class ConfigurationDiffController : ControllerBase
         IVersioningService versioningService,
         ILogger<ConfigurationDiffController> logger)
     {
+        ArgumentNullException.ThrowIfNull(diffService);
+        ArgumentNullException.ThrowIfNull(versioningService);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _diffService = diffService;
         _versioningService = versioningService;
         _logger = logger;
