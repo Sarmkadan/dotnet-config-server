@@ -24,6 +24,9 @@ public sealed class WebhookRetryWorker : BackgroundService
 
     public WebhookRetryWorker(IServiceProvider serviceProvider, ILogger<WebhookRetryWorker> logger)
     {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
