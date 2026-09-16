@@ -66,6 +66,8 @@ public sealed class ConfigWatchController : ControllerBase
         [FromQuery] string? sinceVersion = null,
         [FromQuery] int? timeout = null)
     {
+        ArgumentNullException.ThrowIfNull(sinceVersion);
+
         try
         {
             // Validate timeout
@@ -185,6 +187,8 @@ public sealed class ConfigWatchController : ControllerBase
         [FromRoute] Env env,
         [FromQuery] string? sinceVersion = null)
     {
+        ArgumentNullException.ThrowIfNull(sinceVersion);
+
         try
         {
             // Validate environment
