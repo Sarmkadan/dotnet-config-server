@@ -19,6 +19,7 @@ public class HealthCheckController : ControllerBase
 
     public HealthCheckController(IHealthCheckService healthCheckService)
     {
+        ArgumentNullException.ThrowIfNull(healthCheckService);
         _healthCheckService = healthCheckService;
     }
 
