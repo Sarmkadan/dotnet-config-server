@@ -32,6 +32,12 @@ public sealed class ConfigurationSnapshotWorker : BackgroundService
     IConfigurationSnapshotRepository snapshotRepository,
     IOptions<ConfigurationSnapshotOptions> options)
   {
+    ArgumentNullException.ThrowIfNull(logger);
+    ArgumentNullException.ThrowIfNull(snapshotService);
+    ArgumentNullException.ThrowIfNull(configurationRepository);
+    ArgumentNullException.ThrowIfNull(snapshotRepository);
+    ArgumentNullException.ThrowIfNull(options);
+
     _logger = logger;
     _snapshotService = snapshotService;
     _configurationRepository = configurationRepository;
