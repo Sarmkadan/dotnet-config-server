@@ -66,6 +66,33 @@ public sealed class ComparisonService : IComparisonService
         ArgumentNullException.ThrowIfNull(modified);
 
         var result = new ComparisonResult { ItemType = typeof(T).Name };
+
+        // Handle dictionary types by comparing entries directly
+        if (original is IDictionary<string, string> originalDict && modified is IDictionary<string, string> modifiedDict)
+        {
+            var allKeys = new HashSet<string>(originalDict.Keys);
+            allKeys.UnionWith(modifiedDict.Keys);
+
+            foreach (var key in allKeys)
+            {
+                var hasOriginal = originalDict.TryGetValue(key, out var origValue);
+                var hasModified = modifiedDict.TryGetValue(key, out var modValue);
+
+                if (!hasOriginal || !hasModified || origValue != modValue)
+                {
+                    result.Changes.Add(new PropertyChange
+                    {
+                        PropertyName = key,
+                        OriginalValue = hasOriginal ? origValue ?? "null" : "null",
+                        ModifiedValue = hasModified ? modValue ?? "null" : "null",
+                        PropertyType = "String"
+                    });
+                }
+            }
+
+            return result;
+        }
+
         var properties = typeof(T).GetProperties();
 
         var originalMap = new Dictionary<string, string?>();

@@ -75,8 +75,7 @@ public sealed class AuditLog
         System.ArgumentException.ThrowIfNullOrEmpty(entityType);
         System.ArgumentException.ThrowIfNullOrEmpty(entityId);
         System.ArgumentException.ThrowIfNullOrEmpty(userId);
-        System.ArgumentException.ThrowIfNullOrEmpty(entityName);
-        System.ArgumentException.ThrowIfNullOrEmpty(userEmail);
+        // entityName and userEmail are nullable parameters - skip validation when null
         return new AuditLog
         {
             ActionType = AuditActionType.ConfigurationCreated,

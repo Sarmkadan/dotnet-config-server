@@ -197,6 +197,12 @@ public sealed class ConfigurationExporter
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentNullException.ThrowIfNull(configurations);
 
+        if (!configurations.Any())
+        {
+            writer.Write("<Configurations />");
+            return;
+        }
+
         writer.WriteLine("<Configurations>");
 
         foreach (var config in configurations)

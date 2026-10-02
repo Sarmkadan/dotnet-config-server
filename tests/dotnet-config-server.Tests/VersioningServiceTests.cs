@@ -148,9 +148,13 @@ public sealed class VersioningServiceTests_v2
         var config = new Configuration { Id = configId, Name = "test", ApplicationId = Guid.NewGuid(), CreatedBy = "admin" };
 
         _configRepositoryMock.Setup(r => r.GetByIdAsync(configId)).ReturnsAsync(config);
-        _versionRepositoryMock.Setup(r => r.GetActiveVersionAsync(configId)).ReturnsAsync((ConfigurationVersion?)null);
+        ConfigurationVersion? latestVersion = null;
+        _versionRepositoryMock.Setup(r => r.GetActiveVersionAsync(configId))
+            .ReturnsAsync(() => latestVersion);
         _keyRepositoryMock.Setup(r => r.GetByVersionAsync(It.IsAny<Guid>())).ReturnsAsync(new List<ConfigurationKey>());
-        _versionRepositoryMock.Setup(r => r.AddAsync(It.IsAny<ConfigurationVersion>())).Returns(Task.CompletedTask);
+        _versionRepositoryMock.Setup(r => r.AddAsync(It.IsAny<ConfigurationVersion>()))
+            .Callback<ConfigurationVersion>(v => latestVersion = v)
+            .Returns(Task.CompletedTask);
         _versionRepositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.CompletedTask);
 
         // Create versions

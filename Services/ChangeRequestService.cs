@@ -104,9 +104,8 @@ public sealed class ChangeRequestService : IChangeRequestService
     public async Task<ChangeRequest> RejectAsync(Guid id, string reviewerId, string comment)
     {
         ArgumentException.ThrowIfNullOrEmpty(reviewerId);
-        ArgumentException.ThrowIfNullOrEmpty(comment);
 
-        if (string.IsNullOrWhiteSpace(comment))
+        if (string.IsNullOrEmpty(comment) || string.IsNullOrWhiteSpace(comment))
             throw new ValidationException("Rejection comment is required", new Dictionary<string, List<string>>());
 
         var request = await _repository.GetByIdAsync(id)

@@ -69,7 +69,7 @@ public sealed class VersioningService : IVersioningService
         if (config is null)
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
-        // Get the current active version for version calculation and concurrency check
+        // Get the current active version for concurrency check
         var previousVersion = await GetActiveVersionAsync(configurationId);
 
         // Check optimistic concurrency if expected version is provided

@@ -91,8 +91,8 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromCsvAsync(string csv, Guid configurationId)
     {
-        ArgumentException.ThrowIfNullOrEmpty(csv);
-            ArgumentException.ThrowIfNullOrEmpty(csv);
+        if (string.IsNullOrEmpty(csv))
+            return await Task.FromResult(new List<ConfigurationKey>());
             var lines = csv.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var keys = new List<ConfigurationKey>();
 
@@ -130,7 +130,8 @@ public sealed class ConfigurationImportService : IConfigurationImportService
     /// <inheritdoc/>
     public async Task<List<ConfigurationKey>> ImportFromEnvAsync(string envContent, Guid configurationId)
     {
-        ArgumentException.ThrowIfNullOrEmpty(envContent);
+        if (string.IsNullOrEmpty(envContent))
+            return await Task.FromResult(new List<ConfigurationKey>());
             var lines = envContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         var keys = new List<ConfigurationKey>();
 
