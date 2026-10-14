@@ -7,6 +7,7 @@ A production-grade centralized configuration server for .NET microservices with 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Health Checks](#health-checks)
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -51,6 +52,77 @@ curl -s -X POST https://localhost:5001/api/v1/configurations \
  -H "Content-Type: application/json" \
  -d '{"applicationId":"<id>","environment":"Development","description":"Dev config"}' | jq .
 ```
+
+## Health Checks
+
+The server registers four checks, exposed on three endpoints:
+
+| Endpoint | Checks included | Purpose |
+|----------|-----------------|---------|
+| `/health` | all | Full diagnostic view |
+| `/health/live` | `process` | Liveness: the process is up and serving requests |
+| `/health/ready` | `config-store`, `encryption-keys`, `config-server` | Readiness: safe to route traffic to this instance |
+
+The `config-server` check (`ConfigServerHealthCheck`) is a diagnostic check that covers the configuration root, the change watcher and webhook delivery:
+
+| Signal | Source | Effect when it fails |
+|--------|--------|----------------------|
+| Configuration root reachable | `IConfigStore.IsReachableAsync()` | **Unhealthy** |
+| Watcher running | `ConfigWatcherStatus.IsRunning`, set when the change event subscriptions are wired at startup and cleared on shutdown | **Degraded** |
+| Last reload time | `ConfigWatcherStatus.LastReloadUtc`, set each time a configuration change event is handled successfully | Reported as data only (`never` until the first change) |
+| Last webhook delivery | Most recent `WebhookDelivery` by `SentAt` (or `CreatedAt` if not yet sent) | **Degraded** if its status is `Failed`; **Unhealthy** if the query itself fails |
+
+Status codes follow the ASP.NET Core defaults: `Healthy` and `Degraded` return `200 OK`, and `Unhealthy` returns `503 Service Unavailable`. A degraded watcher or failed webhook delivery therefore does not take the instance out of rotation on its own.
+
+By default the endpoints return only the status word. To see the diagnostic data (`configRootReachable`, `watcherRunning`, `lastReloadUtc`, `lastWebhookDeliveryStatus`, `lastWebhookDeliveryStatusCode`, `lastWebhookDeliveryUtc`), replace the `app.MapHealthChecks("/health")` call in `Program.cs` with one that uses a custom response writer:
+
+```csharp
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                data = e.Value.Data
+            })
+        });
+    }
+});
+```
+
+Example response from the `config-server` check when the watcher has stopped:
+
+```json
+{
+  "name": "config-server",
+  "status": "Degraded",
+  "description": "Configuration watcher is not running.",
+  "data": {
+    "configRootReachable": true,
+    "watcherRunning": false,
+    "lastReloadUtc": "2026-10-14T09:12:44.0310000Z",
+    "lastWebhookDeliveryStatus": "Success",
+    "lastWebhookDeliveryStatusCode": 200,
+    "lastWebhookDeliveryUtc": "2026-10-14T09:10:02.5520000Z"
+  }
+}
+```
+
+The check is registered in `Program.cs` with `AddConfigServerHealthCheck()`, which lives in `Infrastructure/HealthCheckBuilderExtensions.cs`. It also registers the `ConfigWatcherStatus` singleton. If you host the services in another application, call it the same way:
+
+```csharp
+builder.Services.AddHealthChecks()
+    .AddConfigServerHealthCheck();
+```
+
+Diagnostic output is redacted: `ToString()` and the debugger display of `ConfigurationKey` hide `Value` and `DefaultValue` for encrypted or sensitive keys, and `WebhookSubscription` hides its `Secret`, its custom header values, and everything in its URL except the authority.
 
 ## Application
 

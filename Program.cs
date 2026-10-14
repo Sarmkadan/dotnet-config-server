@@ -143,7 +143,8 @@ try
     builder.Services.AddHealthChecks()
         .AddCheck<ProcessLivenessHealthCheck>("process", tags: ["live"])
         .AddCheck<ConfigStoreReadinessHealthCheck>("config-store", tags: ["ready"])
-        .AddCheck<EncryptionKeyReadinessHealthCheck>("encryption-keys", tags: ["ready"]);
+        .AddCheck<EncryptionKeyReadinessHealthCheck>("encryption-keys", tags: ["ready"])
+        .AddConfigServerHealthCheck();
 
     var app = builder.Build();
 
@@ -151,30 +152,41 @@ try
     var eventBus = app.Services.GetRequiredService<IEventBus>();
     var scopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
 
+    // Change watcher: event subscriptions drive cache invalidation and notifications.
+    // ConfigWatcherStatus reports whether they are active and when a change was last handled.
+    var watcherStatus = app.Services.GetRequiredService<ConfigWatcherStatus>();
+
     eventBus.Subscribe<ConfigurationCreatedEvent>(async e =>
     {
         using var scope = scopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
             .HandleConfigurationCreatedAsync(e);
+        watcherStatus.RecordReload();
     });
     eventBus.Subscribe<ConfigurationUpdatedEvent>(async e =>
     {
         using var scope = scopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
             .HandleConfigurationUpdatedAsync(e);
+        watcherStatus.RecordReload();
     });
     eventBus.Subscribe<ConfigurationKeyChangedEvent>(async e =>
     {
         using var scope = scopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
             .HandleConfigurationKeyChangedAsync(e);
+        watcherStatus.RecordReload();
     });
     eventBus.Subscribe<ConfigurationDeletedEvent>(async e =>
     {
         using var scope = scopeFactory.CreateScope();
         await scope.ServiceProvider.GetRequiredService<ConfigurationEventHandlers>()
             .HandleConfigurationDeletedAsync(e);
+        watcherStatus.RecordReload();
     });
+
+    watcherStatus.MarkStarted();
+    app.Lifetime.ApplicationStopping.Register(watcherStatus.MarkStopped);
 
     // Configure middleware
     app.UseMiddleware<ErrorHandlingMiddleware>();

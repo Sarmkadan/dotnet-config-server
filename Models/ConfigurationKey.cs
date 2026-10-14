@@ -5,6 +5,7 @@
 // =============================================================================
 
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using DotnetConfigServer.Common;
 
 using DotnetConfigServer.Exceptions;
@@ -13,6 +14,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a single key-value pair within a configuration
 /// </summary>
+[DebuggerDisplay("ConfigurationKey {Key,nq} ({ValueType,nq})")]
 public sealed class ConfigurationKey
 {
     [Key]
@@ -251,7 +253,15 @@ public sealed class ConfigurationKey
             UpdatedAt = UpdatedAt
         };
     }
-    public override string ToString() => $"ConfigurationKey {{ Id = {Id}, Key = {Key}, Value = {Value}, DefaultValue = {DefaultValue}, Description = {Description}, ValueType = {ValueType} }}";
+    /// <summary>
+    /// Returns a diagnostic representation of this key. Values of encrypted or
+    /// sensitive keys are replaced with a redaction marker so they never reach logs.
+    /// </summary>
+    public override string ToString() => $"ConfigurationKey {{ Id = {Id}, Key = {Key}, Value = {RedactIfSecret(Value)}, DefaultValue = {RedactIfSecret(DefaultValue)}, Description = {Description}, ValueType = {ValueType} }}";
+
+    // Not a property, so EF Core does not map it.
+    private string? RedactIfSecret(string? value) =>
+        IsEncrypted || IsSensitive ? "<redacted>" : value;
 }
 
 /// <summary>

@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using DotnetConfigServer.Common;
 using DotnetConfigServer.Repositories;
 using DotnetConfigServer.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -63,6 +64,102 @@ public sealed class ConfigStoreReadinessHealthCheck : IHealthCheck
         {
             return HealthCheckResult.Unhealthy("Configuration store health probe failed.", ex);
         }
+    }
+}
+
+/// <summary>
+/// Diagnostic health check covering the configuration root, the change watcher and
+/// webhook delivery. The config root being unreachable is <see cref="HealthStatus.Unhealthy"/>;
+/// a stopped watcher or a failed last webhook delivery is <see cref="HealthStatus.Degraded"/>.
+/// Results include the watcher state, the last reload time and the last delivery status as data.
+/// </summary>
+public sealed class ConfigServerHealthCheck : IHealthCheck
+{
+    private readonly IConfigStore _configStore;
+    private readonly ConfigWatcherStatus _watcherStatus;
+    private readonly IWebhookDeliveryRepository _deliveryRepository;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConfigServerHealthCheck"/> class.
+    /// </summary>
+    /// <param name="configStore">The configuration store that acts as the config root.</param>
+    /// <param name="watcherStatus">The state of the in-process change watcher.</param>
+    /// <param name="deliveryRepository">The webhook delivery repository used to read the last delivery.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any argument is <see langword="null"/>.</exception>
+    public ConfigServerHealthCheck(
+        IConfigStore configStore,
+        ConfigWatcherStatus watcherStatus,
+        IWebhookDeliveryRepository deliveryRepository)
+    {
+        ArgumentNullException.ThrowIfNull(configStore);
+        ArgumentNullException.ThrowIfNull(watcherStatus);
+        ArgumentNullException.ThrowIfNull(deliveryRepository);
+
+        _configStore = configStore;
+        _watcherStatus = watcherStatus;
+        _deliveryRepository = deliveryRepository;
+    }
+
+    /// <inheritdoc/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var data = new Dictionary<string, object>();
+
+        bool reachable;
+        try
+        {
+            reachable = await _configStore.IsReachableAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return HealthCheckResult.Unhealthy("Configuration root probe failed.", ex, data);
+        }
+
+        data["configRootReachable"] = reachable;
+        if (!reachable)
+        {
+            return HealthCheckResult.Unhealthy("Configuration root is not reachable.", data: data);
+        }
+
+        var issues = new List<string>();
+
+        data["watcherRunning"] = _watcherStatus.IsRunning;
+        data["lastReloadUtc"] = _watcherStatus.LastReloadUtc?.ToString("O") ?? "never";
+        if (!_watcherStatus.IsRunning)
+        {
+            issues.Add("Configuration watcher is not running.");
+        }
+
+        try
+        {
+            var lastDelivery = await _deliveryRepository.GetMostRecentAsync();
+            if (lastDelivery is null)
+            {
+                data["lastWebhookDeliveryStatus"] = "none";
+            }
+            else
+            {
+                data["lastWebhookDeliveryStatus"] = lastDelivery.Status.ToString();
+                data["lastWebhookDeliveryStatusCode"] = lastDelivery.StatusCode;
+                data["lastWebhookDeliveryUtc"] = (lastDelivery.SentAt ?? lastDelivery.CreatedAt).ToString("O");
+
+                if (lastDelivery.Status == WebhookDeliveryStatus.Failed)
+                {
+                    issues.Add("Last webhook delivery failed.");
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return HealthCheckResult.Unhealthy("Webhook delivery probe failed.", ex, data);
+        }
+
+        return issues.Count == 0
+            ? HealthCheckResult.Healthy("Configuration root is reachable, watcher is running and the last webhook delivery succeeded.", data)
+            : HealthCheckResult.Degraded(string.Join(" ", issues), data: data);
     }
 }
 

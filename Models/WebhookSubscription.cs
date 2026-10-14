@@ -5,6 +5,7 @@
 // =============================================================================
 
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using DotnetConfigServer.Common;
 
 using DotnetConfigServer.Exceptions;
@@ -13,6 +14,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a webhook subscription for configuration change notifications
 /// </summary>
+[DebuggerDisplay("WebhookSubscription {Name,nq} [{Status,nq}]")]
 public sealed class WebhookSubscription
 {
     [Key]
@@ -181,10 +183,22 @@ public sealed class WebhookSubscription
         };
     }
 
+    /// <summary>
+    /// Returns a diagnostic representation of this subscription. The signing secret and
+    /// custom header values are never included, and the URL is reduced to its authority
+    /// because webhook URLs often carry tokens in the path or query string.
+    /// </summary>
     public override string ToString()
     {
-        return $"WebhookSubscription {{ Id = {Id}, Name = {Name}, Url = {Url}, Description = {Description}, ConfigurationId = {ConfigurationId}, Status = {Status} }}";
+        var secret = string.IsNullOrEmpty(Secret) ? "<none>" : "<redacted>";
+        return $"WebhookSubscription {{ Id = {Id}, Name = {Name}, Url = {RedactUrl(Url)}, Description = {Description}, ConfigurationId = {ConfigurationId}, Status = {Status}, Secret = {secret}, CustomHeaders = [{string.Join(", ", CustomHeaders.Keys)}] }}";
     }
+
+    // Not a property, so EF Core does not map it.
+    private static string RedactUrl(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            ? uri.GetLeftPart(UriPartial.Authority) + "/<redacted>"
+            : "<redacted>";
 }
 
 /// <summary>

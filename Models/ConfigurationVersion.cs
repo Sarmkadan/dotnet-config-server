@@ -5,6 +5,7 @@
 // =============================================================================
 
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using DotnetConfigServer.Common;
 
 using DotnetConfigServer.Exceptions;
@@ -13,6 +14,7 @@ namespace DotnetConfigServer.Models;
 /// <summary>
 /// Represents a version of a configuration with associated keys
 /// </summary>
+[DebuggerDisplay("ConfigurationVersion {VersionNumber,nq} [{Status,nq}]")]
 public sealed class ConfigurationVersion
 {
     [Key]
@@ -168,7 +170,11 @@ public sealed class ConfigurationVersion
         };
     }
 
-    public override string ToString() => $"ConfigurationVersion {{ Id = {Id}, ConfigurationId = {ConfigurationId}, VersionNumber = {VersionNumber}, Status = {Status}, ReleaseNotes = {ReleaseNotes}, CreatedAt = {CreatedAt} }}";
+    /// <summary>
+    /// Returns a diagnostic representation of this version. The contained keys are
+    /// deliberately omitted, so their (possibly encrypted) values never appear in the output.
+    /// </summary>
+    public override string ToString() => $"ConfigurationVersion {{ Id = {Id}, ConfigurationId = {ConfigurationId}, VersionNumber = {VersionNumber}, Status = {Status}, KeyCount = {KeyCount}, HasEncryptedKeys = {HasEncryptedKeys}, ReleaseNotes = {ReleaseNotes}, CreatedAt = {CreatedAt} }}";
 }
 
 /// <summary>

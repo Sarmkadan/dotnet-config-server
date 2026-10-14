@@ -73,6 +73,7 @@ public interface IWebhookDeliveryRepository : IRepository<Models.WebhookDelivery
     Task<List<Models.WebhookDelivery>> GetPendingDeliveriesAsync();
     Task<Models.WebhookDelivery?> GetByEventAndSubscriptionAsync(Guid eventId, Guid subscriptionId);
     Task<List<Models.WebhookDelivery>> GetFailedDeliveriesAsync(int maxRetries, int maxAgeHours);
+    Task<Models.WebhookDelivery?> GetMostRecentAsync();
 }
 
 /// <summary>

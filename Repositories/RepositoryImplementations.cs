@@ -159,6 +159,11 @@ public sealed class WebhookDeliveryRepository : BaseRepository<WebhookDelivery>,
             .OrderBy(d => d.CreatedAt).ToListAsync();
     }
 
+    public async Task<WebhookDelivery?> GetMostRecentAsync()
+    {
+        return await _dbSet.OrderByDescending(d => d.SentAt ?? d.CreatedAt).FirstOrDefaultAsync();
+    }
+
     public async Task<WebhookDelivery?> GetByEventAndSubscriptionAsync(Guid eventId, Guid subscriptionId)
     {
         return await _dbSet.FirstOrDefaultAsync(d =>
