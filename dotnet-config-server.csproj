@@ -16,6 +16,13 @@
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +33,8 @@
     <Compile Remove="tests/**/*.cs" />
     <Compile Remove="examples/**/*.cs" />
     <Compile Remove="benchmarks/**/*.cs" />
+    <!-- References the non-existent ServiceExtensionsConfiguration type; excluded until it is defined or the files are removed -->
+    <Compile Remove="Infrastructure/ServiceExtensionsConfiguration*.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +44,10 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.402" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
