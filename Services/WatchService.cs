@@ -5,7 +5,9 @@
 // =============================================================================
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using DotnetConfigServer.Events;
+using DotnetConfigServer.Infrastructure;
 using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Services;
@@ -57,10 +59,11 @@ public sealed class WatchService : IDisposable
             list.Add(callback);
         }
 
-        _logger.LogInformation("Subscriber added for configuration {ConfigurationId}. Total: {Count}",
+        _logger.LogInformation(ConfigServerTelemetry.WatchEvents.Started,
+            "Watch started for configuration {ConfigurationId}. Subscribers: {Count}",
             configurationId, list.Count);
 
-        return new Unsubscriber(list, callback);
+        return new Unsubscriber(list, callback, configurationId, _logger);
     }
 
     /// <summary>
@@ -82,8 +85,14 @@ public sealed class WatchService : IDisposable
             snapshot = list.ToArray();
         }
 
+        // Only dispatches that reach at least one subscriber count as a reload.
+        if (snapshot.Length == 0)
+            return;
+
         _logger.LogDebug("Dispatching event {EventId} to {Count} subscriber(s) for configuration {ConfigurationId}",
             domainEvent.Id, snapshot.Length, domainEvent.ConfigurationId);
+
+        var startedAt = Stopwatch.GetTimestamp();
 
         foreach (var callback in snapshot)
         {
@@ -93,9 +102,18 @@ public sealed class WatchService : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Subscriber callback failed for event {EventId}", domainEvent.Id);
+                _logger.LogError(ConfigServerTelemetry.WatchEvents.SubscriberFailed, ex,
+                    "Subscriber callback failed for event {EventId}", domainEvent.Id);
             }
         }
+
+        var elapsedMs = Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+        ConfigServerTelemetry.ConfigReloads.Add(1);
+        ConfigServerTelemetry.ReloadDurationMs.Record(elapsedMs);
+
+        _logger.LogInformation(ConfigServerTelemetry.WatchEvents.Reloaded,
+            "Configuration {ConfigurationId} reloaded for {Count} subscriber(s) in {ElapsedMs}ms",
+            domainEvent.ConfigurationId, snapshot.Length, elapsedMs);
     }
 
     /// <summary>
@@ -131,26 +149,41 @@ public sealed class WatchService : IDisposable
         if (_disposed) return;
         _disposed = true;
         _subscribers.Clear();
-        _logger.LogInformation("WatchService disposed, all subscriptions cleared");
+        _logger.LogInformation(ConfigServerTelemetry.WatchEvents.Stopped,
+            "WatchService disposed, all subscriptions cleared");
     }
 
     private sealed class Unsubscriber : IDisposable
     {
         private readonly List<Func<DomainEvent, Task>> _list;
         private readonly Func<DomainEvent, Task> _callback;
+        private readonly Guid _configurationId;
+        private readonly ILogger<WatchService> _logger;
 
-        public Unsubscriber(List<Func<DomainEvent, Task>> list, Func<DomainEvent, Task> callback)
+        public Unsubscriber(
+            List<Func<DomainEvent, Task>> list,
+            Func<DomainEvent, Task> callback,
+            Guid configurationId,
+            ILogger<WatchService> logger)
         {
             _list = list;
             _callback = callback;
+            _configurationId = configurationId;
+            _logger = logger;
         }
 
         public void Dispose()
         {
+            int remaining;
             lock (_list)
             {
                 _list.Remove(_callback);
+                remaining = _list.Count;
             }
+
+            _logger.LogInformation(ConfigServerTelemetry.WatchEvents.Stopped,
+                "Watch stopped for configuration {ConfigurationId}. Subscribers: {Count}",
+                _configurationId, remaining);
         }
     }
 }

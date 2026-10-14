@@ -8,6 +8,7 @@ A production-grade centralized configuration server for .NET microservices with 
 
 - [Quick Start](#quick-start)
 - [Health Checks](#health-checks)
+- [Observability](#observability)
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -123,6 +124,53 @@ builder.Services.AddHealthChecks()
 ```
 
 Diagnostic output is redacted: `ToString()` and the debugger display of `ConfigurationKey` hide `Value` and `DefaultValue` for encrypted or sensitive keys, and `WebhookSubscription` hides its `Secret`, its custom header values, and everything in its URL except the authority.
+
+## Observability
+
+The change watcher (`WatchService`) and webhook delivery (`WebhookNotifier`, `WebhookService`) emit metrics and structured logs.
+
+### Metrics
+
+All instruments are published on the meter **`DotnetConfigServer`** (exported as `ConfigServerTelemetry.MeterName`).
+
+| Instrument | Type | Tags | Meaning |
+|---|---|---|---|
+| `config_reloads_total` | Counter | none | Change events dispatched to at least one watch subscriber. |
+| `webhook_deliveries_total` | Counter | `status`: `success` or `failure` | Webhook HTTP deliveries. A non-2xx response or a transport exception counts as `failure`. |
+| `reload_duration_ms` | Histogram (ms) | none | Time to run all subscriber callbacks for one change event. |
+
+### Log events
+
+Log messages carry the following event ids, so they can be filtered or routed by id:
+
+| Id | Name | Emitted when |
+|---|---|---|
+| 1001 | `WatchStarted` | A subscriber is registered with `WatchService.Watch`. |
+| 1002 | `WatchStopped` | A subscription is disposed, or `WatchService` is disposed. |
+| 1003 | `ConfigReloaded` | A change event is dispatched to subscribers. |
+| 1004 | `WatchSubscriberFailed` | A subscriber callback throws. |
+| 2001 | `WebhookNotificationStarted` | A domain event is fanned out to webhook subscriptions. |
+| 2002 | `WebhookNotificationFailed` | Fan-out fails before any delivery is attempted. |
+| 2010 | `WebhookSent` | A webhook endpoint returns a 2xx response. |
+| 2011 | `WebhookFailed` | A webhook endpoint returns a non-2xx response or the request throws. |
+
+### Exporting to OpenTelemetry
+
+The meter is not exported by default. Add the `OpenTelemetry.Extensions.Hosting` package and an exporter of your choice, then add the meter by name:
+
+```csharp
+using OpenTelemetry.Metrics;
+
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics => metrics
+        .AddMeter("DotnetConfigServer")
+        .AddAspNetCoreInstrumentation()
+        .AddOtlpExporter());
+```
+
+To scrape Prometheus instead, replace `AddOtlpExporter()` with `AddPrometheusExporter()` from `OpenTelemetry.Exporter.Prometheus.AspNetCore` and map the endpoint with `app.MapPrometheusScrapingEndpoint()`. The counter names are exported as-is, with `_total` already present, so `config_reloads_total` appears unchanged in Prometheus.
+
+To confirm the instruments are emitting without an exporter, subscribe a `MeterListener` to `DotnetConfigServer` and filter on the instrument names above, as `tests/dotnet-config-server.Tests/WatchServiceMetricsTests.cs` does.
 
 ## Application
 

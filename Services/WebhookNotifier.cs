@@ -6,6 +6,7 @@
 
 using System.Text.Json;
 using DotnetConfigServer.Events;
+using DotnetConfigServer.Infrastructure;
 using DotnetConfigServer.Models;
 
 namespace DotnetConfigServer.Services;
@@ -58,15 +59,17 @@ public sealed class WebhookNotifier : IDisposable
 
         try
         {
-            _logger.LogInformation(
+            _logger.LogInformation(ConfigServerTelemetry.WebhookEvents.NotificationStarted,
                 "Processing webhook notification for event {EventType} ({EventId}), configuration {ConfigurationId}",
                 eventType, domainEvent.Id, domainEvent.ConfigurationId);
 
+            // Per-delivery outcomes (webhook-sent / webhook-failed) are logged and counted by
+            // WebhookService, which performs the HTTP calls; this method only sees fan-out errors.
             await _webhookService.NotifyAsync(eventType, domainEvent).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(ConfigServerTelemetry.WebhookEvents.NotificationFailed, ex,
                 "Failed to send webhook notification for event {EventType} ({EventId})",
                 eventType, domainEvent.Id);
         }

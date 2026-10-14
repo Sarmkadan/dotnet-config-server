@@ -13,6 +13,7 @@ using DotnetConfigServer.Repositories;
 
 using DotnetConfigServer.Exceptions;
 using DotnetConfigServer.Events;
+using DotnetConfigServer.Infrastructure;
 
 namespace DotnetConfigServer.Services;
 
@@ -441,7 +442,7 @@ public sealed class WebhookService : IWebhookService
             request.Headers.Add("X-Webhook-Signature", signature);
         }
 
-        using var response = await _httpClient.SendAsync(request);
+        using var response = await SendRequestAsync(request, subscription);
         var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
 
         if (response.IsSuccessStatusCode)
@@ -450,7 +451,9 @@ public sealed class WebhookService : IWebhookService
             delivery.MarkSuccess((int)response.StatusCode, (int)elapsed, responseBody);
             subscription.ResetRetryCount((int)response.StatusCode);
 
-            _logger.LogInformation("Webhook {WebhookId} delivered successfully in {Elapsed}ms",
+            ConfigServerTelemetry.RecordWebhookDelivery(ConfigServerTelemetry.StatusSuccess);
+            _logger.LogInformation(ConfigServerTelemetry.WebhookEvents.Sent,
+                "Webhook {WebhookId} delivered successfully in {Elapsed}ms",
                 subscription.Id, elapsed);
         }
         else
@@ -459,11 +462,32 @@ public sealed class WebhookService : IWebhookService
             delivery.MarkFailed(errorBody, (int)response.StatusCode, (int)elapsed);
             subscription.IncrementRetryCount((int)response.StatusCode);
 
-            _logger.LogWarning("Webhook {WebhookId} delivery failed with status {StatusCode}",
+            ConfigServerTelemetry.RecordWebhookDelivery(ConfigServerTelemetry.StatusFailure);
+            _logger.LogWarning(ConfigServerTelemetry.WebhookEvents.Failed,
+                "Webhook {WebhookId} delivery failed with status {StatusCode}",
                 subscription.Id, response.StatusCode);
         }
 
         await _deliveryRepository.UpdateAsync(delivery);
         await _subscriptionRepository.UpdateAsync(subscription);
+    }
+
+    /// <summary>
+    /// Sends the request, recording a failed delivery attempt if the transport throws before a response arrives.
+    /// The exception is rethrown so callers keep their existing retry handling.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, WebhookSubscription subscription)
+    {
+        try
+        {
+            return await _httpClient.SendAsync(request);
+        }
+        catch (Exception ex)
+        {
+            ConfigServerTelemetry.RecordWebhookDelivery(ConfigServerTelemetry.StatusFailure);
+            _logger.LogError(ConfigServerTelemetry.WebhookEvents.Failed, ex,
+                "Webhook {WebhookId} delivery failed before receiving a response", subscription.Id);
+            throw;
+        }
     }
 }
