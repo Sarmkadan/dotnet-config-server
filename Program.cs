@@ -16,6 +16,7 @@ using DotnetConfigServer.Integration;
 using DotnetConfigServer.Infrastructure;
 using DotnetConfigServer.BackgroundWorkers;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,23 +103,32 @@ try
     {
         options.Level = System.IO.Compression.CompressionLevel.Fastest;
     });
+    // Options are validated at host startup (data annotations + IValidateOptions<T>);
+    // an invalid setting aborts startup with a message naming the property and value.
     builder.Services.AddOptions<DotnetConfigServerOptions>()
         .Bind(builder.Configuration.GetSection("DotnetConfigServer"))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+    builder.Services.AddSingleton<IValidateOptions<DotnetConfigServerOptions>, DotnetConfigServerOptionsValidator>();
 
     builder.Services.AddOptions<ConfigurationSnapshotOptions>()
         .Bind(builder.Configuration.GetSection("DotnetConfigServer:Snapshot"))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+    builder.Services.AddSingleton<IValidateOptions<ConfigurationSnapshotOptions>, ConfigurationSnapshotOptionsValidator>();
 
     builder.Services.AddOptions<EncryptionKeyRotationOptions>()
         .Bind(builder.Configuration.GetSection("DotnetConfigServer:EncryptionKeyRotation"))
         .ValidateDataAnnotations()
         .ValidateOnStart();
+    builder.Services.AddSingleton<IValidateOptions<EncryptionKeyRotationOptions>, EncryptionKeyRotationOptionsValidator>();
 
-    // Bind performance monitoring options (defaults are defined in the class)
-    builder.Services.Configure<PerformanceMonitoringOptions>(builder.Configuration.GetSection("PerformanceMonitoring"));
+    // Performance monitoring options (defaults are defined in the class)
+    builder.Services.AddOptions<PerformanceMonitoringOptions>()
+        .Bind(builder.Configuration.GetSection("PerformanceMonitoring"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+    builder.Services.AddSingleton<IValidateOptions<PerformanceMonitoringOptions>, PerformanceMonitoringOptionsValidator>();
 
     builder.Services.AddCors(options =>
     {
