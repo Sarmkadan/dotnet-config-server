@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 
 using DotnetConfigServer.Common;
 using DotnetConfigServer.Exceptions;
+
 namespace DotnetConfigServer.Models;
 
 /// <summary>
@@ -160,7 +161,6 @@ public sealed class Application
     }
 
     public override string ToString() => $"Application {{ Id = {Id}, Name = {Name}, Description = {Description}, Slug = {Slug}, CreatedAt = {CreatedAt}, UpdatedAt = {UpdatedAt} }}";
-
 }
 
 /// <summary>
