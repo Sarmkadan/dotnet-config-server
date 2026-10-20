@@ -38,5 +38,6 @@ public sealed class ConfigurationSnapshotOptions
     /// </summary>
     public bool SkipIfUnchanged { get; set; } = true;
 
-    public override string ToString() => $"ConfigurationSnapshotOptions {{ Enabled = {Enabled}, IntervalMinutes = {IntervalMinutes}, DefaultUserId = {DefaultUserId}, DefaultReason = {DefaultReason}, SkipIfUnchanged = {SkipIfUnchanged} }}";
+    public override string ToString() =>
+        $"ConfigurationSnapshotOptions {{ Enabled = {Enabled}, IntervalMinutes = {IntervalMinutes}, DefaultUserId = {DefaultUserId}, DefaultReason = {DefaultReason}, SkipIfUnchanged = {SkipIfUnchanged} }}";
 }
