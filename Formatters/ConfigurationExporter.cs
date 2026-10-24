@@ -19,6 +19,12 @@ namespace DotnetConfigServer.Formatters;
 /// </summary>
 public sealed class ConfigurationExporter
 {
+    private const string EnvNestingSeparator = ":";
+    private const string EnvFlatSeparator = "__";
+
+    // Characters that make an unquoted .env value ambiguous (whitespace, quotes, escapes, comments, interpolation)
+    private static readonly char[] EnvQuotingCharacters = [' ', '\t', '\r', '\n', '"', '\'', '\\', '#', '$', '`'];
+
     // ------------------------------------------------------------------------
     // JSON – streaming version (already existed)
     // ------------------------------------------------------------------------
@@ -269,6 +275,13 @@ public sealed class ConfigurationExporter
     // ------------------------------------------------------------------------
     // ENV – streaming (TextWriter) and string wrapper
     // ------------------------------------------------------------------------
+    /// <summary>
+    /// Writes keys as <c>KEY=VALUE</c> lines suitable for a <c>.env</c> file. Hierarchical keys
+    /// using the <c>:</c> separator (e.g. <c>Database:ConnectionString</c>) are flattened to
+    /// <c>__</c> (<c>Database__ConnectionString</c>), matching the ASP.NET environment variable
+    /// configuration provider. Values are quoted only when they contain characters that would
+    /// otherwise be misread by a dotenv parser.
+    /// </summary>
     public static void WriteAsEnvFormat(TextWriter writer, IEnumerable<ConfigurationKey> keys)
     {
         ArgumentNullException.ThrowIfNull(writer);
@@ -276,8 +289,9 @@ public sealed class ConfigurationExporter
 
         foreach (var key in keys)
         {
+            var envKey = key.Key.Replace(EnvNestingSeparator, EnvFlatSeparator);
             var escapedValue = EscapeEnvValue(key.Value);
-            writer.WriteLine($"{key.Key}={escapedValue}");
+            writer.WriteLine($"{envKey}={escapedValue}");
         }
     }
 
@@ -425,13 +439,23 @@ public sealed class ConfigurationExporter
         if (string.IsNullOrEmpty(value))
             return string.Empty;
 
-        if (value.Contains(" ") || value.Contains("\"") || value.Contains("$"))
-        {
-            return "\"" + value.Replace("\"", "\\\"").Replace("$", "\\$") + "\"";
-        }
+        if (!NeedsEnvQuoting(value))
+            return value;
 
-        return value;
+        var escaped = value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("$", "\\$")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n");
+
+        return $"\"{escaped}\"";
     }
+
+    private static bool NeedsEnvQuoting(string value) =>
+        char.IsWhiteSpace(value[0]) ||
+        char.IsWhiteSpace(value[^1]) ||
+        value.IndexOfAny(EnvQuotingCharacters) >= 0;
 
     private static string EscapeYamlValue(string? value)
     {

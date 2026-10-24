@@ -424,6 +424,125 @@ public sealed class ConfigurationExporterTests
     }
 
     /// <summary>
+    /// Verifies that a single-level hierarchical key ("Database:ConnectionString") is flattened
+    /// to a double-underscore name ("Database__ConnectionString") in .env output.
+    /// </summary>
+    [Fact]
+    public void ExportAsEnvFormat_NestedKey_FlattensSeparatorToDoubleUnderscore()
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("Database:ConnectionString", "Server=localhost") };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be("Database__ConnectionString=Server=localhost\n");
+    }
+
+    /// <summary>
+    /// Verifies that every level of a deeply nested key ("Logging:LogLevel:Default") is flattened
+    /// with "__" and that the value is written unquoted when it contains no special characters.
+    /// </summary>
+    [Fact]
+    public void ExportAsEnvFormat_DeeplyNestedKey_FlattensEveryLevel()
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("Logging:LogLevel:Default", "Information") };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be("Logging__LogLevel__Default=Information\n");
+    }
+
+    /// <summary>
+    /// Verifies that a flat key with no separator (and no dots) is written unchanged.
+    /// </summary>
+    [Fact]
+    public void ExportAsEnvFormat_FlatKey_IsNotModified()
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("API_KEY", "abc123") };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be("API_KEY=abc123\n");
+    }
+
+    /// <summary>
+    /// Verifies that values containing characters that a dotenv parser would misread are wrapped
+    /// in double quotes, for each trigger character in the input.
+    /// </summary>
+    [Theory]
+    [InlineData("Hello World", "\"Hello World\"")]
+    [InlineData("tab\there", "\"tab\there\"")]
+    [InlineData("pa#ss", "\"pa#ss\"")]
+    [InlineData("it's", "\"it's\"")]
+    [InlineData("back\\slash", "\"back\\\\slash\"")]
+    [InlineData("say \"hi\"", "\"say \\\"hi\\\"\"")]
+    [InlineData("cost$5", "\"cost\\$5\"")]
+    [InlineData(" leading", "\" leading\"")]
+    [InlineData("trailing ", "\"trailing \"")]
+    public void ExportAsEnvFormat_ValueNeedsQuoting_WrapsAndEscapesValue(string value, string expectedValue)
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("KEY", value) };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be($"KEY={expectedValue}\n");
+    }
+
+    /// <summary>
+    /// Verifies that a value containing a line break is written as a single quoted line with the
+    /// newline escaped as "\n", so each key still occupies exactly one line of the output file.
+    /// </summary>
+    [Fact]
+    public void ExportAsEnvFormat_ValueWithNewline_EscapesAndStaysOnOneLine()
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("CERT", "line1\r\nline2") };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be("CERT=\"line1\\r\\nline2\"\n");
+    }
+
+    /// <summary>
+    /// Verifies that a null value is written as an empty assignment ("KEY=") rather than
+    /// throwing or emitting the word "null".
+    /// </summary>
+    [Fact]
+    public void ExportAsEnvFormat_NullValue_WritesEmptyAssignment()
+    {
+        // Arrange
+        var keys = new[] { CreateEnvKey("OPTIONAL", null!) };
+
+        // Act
+        var result = ConfigurationExporter.ExportAsEnvFormat(keys);
+
+        // Assert
+        result.Should().Be("OPTIONAL=\n");
+    }
+
+    private static ConfigurationKey CreateEnvKey(string key, string value) => new()
+    {
+        Id = Guid.NewGuid(),
+        ConfigurationId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        Key = key,
+        Value = value,
+        IsActive = true
+    };
+
+    /// <summary>
     /// Verifies that exporting configurations as YAML produces a sequence item containing the
     /// configuration Id, Name, and boolean IsActive/IsEncrypted properties rendered as true/false.
     /// </summary>
