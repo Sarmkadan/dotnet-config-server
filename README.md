@@ -22,6 +22,7 @@ A production-grade centralized configuration server for .NET microservices with 
 - [Performance](#performance)
 - [Related Projects](#related-projects)
 - [Contributing](#contributing)
+- [License](#license)
 
 ## Quick Start
 
@@ -4109,3 +4110,7 @@ result.Violations.Should().ContainSingle();
 result.Violations[0].RuleId.Should().Be(ruleId);
 result.Violations[0].KeyName.Should().Be("ApiKey");
 ```
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
