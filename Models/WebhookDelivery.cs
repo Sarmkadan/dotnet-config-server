@@ -74,6 +74,8 @@ public sealed class WebhookDelivery
     /// </summary>
     public void MarkFailed(string errorMessage, int statusCode = 0, int? responseTimeMs = null)
     {
+        ArgumentNullException.ThrowIfNull(errorMessage);
+
         Status = WebhookDeliveryStatus.Failed;
         StatusCode = statusCode;
         ResponseTimeMs = responseTimeMs;
