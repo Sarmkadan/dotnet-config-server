@@ -17,6 +17,8 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class RollbackService : IRollbackService
 {
+    private const string RollbackEntityType = "Rollback";
+
     private readonly IVersioningService _versioningService;
     private readonly IAuditLogRepository _auditLogRepository;
     private readonly ILogger<RollbackService> _logger;
@@ -54,7 +56,7 @@ public sealed class RollbackService : IRollbackService
 
         var auditEntry = AuditLog.CreateEntry(
             configurationId,
-            "Rollback",
+            RollbackEntityType,
             publishedVersion.Id.ToString(),
             $"Rollback to {targetVersion.VersionNumber}",
             userId,
@@ -100,7 +102,7 @@ public sealed class RollbackService : IRollbackService
         var logs = await _auditLogRepository.GetByConfigurationAsync(configurationId);
 
         var records = logs
-            .Where(log => string.Equals(log.EntityType, "Rollback", StringComparison.OrdinalIgnoreCase))
+            .Where(log => string.Equals(log.EntityType, RollbackEntityType, StringComparison.OrdinalIgnoreCase))
             .Select(MapRecord)
             .OrderByDescending(record => record.PerformedAt)
             .ToList();
