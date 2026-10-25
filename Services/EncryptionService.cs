@@ -39,6 +39,9 @@ public sealed class EncryptionService : IEncryptionService
         AppConstants.Encryption.CurrentCiphertextVersion
     ];
 
+    private const int BitsPerByte = 8;
+    private const int DerivedKeyLengthBytes = 32; // 256 bits, matches AppConstants.Encryption.AesKeySize
+
     private readonly IEncryptionKeyRepository _keyRepository;
     private readonly ILogger<EncryptionService> _logger;
 
@@ -65,7 +68,7 @@ public sealed class EncryptionService : IEncryptionService
             aes.Padding = PaddingMode.PKCS7;
 
             // Generate IV
-            byte[] iv = new byte[aes.BlockSize / 8];
+            byte[] iv = new byte[aes.BlockSize / BitsPerByte];
             using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(iv);
@@ -121,7 +124,7 @@ public sealed class EncryptionService : IEncryptionService
                 aes.Padding = PaddingMode.PKCS7;
 
                 // Extract IV from beginning of buffer
-                int ivSize = aes.BlockSize / 8;
+                int ivSize = aes.BlockSize / BitsPerByte;
                 byte[] iv = new byte[ivSize];
                 Array.Copy(buffer, 0, iv, 0, ivSize);
 
@@ -414,7 +417,7 @@ public sealed class EncryptionService : IEncryptionService
             AppConstants.Encryption.AesIterations,
             HashAlgorithmName.SHA256))
         {
-            return pbkdf2.GetBytes(32); // 256 bits
+            return pbkdf2.GetBytes(DerivedKeyLengthBytes);
         }
     }
 
