@@ -46,6 +46,13 @@ public sealed class ConfigurationService : IConfigurationService
         IEventBus eventBus,
         ILogger<ConfigurationService> logger)
     {
+        ArgumentNullException.ThrowIfNull(configRepository);
+        ArgumentNullException.ThrowIfNull(keyRepository);
+        ArgumentNullException.ThrowIfNull(encryptionService);
+        ArgumentNullException.ThrowIfNull(auditLogRepository);
+        ArgumentNullException.ThrowIfNull(eventBus);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _configRepository = configRepository;
         _keyRepository = keyRepository;
         _encryptionService = encryptionService;
