@@ -194,10 +194,16 @@ public sealed class DiffEntry
 public sealed class ConfigurationDiffSummary
 {
     public Guid Id { get; set; }
+
     public int TotalChanges { get; set; }
+
     public int AddedCount { get; set; }
+
     public int ModifiedCount { get; set; }
+
     public int DeletedCount { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
     public string CreatedBy { get; set; } = string.Empty;
 }
