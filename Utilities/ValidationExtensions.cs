@@ -42,10 +42,11 @@ public static class ValidationExtensions
     /// <param name="minLength">The minimum required length.</param>
     /// <param name="fieldName">The name of the field being validated, used in error messages.</param>
     /// <returns>A <see cref="ValidationResult"/> indicating whether validation passed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="fieldName"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> or <paramref name="fieldName"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="minLength"/> is negative.</exception>
     public static ValidationResult ValidateMinLength(this string value, int minLength, string fieldName)
     {
+        ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(fieldName);
         ArgumentOutOfRangeException.ThrowIfNegative(minLength);
 
@@ -61,10 +62,11 @@ public static class ValidationExtensions
     /// <param name="maxLength">The maximum allowed length.</param>
     /// <param name="fieldName">The name of the field being validated, used in error messages.</param>
     /// <returns>A <see cref="ValidationResult"/> indicating whether validation passed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="fieldName"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> or <paramref name="fieldName"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="maxLength"/> is negative.</exception>
     public static ValidationResult ValidateMaxLength(this string value, int maxLength, string fieldName)
     {
+        ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(fieldName);
         ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
 
@@ -82,10 +84,11 @@ public static class ValidationExtensions
     /// <param name="max">The maximum allowed value (inclusive).</param>
     /// <param name="fieldName">The name of the field being validated, used in error messages.</param>
     /// <returns>A <see cref="ValidationResult"/> indicating whether validation passed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="fieldName"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/>, <paramref name="min"/>, <paramref name="max"/>, or <paramref name="fieldName"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="min"/> is greater than <paramref name="max"/>.</exception>
     public static ValidationResult ValidateRange<T>(this T value, T min, T max, string fieldName) where T : IComparable<T>
     {
+        ArgumentNullException.ThrowIfNull(value);
         ArgumentNullException.ThrowIfNull(fieldName);
         ArgumentNullException.ThrowIfNull(min);
         ArgumentNullException.ThrowIfNull(max);
@@ -210,9 +213,12 @@ public static class ValidationExtensions
     /// Validates the first condition and returns the result or throws.
     /// </summary>
     /// <param name="result">The validation result to check.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="result"/> is null.</exception>
     /// <exception cref="ValidationException">Thrown when the validation result is invalid.</exception>
     public static void ThrowIfInvalid(this ValidationResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         if (!result.IsValid)
             throw new ValidationException("Validation", result.ErrorMessage ?? "Validation failed");
     }
@@ -224,10 +230,11 @@ public static class ValidationExtensions
     /// <param name="errorMessage">The error message to return if validation fails.</param>
     /// <param name="fieldName">Optional field name for context in error messages.</param>
     /// <returns>A <see cref="ValidationResult"/> indicating whether validation passed.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errorMessage"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errorMessage"/> or <paramref name="fieldName"/> is null.</exception>
     public static ValidationResult ValidateCondition(bool condition, string errorMessage, string fieldName = "")
     {
         ArgumentNullException.ThrowIfNull(errorMessage);
+        ArgumentNullException.ThrowIfNull(fieldName);
 
         return !condition
             ? new ValidationResult { IsValid = false, ErrorMessage = errorMessage }
