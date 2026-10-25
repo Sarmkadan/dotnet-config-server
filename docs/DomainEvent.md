@@ -46,6 +46,9 @@
 - **`public bool IsEncrypted`**  
   Indicates whether the key value is stored encrypted. Relevant only for key-related events; for configuration-level events this is `false`.
 
+- **`public override string ToString()`**  
+  Returns a diagnostic string of the form `DomainEvent { Id = ..., OccurredAt = ..., Source = ..., UserId = ..., ConfigurationId = ..., ApplicationId = ... }`. It includes only the base-class members; payload fields of derived events are not printed. A `null` `Source` or `UserId` is rendered as an empty value, and `OccurredAt` uses the current culture's `DateTime` formatting. Intended for logging and debugging, not for serialization.
+
 None of the members throw exceptions under normal usage. The dictionary `Changes` may be accessed safely after construction, but concurrent modification of the dictionary instance is not supported.
 
 ## Usage
