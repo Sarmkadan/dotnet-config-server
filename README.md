@@ -4273,6 +4273,26 @@ result.Violations[0].KeyName.Should().Be("ApiKey");
 
 `RateLimitExemptPaths` is not read by the middleware yet, so it does not exempt any path from the limit.
 
+### Encryption key rotation leaves values on the old key
+
+**Symptom:** After `POST /api/v1/configurations/{configurationId}/encryption/keys/{oldKeyId}/rotate`, encrypted values still carry the old key ID in their `v2:<keyId>:` header. `EncryptionKeyRotationWorker` logs `Failed to migrate configuration keys to the current encryption key version for configuration {ConfigId}` with an `EncryptionException` (`Failed to decrypt value`), and the sweep summary reports `Failed: N` with `N` above zero. In other cases the log shows `Encryption Key Rotation Worker is disabled` and no sweep runs at all.
+
+**Cause:** There are three separate causes:
+
+- **The worker is off by default.** `DotnetConfigServer:EncryptionKeyRotation:Enabled` defaults to `false`, and the worker reads it once at startup, so a change needs a restart. The rotate endpoint does not re-encrypt anything. It only marks the old key as rotated, and nothing migrates the stored values until a sweep or a manual re-encrypt runs.
+- **The old key is no longer usable.** Decryption tries the key named in the ciphertext header, then the primary key, then every key returned by `GetActiveKeysByConfigurationAsync`. Those lookups only return keys with `IsActive = true` and `ExpiresAt` in the future, and keys from `GenerateNewKey` expire one year after creation. Once the old key is deactivated or expired, its values cannot be decrypted, and `ReEncryptConfigurationAsync` throws on the first one.
+- **The configuration has no usable primary key.** If no key is both `IsPrimary`, `IsActive`, and unexpired, the sweep fails for that configuration with `No primary encryption key found for configuration`.
+
+When a configuration fails, the worker does not save any of its stale values, so that configuration stays on the old ciphertext. The rest of the sweep continues.
+
+**Fix:**
+
+1. Enable the worker by setting `DotnetConfigServer:EncryptionKeyRotation:Enabled` to `true`, or with the environment variable `DotnetConfigServer__EncryptionKeyRotation__Enabled=true`, then restart. Confirm the log line `Encryption Key Rotation Worker started with interval: ...`. `IntervalMinutes` must be between `5` and `1440`, and `DefaultUserId` must not be empty, or startup fails validation.
+2. Check the key rows for each failing configuration in the `EncryptionKeys` table. Confirm that one row has `IsPrimary = true` with `IsActive = true` and a future `ExpiresAt`, and that the old key is still `IsActive = true` until its values have been migrated. If the primary key is missing or expired, generate a new key with `GenerateNewKey` and persist it as primary before rotating.
+3. Do not deactivate or let the old key expire until the sweep reports `Failed: 0`. If the old key has already been deactivated or has expired, its values cannot be decrypted with the current keys. Restore the key row from a backup, or have the owner re-enter the secret.
+4. To migrate one configuration now without waiting for the next sweep, call `POST /api/v1/configurations/{configurationId}/encryption/re-encrypt?userId={userId}`. The endpoint saves changes only after every value has been re-encrypted, so a failure leaves the stored values unchanged.
+5. Verify the fix by checking that the next sweep logs `Encryption key rotation sweep completed. Migrated: N, Failed: 0`.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
