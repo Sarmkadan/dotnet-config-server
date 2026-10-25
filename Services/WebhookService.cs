@@ -442,12 +442,14 @@ public sealed class WebhookService : IWebhookService
             request.Headers.Add("X-Webhook-Signature", signature);
         }
 
-        using var response = await SendRequestAsync(request, subscription);
+        // Per-delivery timeout: bounds both the request and the body read so one slow endpoint cannot stall the caller.
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(AppConstants.Webhook.TimeoutSeconds));
+        using var response = await SendRequestAsync(request, subscription, timeoutCts.Token);
         var elapsed = (DateTime.UtcNow - startTime).TotalMilliseconds;
 
         if (response.IsSuccessStatusCode)
         {
-            var responseBody = await response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             delivery.MarkSuccess((int)response.StatusCode, (int)elapsed, responseBody);
             subscription.ResetRetryCount((int)response.StatusCode);
 
@@ -458,7 +460,7 @@ public sealed class WebhookService : IWebhookService
         }
         else
         {
-            var errorBody = await response.Content.ReadAsStringAsync();
+            var errorBody = await response.Content.ReadAsStringAsync(timeoutCts.Token);
             delivery.MarkFailed(errorBody, (int)response.StatusCode, (int)elapsed);
             subscription.IncrementRetryCount((int)response.StatusCode);
 
@@ -476,11 +478,11 @@ public sealed class WebhookService : IWebhookService
     /// Sends the request, recording a failed delivery attempt if the transport throws before a response arrives.
     /// The exception is rethrown so callers keep their existing retry handling.
     /// </summary>
-    private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, WebhookSubscription subscription)
+    private async Task<HttpResponseMessage> SendRequestAsync(HttpRequestMessage request, WebhookSubscription subscription, CancellationToken cancellationToken)
     {
         try
         {
-            return await _httpClient.SendAsync(request);
+            return await _httpClient.SendAsync(request, cancellationToken);
         }
         catch (Exception ex)
         {
