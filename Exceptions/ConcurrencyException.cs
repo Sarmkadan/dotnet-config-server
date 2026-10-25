@@ -13,15 +13,21 @@ public class ConcurrencyException : DotnetConfigServerException
 {
     public ConcurrencyException(string message) : base(message, "CONCURRENCY_ERROR")
     {
+        ArgumentNullException.ThrowIfNull(message);
     }
 
     public ConcurrencyException(string message, Exception innerException) : base(message, innerException)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(innerException);
+
         ErrorCode = "CONCURRENCY_ERROR";
     }
 
     public ConcurrencyException(string message, string errorCode, object? details = null) : base(message, errorCode, details)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(errorCode);
     }
 }
 
@@ -35,6 +41,9 @@ public sealed class OptimisticConcurrencyException : ConcurrencyException
               "OPTIMISTIC_CONCURRENCY_FAILED",
               new { EntityType = entityType, EntityId = entityId, ExpectedVersion = expectedVersion, ActualVersion = actualVersion })
     {
+        ArgumentNullException.ThrowIfNull(entityType);
+        ArgumentNullException.ThrowIfNull(expectedVersion);
+        ArgumentNullException.ThrowIfNull(actualVersion);
     }
 }
 
@@ -45,5 +54,6 @@ public sealed class CircularDependencyException : ConcurrencyException
 {
     public CircularDependencyException(string message) : base(message, "CIRCULAR_DEPENDENCY")
     {
+        ArgumentNullException.ThrowIfNull(message);
     }
 }
