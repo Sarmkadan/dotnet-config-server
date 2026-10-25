@@ -9,6 +9,7 @@ A production-grade centralized configuration server for .NET microservices with 
 - [Quick Start](#quick-start)
 - [Health Checks](#health-checks)
 - [Observability](#observability)
+- [Rate Limiting](#rate-limiting)
 - [Overview](#overview)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -172,6 +173,74 @@ builder.Services.AddOpenTelemetry()
 To scrape Prometheus instead, replace `AddOtlpExporter()` with `AddPrometheusExporter()` from `OpenTelemetry.Exporter.Prometheus.AspNetCore` and map the endpoint with `app.MapPrometheusScrapingEndpoint()`. The counter names are exported as-is, with `_total` already present, so `config_reloads_total` appears unchanged in Prometheus.
 
 To confirm the instruments are emitting without an exporter, subscribe a `MeterListener` to `DotnetConfigServer` and filter on the instrument names above, as `tests/dotnet-config-server.Tests/WatchServiceMetricsTests.cs` does.
+
+## Rate Limiting
+
+`RateLimitingMiddleware` caps the number of requests each client can make per minute using a fixed-window counter. The client is identified by the `X-API-Key` header when it is present, and by the remote IP address otherwise. Requests over the limit receive `429 Too Many Requests` with a `Retry-After` header and the body `{ "error": "Rate limit exceeded" }`.
+
+Every response carries the following headers:
+
+| Header | Value |
+|--------|-------|
+| `X-RateLimit-Limit` | Configured requests per minute |
+| `X-RateLimit-Remaining` | Requests left in the current window (never negative) |
+| `X-RateLimit-Reset` | Unix time, in seconds, when the current window ends |
+
+Settings live under `DotnetConfigServer:RateLimit` in `appsettings.json` and are bound to `RateLimitOptions`:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `RequestsPerMinute` | `100` | Maximum requests per client per window (1-10000) |
+| `RetryAfterSeconds` | `60` | Minimum `Retry-After` value on a 429 response (1-3600). The header is raised to the time left in the window when that is longer |
+| `EnableRateLimiting` | `true` | When `false`, the middleware passes every request through |
+| `UseDistributedStore` | `false` | When `true`, counters are kept in `IDistributedCache` so all instances share one limit |
+| `RateLimitExemptPaths` | `[]` | Not read by the middleware yet, so it currently has no effect |
+
+Counter storage is selected by `UseDistributedStore`:
+
+- **`InMemoryRateLimitStore`** (default) keeps counters in the process. Each instance enforces the limit on its own, so behind a load balancer the effective limit is `RequestsPerMinute` multiplied by the number of instances.
+- **`DistributedRateLimitStore`** keeps counters in `IDistributedCache`, giving one combined limit across instances. It reads, increments and writes the counter without an atomic operation, so a few extra requests can slip through when many instances hit the same client at the same moment. The default `AddDistributedMemoryCache()` call in `Program.cs` is process-local, so for real multi-instance use register a shared cache such as Redis or SQL Server before the rate-limit block in `Program.cs`.
+
+The window is fixed at one minute, so a client can send up to twice the limit across a window boundary (the end of one window followed by the start of the next).
+
+Example configuration that allows 300 requests per minute per client, shared across instances through Redis:
+
+```json
+{
+  "DotnetConfigServer": {
+    "RateLimit": {
+      "RequestsPerMinute": 300,
+      "RetryAfterSeconds": 30,
+      "UseDistributedStore": true
+    }
+  }
+}
+```
+
+```csharp
+// Program.cs - register a shared cache before the rate-limit setup
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+```
+
+Calling the API past the limit returns a response like this:
+
+```bash
+curl -i -H "X-API-Key: <api-key>" https://localhost:5001/api/v1/applications
+```
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1761383460
+Retry-After: 30
+Content-Type: application/json; charset=utf-8
+
+{"error":"Rate limit exceeded"}
+```
 
 ## Application
 
