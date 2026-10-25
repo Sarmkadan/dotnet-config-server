@@ -106,6 +106,8 @@ public sealed class EncryptionKey
     /// </summary>
     public void MarkAsRotated(string rotatedBy)
     {
+        ArgumentNullException.ThrowIfNull(rotatedBy);
+
         RotatedAt = DateTime.UtcNow;
         RotatedBy = rotatedBy;
         IsPrimary = false;
