@@ -22,6 +22,10 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class WebhookService : IWebhookService
 {
+    private const int SecretByteLength = 32;
+    private const int DefaultMaxRetries = 5;
+    private const string SignatureHeaderName = "X-Webhook-Signature";
+
     private readonly IWebhookSubscriptionRepository _subscriptionRepository;
     private readonly IWebhookDeliveryRepository _deliveryRepository;
     private readonly ILogger<WebhookService> _logger;
@@ -58,7 +62,7 @@ public sealed class WebhookService : IWebhookService
         if (subscription.VerifySignature && string.IsNullOrEmpty(subscription.Secret))
         {
             subscription.Secret = Convert.ToBase64String(
-                System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+                System.Security.Cryptography.RandomNumberGenerator.GetBytes(SecretByteLength));
         }
 
         await _subscriptionRepository.AddAsync(subscription);
@@ -274,7 +278,7 @@ public sealed class WebhookService : IWebhookService
     /// <summary>
     /// Retries failed webhook deliveries
     /// </summary>
-    public async Task<int> RetryFailedDeliveriesAsync(int maxRetries = 5)
+    public async Task<int> RetryFailedDeliveriesAsync(int maxRetries = DefaultMaxRetries)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxRetries, 1);
         
@@ -399,7 +403,7 @@ public sealed class WebhookService : IWebhookService
         };
 
         if (subscription.VerifySignature && !string.IsNullOrEmpty(subscription.Secret))
-            request.Headers.Add("X-Webhook-Signature", subscription.GenerateSignature(body));
+            request.Headers.Add(SignatureHeaderName, subscription.GenerateSignature(body));
 
         try
         {
@@ -439,7 +443,7 @@ public sealed class WebhookService : IWebhookService
         if (subscription.VerifySignature && !string.IsNullOrEmpty(subscription.Secret))
         {
             var signature = subscription.GenerateSignature(delivery.Payload);
-            request.Headers.Add("X-Webhook-Signature", signature);
+            request.Headers.Add(SignatureHeaderName, signature);
         }
 
         // Per-delivery timeout: bounds both the request and the body read so one slow endpoint cannot stall the caller.
