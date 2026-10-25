@@ -29,6 +29,10 @@ public sealed class ChangeRequestService : IChangeRequestService
         IConfigurationService configurationService,
         ILogger<ChangeRequestService> logger)
     {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(configurationService);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _repository = repository;
         _configurationService = configurationService;
         _logger = logger;
