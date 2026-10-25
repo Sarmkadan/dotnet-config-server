@@ -1034,7 +1034,7 @@ var enableSwagger = parser.GetBoolValue("enable-swagger"); // true
 var initDb = parser.HasFlag("init-db"); // false
 
 // Get values with defaults
-var timeout = parser.GetIntValue("timeout", 30); // 30 (default)
+var timeout = parser.GetIntValue("timeout") ?? 30; // 30 (default)
 var enableFeature = parser.GetBoolValue("enable-feature", true); // true (default)
 
 // Check if required arguments are present
