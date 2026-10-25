@@ -18,6 +18,10 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class ConfigurationService : IConfigurationService
 {
+    private const string CircularDependencyMessage = "Circular dependency detected";
+    private const string DecryptionFailedValue = "[DECRYPTION_FAILED]";
+    private const int MaxConcurrencyRetries = 3;
+
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
     private readonly IEncryptionService _encryptionService;
@@ -120,7 +124,6 @@ public sealed class ConfigurationService : IConfigurationService
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
     
         int retryCount = 0;
-        const int maxRetries = 3;
 
         while (true)
         {
@@ -150,7 +153,7 @@ public sealed class ConfigurationService : IConfigurationService
                 {
                     await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>(), cancellationToken); // false to avoid resolving parent keys for this check
                 }
-                catch (ConfigurationException ex) when (ex.Message.Contains("Circular dependency detected"))
+                catch (ConfigurationException ex) when (ex.Message.Contains(CircularDependencyMessage))
                 {
                     throw new ConfigurationException($"Update creates a circular dependency in configuration inheritance: {ex.Message}");
                 }
@@ -180,11 +183,11 @@ public sealed class ConfigurationService : IConfigurationService
             }
             catch (DatabaseException ex) when (ex.InnerException is DbUpdateConcurrencyException)
             {
-                if (++retryCount >= maxRetries)
+                if (++retryCount >= MaxConcurrencyRetries)
                 {
                     throw new ConcurrencyException("Max retries exceeded for concurrent update", ex);
                 }
-                _logger.LogWarning("Concurrency conflict detected for config {Id}. Retrying ({RetryCount}/{MaxRetries})", id, retryCount, maxRetries);
+                _logger.LogWarning("Concurrency conflict detected for config {Id}. Retrying ({RetryCount}/{MaxRetries})", id, retryCount, MaxConcurrencyRetries);
             }
         }
     }
@@ -317,7 +320,7 @@ public sealed class ConfigurationService : IConfigurationService
         // Add current config to visited set to detect circular dependencies
         if (!visitedConfigs.Add(configurationId))
         {
-            throw new ConfigurationException($"Circular dependency detected for configuration {configurationId}");
+            throw new ConfigurationException($"{CircularDependencyMessage} for configuration {configurationId}");
         }
 
         var currentConfigKeys = await GetRawKeysAsync(configurationId, versionId);
@@ -390,7 +393,7 @@ public sealed class ConfigurationService : IConfigurationService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to decrypt key {KeyId} for configuration {ConfigId}. Returning [DECRYPTION_FAILED].", clonedKey.Id, configurationId);
-                    clonedKey.Value = "[DECRYPTION_FAILED]";
+                    clonedKey.Value = DecryptionFailedValue;
                 }
             }
             finalKeys.Add(clonedKey);
