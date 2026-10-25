@@ -3965,6 +3965,21 @@ Errors other than missing versions are logged and returned as `500 Internal Serv
 
 For request and response details, see [`docs/DiffViewerController.md`](docs/DiffViewerController.md).
 
+## EncryptionController
+
+The `EncryptionController` exposes the key rotation and re-encryption operations for configuration secrets. It is nested under one configuration, and both endpoints take the identifier of the requesting user as the `userId` query parameter. Logic is delegated to `IEncryptionService`, and re-encrypted values are persisted through `IConfigurationKeyRepository`.
+
+**Endpoints:**
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST | `api/v1/configurations/{configurationId}/encryption/keys/{oldKeyId}/rotate?userId={userId}` | Marks the key as rotated: it is no longer the primary key but stays active for decryption. Returns `204 No Content`, or `404 Not Found` if the configuration does not exist |
+| POST | `api/v1/configurations/{configurationId}/encryption/re-encrypt?userId={userId}` | Re-encrypts every encrypted value of the configuration with the current primary key. Returns `200 OK` with `{ "configurationId": "...", "migratedCount": n }`, or `400 Bad Request` on a configuration error |
+
+Re-encryption migrates values still protected by an older key version to the current primary key. Other failures are logged and returned as `500 Internal Server Error` with `{ "error": "Internal server error" }`.
+
+For request and response details, see [`docs/EncryptionController.md`](docs/EncryptionController.md).
+
 ## EventBusTests
 
 The `EventBusTests` class (defined in `tests/dotnet-config-server.Tests/Events/EventBusTests.cs`) verifies the behavior of the in-process event bus that dispatches domain events to subscribed handlers. It covers publishing scenarios—delivery to a single handler, fan-out to multiple handlers running in parallel, no-op publishes when no handlers are registered, and graceful containment of handler exceptions—together with subscription management such as adding handlers, removing specific handlers, and safely unsubscribing non-existent ones. Since the class also implements `ILogger` through its `IsEnabled`, `Log<TState>`, and `BeginScope<TState>` members, it can double as a lightweight logger while exercising the bus.
