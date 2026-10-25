@@ -2769,56 +2769,21 @@ await tests.GenerateDiffAsync_DetectsAddedKeys_ThroughPublicAPI();
 
 ## ConfigurationDiffController
 
-The `ConfigurationDiffController` exposes API endpoints for comparing two versions of a configuration and inspecting what changed between them. The version range under comparison is selected through the `FromVersionId` and `ToVersionId` properties, which are bound from the incoming request. It offers two operations: `GetConfigurationDiff`, which returns the detailed differences between the two versions, and `GetConfigurationDiffSummary`, which returns an aggregated summary of those changes.
+The `ConfigurationDiffController` exposes read-only endpoints for comparing two versions of the same configuration. Both endpoints live under `api/v1/configurations/{configurationId}/ConfigurationDiff` and return JSON. Each request first checks that both versions exist and belong to the given configuration, and responds `404 Not Found` otherwise.
+
+| Method | Route | Returns |
+|--------|-------|---------|
+| GET | `compare/{fromVersionId}/{toVersionId}` | `ConfigurationDiff`: added, removed and changed keys |
+| GET | `summary/{version1Id}/{version2Id}` | `ConfigurationDiffSummary`: added, removed and changed counts |
 
 ### Usage Example
 
-```csharp
-using DotnetConfigServer.Controllers;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Threading.Tasks;
+```bash
+# Detailed diff between two versions
+curl -s https://localhost:5001/api/v1/configurations/<configId>/ConfigurationDiff/compare/<fromVersionId>/<toVersionId> | jq .
 
-// Example: Invoking ConfigurationDiffController through dependency injection
-public class ConfigurationDiffService
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    public ConfigurationDiffService(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    public async Task<IActionResult> CompareVersionsAsync(
-        Guid configurationId,
-        Guid fromVersionId,
-        Guid toVersionId)
-    {
-        var controller = _serviceProvider.GetRequiredService<ConfigurationDiffController>();
-
-        // Select the version range to compare
-        controller.FromVersionId = fromVersionId;
-        controller.ToVersionId = toVersionId;
-
-        // Return the detailed diff between the two versions
-        return await controller.GetConfigurationDiff(configurationId);
-    }
-
-    public async Task<IActionResult> SummarizeChangesAsync(
-        Guid configurationId,
-        Guid fromVersionId,
-        Guid toVersionId)
-    {
-        var controller = _serviceProvider.GetRequiredService<ConfigurationDiffController>();
-
-        controller.FromVersionId = fromVersionId;
-        controller.ToVersionId = toVersionId;
-
-        // Return an aggregated summary of the changes between the two versions
-        return await controller.GetConfigurationDiffSummary(configurationId);
-    }
-}
+# Summary counts between the same two versions
+curl -s https://localhost:5001/api/v1/configurations/<configId>/ConfigurationDiff/summary/<fromVersionId>/<toVersionId> | jq .
 ```
 
 ## ValidationRulesController
