@@ -119,6 +119,8 @@ public sealed class ConfigurationDiff
         summary.AppendLine($"  Deleted: {DeletedCount}");
         return summary.ToString();
     }
+
+    public override string ToString() => $"ConfigurationDiff {{ Id = {Id}, ConfigurationId = {ConfigurationId}, FromVersionId = {FromVersionId}, ToVersionId = {ToVersionId}, TotalChanges = {TotalChanges}, AddedCount = {AddedCount}, ModifiedCount = {ModifiedCount}, DeletedCount = {DeletedCount}, CreatedAt = {CreatedAt}, CreatedBy = {CreatedBy} }}";
 }
 
 /// <summary>
