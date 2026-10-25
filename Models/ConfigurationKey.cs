@@ -7,8 +7,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using DotnetConfigServer.Common;
-
 using DotnetConfigServer.Exceptions;
+
 namespace DotnetConfigServer.Models;
 
 /// <summary>
@@ -256,6 +256,7 @@ public sealed class ConfigurationKey
             UpdatedAt = UpdatedAt
         };
     }
+
     /// <summary>
     /// Returns a diagnostic representation of this key. Values of encrypted or
     /// sensitive keys are replaced with a redaction marker so they never reach logs.
