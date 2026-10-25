@@ -41,6 +41,11 @@ public sealed class WebhookService : IWebhookService
         ILogger<WebhookService> logger,
         HttpClient httpClient)
     {
+        ArgumentNullException.ThrowIfNull(subscriptionRepository);
+        ArgumentNullException.ThrowIfNull(deliveryRepository);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(httpClient);
+
         _subscriptionRepository = subscriptionRepository;
         _deliveryRepository = deliveryRepository;
         _logger = logger;
