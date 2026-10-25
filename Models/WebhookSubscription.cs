@@ -7,8 +7,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using DotnetConfigServer.Common;
-
 using DotnetConfigServer.Exceptions;
+
 namespace DotnetConfigServer.Models;
 
 /// <summary>
