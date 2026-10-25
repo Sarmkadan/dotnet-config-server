@@ -168,6 +168,7 @@ public sealed class CliConfig
     /// </summary>
     public static CliConfig FromParser(CliArgumentParser parser)
     {
+        ArgumentNullException.ThrowIfNull(parser);
         return new CliConfig
         {
             Port = parser.GetIntValue("port") ?? 5000,
