@@ -13,6 +13,8 @@ public class NotFoundException : DotnetConfigServerException
 {
     public NotFoundException(string message, string errorCode, object? details = null) : base(message, errorCode, details)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(errorCode);
     }
 }
 
@@ -23,6 +25,7 @@ public sealed class ApplicationNotFoundException : NotFoundException
 {
     public ApplicationNotFoundException(string applicationId) : base($"Application '{applicationId}' not found", "APP_NOT_FOUND", new { ApplicationId = applicationId })
     {
+        ArgumentNullException.ThrowIfNull(applicationId);
     }
 
     public ApplicationNotFoundException(Guid applicationId) : base($"Application '{applicationId}' not found", "APP_NOT_FOUND", new { ApplicationId = applicationId })
@@ -37,6 +40,7 @@ public sealed class UserNotFoundException : NotFoundException
 {
     public UserNotFoundException(string userId) : base($"User '{userId}' not found", "USER_NOT_FOUND", new { UserId = userId })
     {
+        ArgumentNullException.ThrowIfNull(userId);
     }
 
     public UserNotFoundException(Guid userId) : base($"User '{userId}' not found", "USER_NOT_FOUND", new { UserId = userId })
@@ -51,6 +55,7 @@ public sealed class WebhookDeliveryNotFoundException : NotFoundException
 {
     public WebhookDeliveryNotFoundException(string deliveryId) : base($"Webhook delivery '{deliveryId}' not found", "DELIVERY_NOT_FOUND", new { DeliveryId = deliveryId })
     {
+        ArgumentNullException.ThrowIfNull(deliveryId);
     }
 
     public WebhookDeliveryNotFoundException(Guid deliveryId) : base($"Webhook delivery '{deliveryId}' not found", "DELIVERY_NOT_FOUND", new { DeliveryId = deliveryId })
@@ -65,6 +70,7 @@ public sealed class ChangeRequestNotFoundException : NotFoundException
 {
     public ChangeRequestNotFoundException(string changeRequestId) : base($"Change request '{changeRequestId}' not found", "CHANGE_REQUEST_NOT_FOUND", new { ChangeRequestId = changeRequestId })
     {
+        ArgumentNullException.ThrowIfNull(changeRequestId);
     }
 
     public ChangeRequestNotFoundException(Guid changeRequestId) : base($"Change request '{changeRequestId}' not found", "CHANGE_REQUEST_NOT_FOUND", new { ChangeRequestId = changeRequestId })
