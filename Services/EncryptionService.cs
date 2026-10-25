@@ -47,6 +47,9 @@ public sealed class EncryptionService : IEncryptionService
 
     public EncryptionService(IEncryptionKeyRepository keyRepository, ILogger<EncryptionService> logger)
     {
+        ArgumentNullException.ThrowIfNull(keyRepository);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _keyRepository = keyRepository;
         _logger = logger;
     }
@@ -265,6 +268,9 @@ public sealed class EncryptionService : IEncryptionService
     /// </summary>
     public EncryptionKey GenerateNewKey(string name, string algorithm = "AES256")
     {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(algorithm);
+
         using (var aes = Aes.Create())
         {
             aes.KeySize = AppConstants.Encryption.AesKeySize;
@@ -329,6 +335,9 @@ public sealed class EncryptionService : IEncryptionService
     /// </summary>
     public async Task ReEncryptConfigurationAsync(Guid configurationId, IEnumerable<Models.ConfigurationKey> keys, string userId)
     {
+        ArgumentNullException.ThrowIfNull(keys);
+        ArgumentNullException.ThrowIfNull(userId);
+
         var primaryKey = await GetPrimaryKeyAsync(configurationId);
         if (primaryKey is null)
             throw new ConfigurationException("No primary encryption key found for configuration");
