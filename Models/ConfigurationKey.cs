@@ -221,6 +221,9 @@ public sealed class ConfigurationKey
     /// </summary>
     public void Update(string value, string? description, string updatedBy)
     {
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(updatedBy);
+
         Value = value;
         Description = description;
         UpdatedBy = updatedBy;
