@@ -6,8 +6,8 @@
 
 using System.ComponentModel.DataAnnotations;
 using DotnetConfigServer.Common;
-
 using DotnetConfigServer.Exceptions;
+
 namespace DotnetConfigServer.Models;
 
 /// <summary>
@@ -55,6 +55,7 @@ public sealed class WebhookDelivery
     public string? Url { get; set; }
 
     public DateTime? NextRetryAt { get; set; }
+
     public override string ToString() => $"WebhookDelivery {{ Id = {Id}, WebhookSubscriptionId = {WebhookSubscriptionId}, ConfigurationVersionId = {ConfigurationVersionId}, Status = {Status}, EventId = {EventId}, CreatedAt = {CreatedAt} }}";
 
     /// <summary>
