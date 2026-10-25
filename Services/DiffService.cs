@@ -17,6 +17,9 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class DiffService : IDiffService
 {
+    private const string VersionIdentifierEmptyMessage = "Version identifier cannot be empty.";
+    private const string ConfigurationIdentifierEmptyMessage = "Configuration identifier cannot be empty.";
+
     private readonly IConfigurationDiffRepository _diffRepository;
     private readonly IConfigurationVersionRepository _versionRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
@@ -203,7 +206,7 @@ public sealed class DiffService : IDiffService
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
-            throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
+            throw new ArgumentException(ConfigurationIdentifierEmptyMessage, nameof(configurationId));
 
         return await _diffRepository.GetByConfigurationAsync(configurationId);
     }
@@ -220,7 +223,7 @@ public sealed class DiffService : IDiffService
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
-            throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
+            throw new ArgumentException(ConfigurationIdentifierEmptyMessage, nameof(configurationId));
 
         var diffs = await GetDiffsAsync(configurationId, cancellationToken);
         return diffs.OrderByDescending(d => d.CreatedAt).FirstOrDefault();
@@ -240,7 +243,7 @@ public sealed class DiffService : IDiffService
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
-            throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
+            throw new ArgumentException(ConfigurationIdentifierEmptyMessage, nameof(configurationId));
         ArgumentException.ThrowIfNullOrEmpty(keyName);
 
         var diffs = await GetDiffsAsync(configurationId, cancellationToken);
@@ -266,9 +269,9 @@ public sealed class DiffService : IDiffService
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (version1Id == Guid.Empty)
-            throw new ArgumentException("Version identifier cannot be empty.", nameof(version1Id));
+            throw new ArgumentException(VersionIdentifierEmptyMessage, nameof(version1Id));
         if (version2Id == Guid.Empty)
-            throw new ArgumentException("Version identifier cannot be empty.", nameof(version2Id));
+            throw new ArgumentException(VersionIdentifierEmptyMessage, nameof(version2Id));
 
         // Preserve existing exact‑comparison behaviour
         return await ComparVersionsAsync(version1Id, version2Id, ignoreWhitespaceAndBlankLines: false, cancellationToken: cancellationToken);
@@ -295,9 +298,9 @@ public sealed class DiffService : IDiffService
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (version1Id == Guid.Empty)
-            throw new ArgumentException("Version identifier cannot be empty.", nameof(version1Id));
+            throw new ArgumentException(VersionIdentifierEmptyMessage, nameof(version1Id));
         if (version2Id == Guid.Empty)
-            throw new ArgumentException("Version identifier cannot be empty.", nameof(version2Id));
+            throw new ArgumentException(VersionIdentifierEmptyMessage, nameof(version2Id));
 
         var existingDiff = await _diffRepository.GetByVersionsAsync(version1Id, version2Id);
         if (existingDiff is not null)
