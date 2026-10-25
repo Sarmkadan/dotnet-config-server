@@ -36,6 +36,8 @@ public interface IHealthCheckService
 
 public sealed class HealthCheckService : IHealthCheckService
 {
+    private const long BytesPerMegabyte = 1024 * 1024;
+
     private readonly ILogger<HealthCheckService> _logger;
     private readonly ICacheService? _cacheService;
     private readonly ApplicationDbContext? _dbContext;
@@ -68,7 +70,7 @@ public sealed class HealthCheckService : IHealthCheckService
             Timestamp = DateTime.UtcNow,
             Uptime = uptime.TotalSeconds,
             ProcessId = process.Id,
-            MemoryMb = process.WorkingSet64 / (1024 * 1024),
+            MemoryMb = process.WorkingSet64 / BytesPerMegabyte,
             ThreadCount = process.Threads.Count,
             Checks = new()
         };
@@ -116,7 +118,7 @@ public sealed class HealthCheckService : IHealthCheckService
                 {
                     // Get database size and performance metrics
                     var databaseSize = await _dbContext.Database.SqlQueryRaw<long>($"SELECT SUM(size) FROM sys.master_files WHERE database_id = DB_ID() AND type_desc = 'ROWS'").ToListAsync();
-                    var dbSizeMb = databaseSize.FirstOrDefault() / 1024 / 1024;
+                    var dbSizeMb = databaseSize.FirstOrDefault() / BytesPerMegabyte;
 
                     report.Checks.Add("database", new HealthCheck
                     {
