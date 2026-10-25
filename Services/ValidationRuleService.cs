@@ -17,6 +17,9 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class ValidationRuleService : IValidationRuleService
 {
+    private const string EmptyJsonObject = "{}";
+    private const string ParametersErrorKey = "Parameters";
+
     private readonly IValidationRuleRepository _validationRuleRepository;
     private readonly IConfigurationService _configurationService;
     private readonly IVersioningService _versioningService;
@@ -215,7 +218,7 @@ public sealed class ValidationRuleService : IValidationRuleService
 
     private static List<ValidationViolation> EvaluateNumericRangeRule(ValidationRule rule, List<ConfigurationKey> matchingKeys)
     {
-        var parameters = JsonSerializer.Deserialize<NumericRangeParameters>(rule.Parameters ?? "{}") ?? new NumericRangeParameters();
+        var parameters = JsonSerializer.Deserialize<NumericRangeParameters>(rule.Parameters ?? EmptyJsonObject) ?? new NumericRangeParameters();
         var violations = new List<ValidationViolation>();
 
         foreach (var key in matchingKeys)
@@ -259,7 +262,7 @@ public sealed class ValidationRuleService : IValidationRuleService
         List<ConfigurationKey> matchingKeys,
         List<ConfigurationKey> allKeys)
     {
-        var parameters = JsonSerializer.Deserialize<CrossKeyParameters>(rule.Parameters ?? "{}") ?? new CrossKeyParameters();
+        var parameters = JsonSerializer.Deserialize<CrossKeyParameters>(rule.Parameters ?? EmptyJsonObject) ?? new CrossKeyParameters();
         if (string.IsNullOrWhiteSpace(parameters.OtherKey))
             return new List<ValidationViolation>();
 
@@ -325,7 +328,7 @@ public sealed class ValidationRuleService : IValidationRuleService
                 break;
             case ValidationRuleType.AllowedValues:
                 if (string.IsNullOrWhiteSpace(rule.Parameters))
-                    errors["Parameters"] = new List<string> { "AllowedValues rule requires a comma-separated parameter list." };
+                    errors[ParametersErrorKey] = new List<string> { "AllowedValues rule requires a comma-separated parameter list." };
                 break;
             case ValidationRuleType.NumericRange:
                 ValidateNumericRangeParameters(rule, errors);
@@ -343,7 +346,7 @@ public sealed class ValidationRuleService : IValidationRuleService
     {
         if (string.IsNullOrWhiteSpace(rule.Parameters))
         {
-            errors["Parameters"] = new List<string> { "Regex rule requires a regex pattern." };
+            errors[ParametersErrorKey] = new List<string> { "Regex rule requires a regex pattern." };
             return;
         }
 
@@ -353,25 +356,25 @@ public sealed class ValidationRuleService : IValidationRuleService
         }
         catch (ArgumentException ex)
         {
-            errors["Parameters"] = new List<string> { $"Invalid regex pattern: {ex.Message}" };
+            errors[ParametersErrorKey] = new List<string> { $"Invalid regex pattern: {ex.Message}" };
         }
     }
 
     private static void ValidateIntegerParameters(ValidationRule rule, Dictionary<string, List<string>> errors)
     {
         if (!int.TryParse(rule.Parameters, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out _))
-            errors["Parameters"] = new List<string> { "Length rule requires an integer parameter." };
+            errors[ParametersErrorKey] = new List<string> { "Length rule requires an integer parameter." };
     }
 
     private static void ValidateNumericRangeParameters(ValidationRule rule, Dictionary<string, List<string>> errors)
     {
         try
         {
-            _ = JsonSerializer.Deserialize<NumericRangeParameters>(rule.Parameters ?? "{}");
+            _ = JsonSerializer.Deserialize<NumericRangeParameters>(rule.Parameters ?? EmptyJsonObject);
         }
         catch (JsonException ex)
         {
-            errors["Parameters"] = new List<string> { $"Invalid numeric range parameters: {ex.Message}" };
+            errors[ParametersErrorKey] = new List<string> { $"Invalid numeric range parameters: {ex.Message}" };
         }
     }
 
@@ -379,13 +382,13 @@ public sealed class ValidationRuleService : IValidationRuleService
     {
         try
         {
-            var parameters = JsonSerializer.Deserialize<CrossKeyParameters>(rule.Parameters ?? "{}") ?? new CrossKeyParameters();
+            var parameters = JsonSerializer.Deserialize<CrossKeyParameters>(rule.Parameters ?? EmptyJsonObject) ?? new CrossKeyParameters();
             if (string.IsNullOrWhiteSpace(parameters.OtherKey))
-                errors["Parameters"] = new List<string> { "CrossKey rule requires an otherKey parameter." };
+                errors[ParametersErrorKey] = new List<string> { "CrossKey rule requires an otherKey parameter." };
         }
         catch (JsonException ex)
         {
-            errors["Parameters"] = new List<string> { $"Invalid cross-key parameters: {ex.Message}" };
+            errors[ParametersErrorKey] = new List<string> { $"Invalid cross-key parameters: {ex.Message}" };
         }
     }
 
