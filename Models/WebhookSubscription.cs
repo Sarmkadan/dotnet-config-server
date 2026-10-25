@@ -155,6 +155,8 @@ public sealed class WebhookSubscription
     /// </summary>
     public string GenerateSignature(string payload)
     {
+        ArgumentNullException.ThrowIfNull(payload);
+
         if (string.IsNullOrEmpty(Secret))
             throw new Exceptions.ConfigurationException("Secret is not configured for signature generation");
 
