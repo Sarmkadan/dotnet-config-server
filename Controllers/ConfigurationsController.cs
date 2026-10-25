@@ -53,7 +53,7 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(configuration);
         return await ExecuteAsync(async () =>
         {
-            var created = await _configurationService.CreateAsync(configuration, CurrentUserId);
+            var created = await _configurationService.CreateAsync(configuration, CurrentUserId, cancellationToken: HttpContext.RequestAborted);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }, "Error creating configuration");
     }
@@ -68,7 +68,7 @@ public sealed class ConfigurationsController : ControllerBase
     {
         return await ExecuteAsync(async () =>
         {
-            var config = await _configurationService.GetByIdAsync(id);
+            var config = await _configurationService.GetByIdAsync(id, cancellationToken: HttpContext.RequestAborted);
             if (config is null)
                 return NotFound(new { error = ConfigurationNotFoundMessage });
 
@@ -85,7 +85,7 @@ public sealed class ConfigurationsController : ControllerBase
     {
         return await ExecuteAsync(async () =>
         {
-            var configs = await _configurationService.GetByApplicationAsync(applicationId);
+            var configs = await _configurationService.GetByApplicationAsync(applicationId, cancellationToken: HttpContext.RequestAborted);
             return Ok(configs);
         }, $"Error retrieving configurations for application {applicationId}");
     }
@@ -101,7 +101,7 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(configuration);
         return await ExecuteAsync(async () =>
         {
-            var updated = await _configurationService.UpdateAsync(id, configuration, CurrentUserId);
+            var updated = await _configurationService.UpdateAsync(id, configuration, CurrentUserId, cancellationToken: HttpContext.RequestAborted);
             return Ok(updated);
         }, $"Error updating configuration {id}");
     }
@@ -116,7 +116,7 @@ public sealed class ConfigurationsController : ControllerBase
     {
         return await ExecuteAsync(async () =>
         {
-            await _configurationService.DeleteAsync(id, CurrentUserId);
+            await _configurationService.DeleteAsync(id, CurrentUserId, cancellationToken: HttpContext.RequestAborted);
             return NoContent();
         }, $"Error deleting configuration {id}");
     }
@@ -130,7 +130,7 @@ public sealed class ConfigurationsController : ControllerBase
     {
         return await ExecuteAsync(async () =>
         {
-            var keys = await _configurationService.GetKeysAsync(configurationId);
+            var keys = await _configurationService.GetKeysAsync(configurationId, cancellationToken: HttpContext.RequestAborted);
             return Ok(keys);
         }, "Error retrieving configuration keys");
     }
@@ -145,7 +145,7 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentNullException.ThrowIfNull(key);
         return await ExecuteAsync(async () =>
         {
-            var created = await _configurationService.AddKeyAsync(configurationId, key, CurrentUserId);
+            var created = await _configurationService.AddKeyAsync(configurationId, key, CurrentUserId, cancellationToken: HttpContext.RequestAborted);
             return CreatedAtAction(nameof(GetKeys), new { configurationId }, created);
         }, "Error adding configuration key");
     }
@@ -160,7 +160,7 @@ public sealed class ConfigurationsController : ControllerBase
         ArgumentException.ThrowIfNullOrEmpty(query);
         return await ExecuteAsync(async () =>
         {
-            var results = await _configurationService.SearchAsync(query, applicationId);
+            var results = await _configurationService.SearchAsync(query, applicationId, cancellationToken: HttpContext.RequestAborted);
             return Ok(results);
         }, "Error searching configurations");
     }
@@ -177,7 +177,7 @@ public sealed class ConfigurationsController : ControllerBase
     {
         return await ExecuteAsync(async () =>
         {
-            var results = await _configurationService.SearchKeysAsync(q, prefix, configurationId);
+            var results = await _configurationService.SearchKeysAsync(q, prefix, configurationId, cancellationToken: HttpContext.RequestAborted);
             return Ok(results);
         }, "Error searching configuration keys");
     }

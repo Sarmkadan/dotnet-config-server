@@ -86,7 +86,7 @@ public sealed class ConfigWatchController : ControllerBase
             }
 
             // Get current configuration version
-            var currentVersion = await _versioningService.GetActiveVersionAsync(appId);
+            var currentVersion = await _versioningService.GetActiveVersionAsync(appId, cancellationToken: HttpContext.RequestAborted);
 
             if (currentVersion is null)
             {
@@ -100,7 +100,7 @@ public sealed class ConfigWatchController : ControllerBase
                 if (currentVersionNumber > expectedVersion)
                 {
                     // Newer version already exists, return immediately
-                    var config = await _configurationService.GetByApplicationAsync(appId);
+                    var config = await _configurationService.GetByApplicationAsync(appId, cancellationToken: HttpContext.RequestAborted);
                     var response = new WatchResponse
                     {
                         Version = currentVersion.VersionNumber,
@@ -198,7 +198,7 @@ public sealed class ConfigWatchController : ControllerBase
             }
 
             // Get current configuration version
-            var currentVersion = await _versioningService.GetActiveVersionAsync(appId);
+            var currentVersion = await _versioningService.GetActiveVersionAsync(appId, cancellationToken: HttpContext.RequestAborted);
 
             if (currentVersion is null)
             {
@@ -212,7 +212,7 @@ public sealed class ConfigWatchController : ControllerBase
                 if (currentVersionNumber > expectedVersion)
                 {
                     // Newer version already exists, return immediately
-                    var config = await _configurationService.GetByApplicationAsync(appId);
+                    var config = await _configurationService.GetByApplicationAsync(appId, cancellationToken: HttpContext.RequestAborted);
                     var response = new WatchResponse
                     {
                         Version = currentVersion.VersionNumber,

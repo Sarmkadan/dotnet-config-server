@@ -17,10 +17,11 @@ public interface IDiffService
     /// <summary>
     /// Generates a diff between two configuration versions using exact, case-sensitive comparison.
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="userId"/> is <c>null</c> or empty.
     /// </exception>
-    Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId);
+    Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Generates a diff between two configuration versions, optionally ignoring leading/trailing
@@ -33,51 +34,57 @@ public interface IDiffService
     /// When <c>true</c>, leading/trailing whitespace is trimmed and values that consist solely of
     /// whitespace (blank lines) are treated as equal.
     /// </param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="userId"/> is <c>null</c> or empty.
     /// </exception>
-    Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId, bool ignoreWhitespaceAndBlankLines);
+    Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId, bool ignoreWhitespaceAndBlankLines, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a previously generated diff
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="diffId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    Task<ConfigurationDiff?> GetDiffAsync(Guid diffId);
+    Task<ConfigurationDiff?> GetDiffAsync(Guid diffId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all diffs for a configuration
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    Task<List<ConfigurationDiff>> GetDiffsAsync(Guid configurationId);
+    Task<List<ConfigurationDiff>> GetDiffsAsync(Guid configurationId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets diff between current and previous version
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    Task<ConfigurationDiff?> GetLatestDiffAsync(Guid configurationId);
+    Task<ConfigurationDiff?> GetLatestDiffAsync(Guid configurationId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets changes for a specific key across versions
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c> or
     /// <paramref name="keyName"/> is <c>null</c> or empty.
     /// </exception>
-    Task<List<DiffEntry>> GetKeyHistoryAsync(Guid configurationId, string keyName);
+    Task<List<DiffEntry>> GetKeyHistoryAsync(Guid configurationId, string keyName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Compares two specific versions using exact, case-sensitive comparison and returns a summary.
     /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when either version identifier is <c>Guid.Empty</c>.
     /// </exception>
-    Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id);
+    Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Compares two specific versions and returns a summary, optionally ignoring leading/trailing
@@ -89,8 +96,9 @@ public interface IDiffService
     /// When <c>true</c>, leading/trailing whitespace is trimmed and blank-line-only values are
     /// treated as equal.
     /// </param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when either version identifier is <c>Guid.Empty</c>.
     /// </exception>
-    Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id, bool ignoreWhitespaceAndBlankLines);
+    Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id, bool ignoreWhitespaceAndBlankLines, CancellationToken cancellationToken = default);
 }

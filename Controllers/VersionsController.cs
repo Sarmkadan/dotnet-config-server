@@ -48,7 +48,7 @@ public sealed class VersionsController : ControllerBase
     {
         try
         {
-            var history = await _versioningService.GetVersionHistoryAsync(configurationId);
+            var history = await _versioningService.GetVersionHistoryAsync(configurationId, cancellationToken: HttpContext.RequestAborted);
             return Ok(history);
         }
         catch (Exception ex)
@@ -67,7 +67,7 @@ public sealed class VersionsController : ControllerBase
     {
         try
         {
-            var version = await _versioningService.GetActiveVersionAsync(configurationId);
+            var version = await _versioningService.GetActiveVersionAsync(configurationId, cancellationToken: HttpContext.RequestAborted);
             if (version is null)
                 return NotFound(new { error = "No active version found" });
 
@@ -89,7 +89,7 @@ public sealed class VersionsController : ControllerBase
     {
         try
         {
-            var version = await _versioningService.GetVersionAsync(versionId);
+            var version = await _versioningService.GetVersionAsync(versionId, cancellationToken: HttpContext.RequestAborted);
             if (version is null || version.ConfigurationId != configurationId)
                 return NotFound(new { error = "Version not found" });
 
@@ -113,7 +113,7 @@ public sealed class VersionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? "system";
-            var version = await _versioningService.CreateVersionAsync(configurationId, request.ReleaseNotes, userId);
+            var version = await _versioningService.CreateVersionAsync(configurationId, request.ReleaseNotes, userId, cancellationToken: HttpContext.RequestAborted);
             return CreatedAtAction(nameof(GetVersion), new { configurationId, versionId = version.Id }, version);
         }
         catch (ConfigurationNotFoundException)
@@ -137,7 +137,7 @@ public sealed class VersionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? "system";
-            var version = await _versioningService.PublishVersionAsync(versionId, userId);
+            var version = await _versioningService.PublishVersionAsync(versionId, userId, cancellationToken: HttpContext.RequestAborted);
             return Ok(version);
         }
         catch (ConfigurationNotFoundException)
@@ -161,7 +161,7 @@ public sealed class VersionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? "system";
-            var version = await _versioningService.ArchiveVersionAsync(versionId, userId);
+            var version = await _versioningService.ArchiveVersionAsync(versionId, userId, cancellationToken: HttpContext.RequestAborted);
             return Ok(version);
         }
         catch (ConfigurationNotFoundException)
@@ -185,7 +185,7 @@ public sealed class VersionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? "system";
-            var version = await _versioningService.RollbackAsync(configurationId, previousVersionId, userId);
+            var version = await _versioningService.RollbackAsync(configurationId, previousVersionId, userId, cancellationToken: HttpContext.RequestAborted);
             return Ok(version);
         }
         catch (ConfigurationNotFoundException)
@@ -236,7 +236,7 @@ public sealed class VersionsController : ControllerBase
         try
         {
             var userId = User.Identity?.Name ?? "system";
-            var count = await _versioningService.CleanupOldVersionsAsync(configurationId, maxVersions);
+            var count = await _versioningService.CleanupOldVersionsAsync(configurationId, maxVersions, cancellationToken: HttpContext.RequestAborted);
             return Ok(new CleanupResponse { ArchivedCount = count });
         }
         catch (Exception ex)

@@ -51,8 +51,10 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<Configuration> CreateAsync(Configuration configuration, string userId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<Configuration> CreateAsync(Configuration configuration, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         
@@ -90,8 +92,10 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<Configuration?> GetByIdAsync(Guid id)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<Configuration?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var config = await _configRepository.GetByIdAsync(id);
         if (config?.DeletedAt is not null)
             return null;
@@ -99,14 +103,18 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<List<Configuration>> GetByApplicationAsync(Guid applicationId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<List<Configuration>> GetByApplicationAsync(Guid applicationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _configRepository.GetByApplicationIdAsync(applicationId);
     }
 
     /// <inheritdoc/>
-    public async Task<Configuration> UpdateAsync(Guid id, Configuration configuration, string userId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<Configuration> UpdateAsync(Guid id, Configuration configuration, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
@@ -116,6 +124,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var existing = await _configRepository.GetByIdAsync(id);
             if (existing is null)
                 throw new ConfigurationNotFoundException(id.ToString());
@@ -139,7 +148,7 @@ public sealed class ConfigurationService : IConfigurationService
                 // a ConfigurationException if a circular dependency is detected.
                 try
                 {
-                    await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>()); // false to avoid resolving parent keys for this check
+                    await GetKeysInternalAsync(existing.Id, null, false, new HashSet<Guid>(), cancellationToken); // false to avoid resolving parent keys for this check
                 }
                 catch (ConfigurationException ex) when (ex.Message.Contains("Circular dependency detected"))
                 {
@@ -181,8 +190,9 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task DeleteAsync(Guid id, string userId)
+    public async Task DeleteAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentOutOfRangeException.ThrowIfEqual(id, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
     
@@ -211,8 +221,10 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKey key, string userId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<ConfigurationKey> AddKeyAsync(Guid configurationId, ConfigurationKey key, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentOutOfRangeException.ThrowIfEqual(configurationId, Guid.Empty);
         ArgumentNullException.ThrowIfNull(key);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
@@ -240,8 +252,10 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<ConfigurationKey> UpdateKeyAsync(Guid keyId, string value, string userId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<ConfigurationKey> UpdateKeyAsync(Guid keyId, string value, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
@@ -281,16 +295,19 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null, bool resolveInheritance = true)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<List<ConfigurationKey>> GetKeysAsync(Guid configurationId, Guid? versionId = null, bool resolveInheritance = true, CancellationToken cancellationToken = default)
     {
-        return await GetKeysInternalAsync(configurationId, versionId, resolveInheritance, new HashSet<Guid>());
+        cancellationToken.ThrowIfCancellationRequested();
+        return await GetKeysInternalAsync(configurationId, versionId, resolveInheritance, new HashSet<Guid>(), cancellationToken);
     }
 
     /// <summary>
     /// Internal method to get keys with inheritance resolution and circular dependency detection.
     /// </summary>
-    private async Task<List<ConfigurationKey>> GetKeysInternalAsync(Guid configurationId, Guid? versionId, bool resolveInheritance, HashSet<Guid> visitedConfigs)
+    private async Task<List<ConfigurationKey>> GetKeysInternalAsync(Guid configurationId, Guid? versionId, bool resolveInheritance, HashSet<Guid> visitedConfigs, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var config = await _configRepository.GetByIdAsync(configurationId);
         if (config is null)
         {
@@ -317,7 +334,7 @@ public sealed class ConfigurationService : IConfigurationService
         {
             try
             {
-                var parentKeys = await GetKeysInternalAsync(config.ParentConfigurationId.Value, null, true, visitedConfigs); // Always resolve parent fully
+                var parentKeys = await GetKeysInternalAsync(config.ParentConfigurationId.Value, null, true, visitedConfigs, cancellationToken); // Always resolve parent fully
                 foreach (var parentKey in parentKeys)
                 {
                     if (!resolvedKeys.ContainsKey(parentKey.Key))
@@ -394,14 +411,17 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<ConfigurationKey?> GetKeyAsync(Guid keyId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<ConfigurationKey?> GetKeyAsync(Guid keyId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _keyRepository.GetByIdAsync(keyId);
     }
 
     /// <inheritdoc/>
-    public async Task DeleteKeyAsync(Guid keyId, string userId)
+    public async Task DeleteKeyAsync(Guid keyId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentOutOfRangeException.ThrowIfEqual(keyId, Guid.Empty);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
     
@@ -417,22 +437,28 @@ public sealed class ConfigurationService : IConfigurationService
     }
 
     /// <inheritdoc/>
-    public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<List<Configuration>> SearchAsync(string query, Guid? applicationId = null, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrWhiteSpace(query);
     
         return await _configRepository.SearchAsync(query, applicationId);
     }
 
     /// <inheritdoc/>
-    public async Task<List<ConfigurationKey>> SearchKeysAsync(string? query, string? prefix, Guid? configurationId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<List<ConfigurationKey>> SearchKeysAsync(string? query, string? prefix, Guid? configurationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _keyRepository.SearchAsync(query, prefix, configurationId);
     }
 
     /// <inheritdoc/>
-    public async Task<int> GetConfigurationCountAsync(Guid applicationId)
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    public async Task<int> GetConfigurationCountAsync(Guid applicationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _configRepository.GetCountByApplicationAsync(applicationId);
     }
 }

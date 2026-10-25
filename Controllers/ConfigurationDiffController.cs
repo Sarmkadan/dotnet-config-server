@@ -65,8 +65,8 @@ public sealed class ConfigurationDiffController : ControllerBase
                 configurationId, fromVersionId, toVersionId);
 
             // Validate that both versions belong to the specified configuration
-            var fromVersion = await _versioningService.GetVersionAsync(fromVersionId);
-            var toVersion = await _versioningService.GetVersionAsync(toVersionId);
+            var fromVersion = await _versioningService.GetVersionAsync(fromVersionId, cancellationToken: HttpContext.RequestAborted);
+            var toVersion = await _versioningService.GetVersionAsync(toVersionId, cancellationToken: HttpContext.RequestAborted);
 
             if (fromVersion is null || toVersion is null)
             {
@@ -88,7 +88,7 @@ public sealed class ConfigurationDiffController : ControllerBase
             var userId = User.Identity?.Name ?? "system";
 
             // Generate the diff using DiffService
-            var diff = await _diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId);
+            var diff = await _diffService.GenerateDiffAsync(fromVersionId, toVersionId, userId, cancellationToken: HttpContext.RequestAborted);
 
             _logger.LogInformation(
                 "GetConfigurationDiff completed successfully for {ConfigurationId} between {FromVersionId} and {ToVersionId}",
@@ -136,8 +136,8 @@ public sealed class ConfigurationDiffController : ControllerBase
                 configurationId, version1Id, version2Id);
 
             // Validate that both versions belong to the specified configuration
-            var version1 = await _versioningService.GetVersionAsync(version1Id);
-            var version2 = await _versioningService.GetVersionAsync(version2Id);
+            var version1 = await _versioningService.GetVersionAsync(version1Id, cancellationToken: HttpContext.RequestAborted);
+            var version2 = await _versioningService.GetVersionAsync(version2Id, cancellationToken: HttpContext.RequestAborted);
 
             if (version1 is null || version2 is null)
             {
@@ -156,7 +156,7 @@ public sealed class ConfigurationDiffController : ControllerBase
             }
 
             // Get the diff summary using DiffService
-            var summary = await _diffService.ComparVersionsAsync(version1Id, version2Id);
+            var summary = await _diffService.ComparVersionsAsync(version1Id, version2Id, cancellationToken: HttpContext.RequestAborted);
 
             _logger.LogInformation(
                 "GetConfigurationDiffSummary completed successfully for {ConfigurationId} between {Version1Id} and {Version2Id}",

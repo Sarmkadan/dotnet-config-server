@@ -58,21 +58,23 @@ public sealed class DiffService : IDiffService
     /// <param name="fromVersionId">The source version identifier.</param>
     /// <param name="toVersionId">The target version identifier.</param>
     /// <param name="userId">Identifier of the user requesting the diff.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="userId"/> is <c>null</c> or empty.
     /// </exception>
     /// <exception cref="ConfigurationNotFoundException">
     /// Thrown when one or both versions cannot be found.
     /// </exception>
-    public async Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId)
+    public async Task<ConfigurationDiff> GenerateDiffAsync(Guid fromVersionId, Guid toVersionId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         try
         {
             _logger.LogInformation("Entering {MethodName} with {FromVersionId}={FromVersionId}, {ToVersionId}={ToVersionId}, {UserId}={UserId}",
                 nameof(GenerateDiffAsync), fromVersionId, toVersionId, userId);
             ArgumentException.ThrowIfNullOrEmpty(userId);
             // Preserve existing behaviour (exact comparison)
-            return await GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: false);
+            return await GenerateDiffAsync(fromVersionId, toVersionId, userId, ignoreWhitespaceAndBlankLines: false, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -91,6 +93,7 @@ public sealed class DiffService : IDiffService
     /// When <c>true</c>, leading/trailing whitespace is trimmed and values that consist
     /// solely of whitespace (blank lines) are treated as equal.
     /// </param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="userId"/> is <c>null</c> or empty.
     /// </exception>
@@ -101,8 +104,10 @@ public sealed class DiffService : IDiffService
         Guid fromVersionId,
         Guid toVersionId,
         string userId,
-        bool ignoreWhitespaceAndBlankLines)
+        bool ignoreWhitespaceAndBlankLines,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var fromVersion = await _versionRepository.GetByIdAsync(fromVersionId);
@@ -173,11 +178,13 @@ public sealed class DiffService : IDiffService
     /// Gets a diff.
     /// </summary>
     /// <param name="diffId">The identifier of the diff to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="diffId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    public async Task<ConfigurationDiff?> GetDiffAsync(Guid diffId)
+    public async Task<ConfigurationDiff?> GetDiffAsync(Guid diffId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (diffId == Guid.Empty)
             throw new ArgumentException("Diff identifier cannot be empty.", nameof(diffId));
 
@@ -188,11 +195,13 @@ public sealed class DiffService : IDiffService
     /// Gets all diffs for a configuration.
     /// </summary>
     /// <param name="configurationId">The configuration identifier.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    public async Task<List<ConfigurationDiff>> GetDiffsAsync(Guid configurationId)
+    public async Task<List<ConfigurationDiff>> GetDiffsAsync(Guid configurationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
             throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
 
@@ -203,15 +212,17 @@ public sealed class DiffService : IDiffService
     /// Gets the latest diff for a configuration.
     /// </summary>
     /// <param name="configurationId">The configuration identifier.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c>.
     /// </exception>
-    public async Task<ConfigurationDiff?> GetLatestDiffAsync(Guid configurationId)
+    public async Task<ConfigurationDiff?> GetLatestDiffAsync(Guid configurationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
             throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
 
-        var diffs = await GetDiffsAsync(configurationId);
+        var diffs = await GetDiffsAsync(configurationId, cancellationToken);
         return diffs.OrderByDescending(d => d.CreatedAt).FirstOrDefault();
     }
 
@@ -220,17 +231,19 @@ public sealed class DiffService : IDiffService
     /// </summary>
     /// <param name="configurationId">The configuration identifier.</param>
     /// <param name="keyName">The key name to retrieve history for.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="configurationId"/> is <c>Guid.Empty</c> or
     /// <paramref name="keyName"/> is <c>null</c> or empty.
     /// </exception>
-    public async Task<List<DiffEntry>> GetKeyHistoryAsync(Guid configurationId, string keyName)
+    public async Task<List<DiffEntry>> GetKeyHistoryAsync(Guid configurationId, string keyName, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (configurationId == Guid.Empty)
             throw new ArgumentException("Configuration identifier cannot be empty.", nameof(configurationId));
         ArgumentException.ThrowIfNullOrEmpty(keyName);
 
-        var diffs = await GetDiffsAsync(configurationId);
+        var diffs = await GetDiffsAsync(configurationId, cancellationToken);
         return diffs
             .SelectMany(d => d.Changes)
             .Where(c => c.Key == keyName)
@@ -245,18 +258,20 @@ public sealed class DiffService : IDiffService
     /// </summary>
     /// <param name="version1Id">First version identifier.</param>
     /// <param name="version2Id">Second version identifier.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when either identifier is <c>Guid.Empty</c>.
     /// </exception>
-    public async Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id)
+    public async Task<ConfigurationDiffSummary> ComparVersionsAsync(Guid version1Id, Guid version2Id, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (version1Id == Guid.Empty)
             throw new ArgumentException("Version identifier cannot be empty.", nameof(version1Id));
         if (version2Id == Guid.Empty)
             throw new ArgumentException("Version identifier cannot be empty.", nameof(version2Id));
 
         // Preserve existing exact‑comparison behaviour
-        return await ComparVersionsAsync(version1Id, version2Id, ignoreWhitespaceAndBlankLines: false);
+        return await ComparVersionsAsync(version1Id, version2Id, ignoreWhitespaceAndBlankLines: false, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -268,14 +283,17 @@ public sealed class DiffService : IDiffService
     /// When <c>true</c>, leading/trailing whitespace is trimmed and blank‑line‑only values
     /// are treated as equal.
     /// </param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when either identifier is <c>Guid.Empty</c>.
     /// </exception>
     public async Task<ConfigurationDiffSummary> ComparVersionsAsync(
         Guid version1Id,
         Guid version2Id,
-        bool ignoreWhitespaceAndBlankLines)
+        bool ignoreWhitespaceAndBlankLines,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (version1Id == Guid.Empty)
             throw new ArgumentException("Version identifier cannot be empty.", nameof(version1Id));
         if (version2Id == Guid.Empty)

@@ -51,6 +51,7 @@ public sealed class VersioningService : IVersioningService
     /// <param name="releaseNotes">Release notes for the version</param>
     /// <param name="userId">User ID creating the version</param>
     /// <param name="expectedVersionNumber">Optional: Expected current version number for optimistic concurrency check</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The newly created configuration version</returns>
     /// <exception cref="ArgumentException">Thrown when release notes or user ID are null or empty</exception>
     /// <exception cref="ConfigurationNotFoundException">Thrown when the configuration does not exist</exception>
@@ -59,8 +60,10 @@ public sealed class VersioningService : IVersioningService
         Guid configurationId,
         string releaseNotes,
         string userId,
-        string? expectedVersionNumber = null)
+        string? expectedVersionNumber = null,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentNullException.ThrowIfNull(configurationId);
         ArgumentException.ThrowIfNullOrEmpty(releaseNotes);
         ArgumentException.ThrowIfNullOrEmpty(userId);
@@ -70,7 +73,7 @@ public sealed class VersioningService : IVersioningService
             throw new ConfigurationNotFoundException(configurationId.ToString());
 
         // Get the current active version for concurrency check
-        var previousVersion = await GetActiveVersionAsync(configurationId);
+        var previousVersion = await GetActiveVersionAsync(configurationId, cancellationToken);
 
         // Check optimistic concurrency if expected version is provided
         if (expectedVersionNumber is not null && previousVersion is not null)
@@ -147,9 +150,11 @@ public sealed class VersioningService : IVersioningService
     /// Gets a configuration version by its unique identifier
     /// </summary>
     /// <param name="versionId">The version ID</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The configuration version, or null if not found</returns>
-    public async Task<ConfigurationVersion?> GetVersionAsync(Guid versionId)
+    public async Task<ConfigurationVersion?> GetVersionAsync(Guid versionId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _versionRepository.GetByIdAsync(versionId);
     }
 
@@ -157,9 +162,11 @@ public sealed class VersioningService : IVersioningService
     /// Gets all versions of a configuration
     /// </summary>
     /// <param name="configurationId">The configuration ID</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A list of all versions for the configuration</returns>
-    public async Task<List<ConfigurationVersion>> GetVersionsAsync(Guid configurationId)
+    public async Task<List<ConfigurationVersion>> GetVersionsAsync(Guid configurationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _versionRepository.GetByConfigurationAsync(configurationId);
     }
 
@@ -167,9 +174,11 @@ public sealed class VersioningService : IVersioningService
     /// Gets the active version
     /// </summary>
     /// <param name="configurationId">The configuration ID</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The active configuration version, or null if none exists</returns>
-    public async Task<ConfigurationVersion?> GetActiveVersionAsync(Guid configurationId)
+    public async Task<ConfigurationVersion?> GetActiveVersionAsync(Guid configurationId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         return await _versionRepository.GetActiveVersionAsync(configurationId);
     }
 
@@ -178,11 +187,13 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     /// <param name="versionId">The version ID</param>
     /// <param name="userId">User ID publishing the version</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The published configuration version</returns>
     /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
     /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
-    public async Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId)
+    public async Task<ConfigurationVersion> PublishVersionAsync(Guid versionId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var version = await _versionRepository.GetByIdAsync(versionId);
@@ -190,7 +201,7 @@ public sealed class VersioningService : IVersioningService
             throw new ConfigurationNotFoundException(versionId.ToString());
 
         // Unpublish current active version
-        var activeVersion = await GetActiveVersionAsync(version.ConfigurationId);
+        var activeVersion = await GetActiveVersionAsync(version.ConfigurationId, cancellationToken);
         if (activeVersion is not null && activeVersion.Id != versionId)
         {
             activeVersion.Deprecate();
@@ -233,11 +244,13 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     /// <param name="versionId">The version ID</param>
     /// <param name="userId">User ID archiving the version</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The archived configuration version</returns>
     /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
     /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
-    public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId)
+    public async Task<ConfigurationVersion> ArchiveVersionAsync(Guid versionId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var version = await _versionRepository.GetByIdAsync(versionId);
@@ -257,11 +270,13 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     /// <param name="versionId">The version ID</param>
     /// <param name="userId">User ID deprecating the version</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The deprecated configuration version</returns>
     /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
     /// <exception cref="ConfigurationNotFoundException">Thrown when the version does not exist</exception>
-    public async Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId)
+    public async Task<ConfigurationVersion> DeprecateVersionAsync(Guid versionId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var version = await _versionRepository.GetByIdAsync(versionId);
@@ -282,11 +297,13 @@ public sealed class VersioningService : IVersioningService
     /// <param name="configurationId">The configuration ID</param>
     /// <param name="previousVersionId">The ID of the version to roll back to</param>
     /// <param name="userId">User ID performing the rollback</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The newly created rollback version</returns>
     /// <exception cref="ArgumentException">Thrown when user ID is null or empty</exception>
     /// <exception cref="ConfigurationNotFoundException">Thrown when the previous version does not exist</exception>
-    public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId)
+    public async Task<ConfigurationVersion> RollbackAsync(Guid configurationId, Guid previousVersionId, string userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var previousVersion = await _versionRepository.GetByIdAsync(previousVersionId);
@@ -295,7 +312,7 @@ public sealed class VersioningService : IVersioningService
 
         // Create new version as rollback
         var newVersion = await CreateVersionAsync(configurationId,
-            $"Rollback to version {previousVersion.VersionNumber}", userId);
+            $"Rollback to version {previousVersion.VersionNumber}", userId, cancellationToken: cancellationToken);
 
         // Copy keys from previous version
         newVersion.Keys.Clear();
@@ -335,10 +352,12 @@ public sealed class VersioningService : IVersioningService
     /// Gets version history
     /// </summary>
     /// <param name="configurationId">The configuration ID</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A list of version summaries ordered by creation date, newest first</returns>
-    public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId)
+    public async Task<List<ConfigurationVersionSummary>> GetVersionHistoryAsync(Guid configurationId, CancellationToken cancellationToken = default)
     {
-        var versions = await GetVersionsAsync(configurationId);
+        cancellationToken.ThrowIfCancellationRequested();
+        var versions = await GetVersionsAsync(configurationId, cancellationToken);
         return versions.OrderByDescending(v => v.CreatedAt)
             .Select(v => v.GetSummary())
             .ToList();
@@ -349,10 +368,12 @@ public sealed class VersioningService : IVersioningService
     /// </summary>
     /// <param name="configurationId">The configuration ID</param>
     /// <param name="maxVersions">Maximum number of versions to retain</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>The number of versions archived during cleanup</returns>
-    public async Task<int> CleanupOldVersionsAsync(Guid configurationId, int maxVersions)
+    public async Task<int> CleanupOldVersionsAsync(Guid configurationId, int maxVersions, CancellationToken cancellationToken = default)
     {
-        var versions = await GetVersionsAsync(configurationId);
+        cancellationToken.ThrowIfCancellationRequested();
+        var versions = await GetVersionsAsync(configurationId, cancellationToken);
         var sortedVersions = versions.OrderByDescending(v => v.CreatedAt).ToList();
 
         var versionsToArchive = sortedVersions
