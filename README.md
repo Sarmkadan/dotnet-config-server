@@ -3984,6 +3984,22 @@ public class ConfigWatchClient
 }
 ```
 
+## DiffViewerController
+
+The `DiffViewerController` provides read-only endpoints for the diff viewer UI. It returns an enriched diff between two versions of a configuration, a version timeline annotated with change statistics, and a non-destructive rollback preview. All endpoints are nested under one configuration and delegate their logic to `IDiffViewerService`. Nothing is persisted or applied by these endpoints.
+
+**Endpoints** (all under `api/v1/configurations/{configurationId}/diff-viewer`):
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `{fromVersionId}/{toVersionId}` | Enriched diff between two versions. Returns `200 OK` with an `EnrichedDiff`, or `404 Not Found` if a version does not belong to the configuration |
+| GET | `timeline` | Version history for the configuration, oldest first, as a list of `VersionTimelineEntry` |
+| GET | `rollback-preview/{targetVersionId}` | Changes a rollback to the target version would make relative to the active version. Returns `200 OK` with a `RollbackPreview`, or `404 Not Found` if the version does not exist |
+
+Errors other than missing versions are logged and returned as `500 Internal Server Error` with `{ "error": "Internal server error" }`.
+
+For request and response details, see [`docs/DiffViewerController.md`](docs/DiffViewerController.md).
+
 ## EventBusTests
 
 The `EventBusTests` class (defined in `tests/dotnet-config-server.Tests/Events/EventBusTests.cs`) verifies the behavior of the in-process event bus that dispatches domain events to subscribed handlers. It covers publishing scenarios—delivery to a single handler, fan-out to multiple handlers running in parallel, no-op publishes when no handlers are registered, and graceful containment of handler exceptions—together with subscription management such as adding handlers, removing specific handlers, and safely unsubscribing non-existent ones. Since the class also implements `ILogger` through its `IsEnabled`, `Log<TState>`, and `BeginScope<TState>` members, it can double as a lightweight logger while exercising the bus.
