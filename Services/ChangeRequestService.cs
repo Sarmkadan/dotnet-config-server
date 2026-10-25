@@ -17,6 +17,9 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class ChangeRequestService : IChangeRequestService
 {
+    private const string RequestNotFoundFormat = "Change request {0} not found";
+    private const string RequestNotPendingFormat = "Change request {0} is not pending (status: {1})";
+
     private readonly IChangeRequestRepository _repository;
     private readonly IConfigurationService _configurationService;
     private readonly ILogger<ChangeRequestService> _logger;
@@ -81,10 +84,10 @@ public sealed class ChangeRequestService : IChangeRequestService
         ArgumentException.ThrowIfNullOrEmpty(reviewerId);
 
         var request = await _repository.GetByIdAsync(id)
-            ?? throw new ConfigurationNotFoundException($"Change request {id} not found");
+            ?? throw new ConfigurationNotFoundException(string.Format(RequestNotFoundFormat, id));
 
         if (request.Status != ChangeRequestStatus.Pending)
-            throw new ConfigurationException($"Change request {id} is not pending (status: {request.Status})");
+            throw new ConfigurationException(string.Format(RequestNotPendingFormat, id, request.Status));
 
         request.Approve(reviewerId, comment);
         await _repository.UpdateAsync(request);
@@ -109,10 +112,10 @@ public sealed class ChangeRequestService : IChangeRequestService
             throw new ValidationException("Rejection comment is required", new Dictionary<string, List<string>>());
 
         var request = await _repository.GetByIdAsync(id)
-            ?? throw new ConfigurationNotFoundException($"Change request {id} not found");
+            ?? throw new ConfigurationNotFoundException(string.Format(RequestNotFoundFormat, id));
 
         if (request.Status != ChangeRequestStatus.Pending)
-            throw new ConfigurationException($"Change request {id} is not pending (status: {request.Status})");
+            throw new ConfigurationException(string.Format(RequestNotPendingFormat, id, request.Status));
 
         request.Reject(reviewerId, comment);
         await _repository.UpdateAsync(request);
@@ -130,7 +133,7 @@ public sealed class ChangeRequestService : IChangeRequestService
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
         var request = await _repository.GetByIdAsync(id)
-            ?? throw new ConfigurationNotFoundException($"Change request {id} not found");
+            ?? throw new ConfigurationNotFoundException(string.Format(RequestNotFoundFormat, id));
 
         if (request.Status != ChangeRequestStatus.Pending)
             throw new ConfigurationException($"Only pending change requests can be cancelled");
