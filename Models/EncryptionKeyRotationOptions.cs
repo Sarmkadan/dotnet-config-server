@@ -31,4 +31,6 @@ public sealed class EncryptionKeyRotationOptions
     [Required]
     [StringLength(256)]
     public string DefaultUserId { get; set; } = "system";
+
+    public override string ToString() => $"EncryptionKeyRotationOptions {{ Enabled = {Enabled}, IntervalMinutes = {IntervalMinutes}, DefaultUserId = {DefaultUserId} }}";
 }
