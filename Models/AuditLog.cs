@@ -106,6 +106,9 @@ public sealed class AuditLog
         string? newValues = null,
         string? details = null)
     {
+        System.ArgumentNullException.ThrowIfNull(entityType);
+        System.ArgumentNullException.ThrowIfNull(entityId);
+        System.ArgumentNullException.ThrowIfNull(userId);
         return new AuditLog
         {
             ActionType = AuditActionType.ConfigurationUpdated,
@@ -135,6 +138,9 @@ public sealed class AuditLog
         string? userEmail,
         string? oldValues = null)
     {
+        System.ArgumentNullException.ThrowIfNull(entityType);
+        System.ArgumentNullException.ThrowIfNull(entityId);
+        System.ArgumentNullException.ThrowIfNull(userId);
         return new AuditLog
         {
             ActionType = AuditActionType.ConfigurationDeleted,
