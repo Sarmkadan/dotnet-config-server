@@ -14,6 +14,8 @@ namespace DotnetConfigServer.Caching;
 /// </summary>
 public sealed class MemoryCacheService : ICacheService
 {
+    private const int CleanupIntervalMinutes = 5;
+
     private readonly ConcurrentDictionary<string, CacheEntry> _cache;
     private readonly ILogger<MemoryCacheService> _logger;
     private CacheStats _stats = new();
@@ -25,7 +27,7 @@ public sealed class MemoryCacheService : ICacheService
         ArgumentNullException.ThrowIfNull(logger);
         _cache = new ConcurrentDictionary<string, CacheEntry>();
         _logger = logger;
-        _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+        _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(CleanupIntervalMinutes), TimeSpan.FromMinutes(CleanupIntervalMinutes));
     }
 
     public async Task<T?> GetAsync<T>(string key)
