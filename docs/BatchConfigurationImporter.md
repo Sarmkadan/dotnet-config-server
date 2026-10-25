@@ -1,95 +1,89 @@
 # BatchConfigurationImporter
 
-Provides mechanisms for importing, exporting, cloning, and merging batch configuration data from JSON sources. It encapsulates the state of a batch operation, including the configuration identifier, environment, keys, and a detailed result summary with success and failure counts and error messages.
+Sample HTTP client (namespace `DotnetConfigServer.Examples`, source in `examples/BatchConfigurationImporter.cs`) that imports, exports, clones and merges configuration keys through the server's REST API under `/api/v1/configurations/`. It wraps a single `HttpClient` and returns a `BatchImportResult` with success and failure counts and error messages.
+
+The `examples/` folder is excluded from the main build (`<Compile Remove="examples/**/*.cs" />` in `dotnet-config-server.csproj`), so this class is a reference client, not part of the server assembly.
 
 ## API
 
-### Constructors
+### Constructor
 
-- **`public BatchConfigurationImporter`**  
-  Initializes a new instance of the `BatchConfigurationImporter` class. The default constructor prepares an empty importer with no pre-configured keys or results.
+- **`public BatchConfigurationImporter(string baseUrl)`**  
+  Creates the importer and an internal `HttpClient` whose `BaseAddress` is `new Uri(baseUrl)`. The `HttpClient` is not disposed by this class (see Notes).  
+  **Throws:** `ArgumentNullException` if `baseUrl` is null, `UriFormatException` if it is not an absolute URI.
 
 ### Methods
 
-- **`public async Task<BatchImportResult> ImportFromJsonAsync`**  
-  Imports configuration data from a JSON source asynchronously. The exact source (stream, string, file path) is determined by the overload used.  
-  **Returns:** A `BatchImportResult` containing the number of successfully imported keys, failures, and any error messages encountered during the operation.  
-  **Throws:** May throw `ArgumentNullException` if the JSON source is null, `JsonException` if the JSON is malformed, or `InvalidOperationException` if the importer is not in a valid state.
+- **`public async Task<BatchImportResult> ImportFromJsonAsync(string jsonFilePath)`**  
+  Reads the file as text, deserializes it into a `BatchImportRequest` with default `System.Text.Json` options, and delegates to `ImportAsync`.  
+  **Returns:** The `BatchImportResult` from `ImportAsync`.  
+  **Throws:** `ArgumentNullException` for a null path, `FileNotFoundException` if the file is missing, `JsonException` if the JSON is malformed. Property names must match the PascalCase names of `BatchImportRequest` and `ConfigurationKeyImport` (see Notes).
 
-- **`public async Task<BatchImportResult> ImportAsync`**  
-  Performs an asynchronous import of configuration keys that have been set on the instance.  
-  **Returns:** A `BatchImportResult` detailing the outcome of the import process.  
-  **Throws:** May throw `InvalidOperationException` if required properties such as `ConfigurationId` are not set.
+- **`public async Task<BatchImportResult> ImportAsync(BatchImportRequest request)`**  
+  Sends one `POST /api/v1/configurations/{ConfigurationId}/keys` per entry in `request.Keys`, sequentially. The body is `{ key, value, isEncrypted, description }`. Progress is written to the console (`✓ Imported key: ...` / `✗ ...`).  
+  **Returns:** A new `BatchImportResult`. Per-key failures are counted in `FailureCount` and described in `Errors`; the method does not throw for them.  
+  **Throws:** `NullReferenceException` if `request` is null.
 
-- **`public async Task ExportToJsonAsync`**  
-  Exports the current configuration keys to a JSON destination asynchronously.  
-  **Returns:** A `Task` representing the asynchronous export operation.  
-  **Throws:** May throw `InvalidOperationException` if there is no configuration data to export, or `IOException` if the target destination is not writable.
+- **`public async Task ExportToJsonAsync(string configurationId, string outputPath)`**  
+  Sends `GET /api/v1/configurations/{configurationId}`, checks the status code, and writes the response body unchanged to `outputPath`. Prints `Configuration exported to <outputPath>` on success.  
+  **Returns:** A `Task` that completes when the file is written.  
+  **Throws:** `HttpRequestException` for a non-success status (no file is written), `IOException` or `UnauthorizedAccessException` if `outputPath` cannot be written.
 
-- **`public async Task<BatchImportResult> CloneConfigurationAsync`**  
-  Clones an existing configuration identified by `ConfigurationId` into a new configuration.  
-  **Returns:** A `BatchImportResult` with the outcome of the clone operation.  
-  **Throws:** May throw `KeyNotFoundException` if the source configuration does not exist, or `InvalidOperationException` if the clone operation fails due to validation errors.
+- **`public async Task<BatchImportResult> CloneConfigurationAsync(string sourceConfigId, string targetConfigId)`**  
+  Fetches the source configuration (`GET /api/v1/configurations/{sourceConfigId}`), deserializes it as a `ConfigurationDto` with case-insensitive property matching, copies each key's `Key`, `Value`, `IsEncrypted` and `Description` (server `Id`s are not copied), and runs `ImportAsync` against `targetConfigId`.  
+  **Returns:** The `BatchImportResult` from `ImportAsync` for the target.  
+  **Throws:** `HttpRequestException` if the source fetch is not successful, `JsonException` if its body cannot be parsed, `NullReferenceException` if the source has no `Keys` list.
 
-- **`public async Task<BatchImportResult> MergeConfigurationsAsync`**  
-  Merges the current set of keys into an existing configuration. The merge strategy (add, update, skip) is determined by the implementation.  
-  **Returns:** A `BatchImportResult` summarizing the merge outcome.  
-  **Throws:** May throw `InvalidOperationException` if the target configuration is locked or if a merge conflict cannot be resolved.
+- **`public async Task<BatchImportResult> MergeConfigurationsAsync(string sourceConfigId, string targetConfigId, bool overwrite = true)`**  
+  Fetches both configurations, then posts each source key to `POST /api/v1/configurations/{targetConfigId}/keys`. If `overwrite` is `false`, source keys whose name already exists in the target are skipped. Keys that exist only in the target are left untouched; nothing is deleted. Unlike `ImportAsync`, this method does not write to the console and does not record messages in `Errors`.  
+  **Returns:** A new `BatchImportResult`. Skipped keys are counted in neither `SuccessCount` nor `FailureCount`.  
+  **Throws:** `HttpRequestException` if either fetch is not successful (the source response is checked first), `ArgumentException` if the target contains duplicate key names.
 
-- **`public override string ToString`**  
-  Returns a string representation of the current `BatchConfigurationImporter`, typically including the `ConfigurationId` and the number of keys loaded.  
-  **Returns:** A human-readable string describing the importer state.
+- **`public override string ToString()`** (on `BatchImportResult`)  
+  Returns `Success: {SuccessCount}, Failed: {FailureCount}, Errors: {Errors.Count}`.
 
-### Properties
+### Types
 
-- **`public string ConfigurationId`**  
-  Gets or sets the identifier of the configuration being imported or manipulated.
+- **`BatchImportRequest`**  
+  - `string ConfigurationId` - target configuration identifier used in the URL.  
+  - `List<ConfigurationKeyImport> Keys` - keys to write; defaults to an empty list.
 
-- **`public List<ConfigurationKeyImport> Keys`**  
-  Gets the list of `ConfigurationKeyImport` objects representing the keys to be imported or that have been imported. Each entry contains a `Key`, `Value`, `IsEncrypted`, and `Description`.
+- **`ConfigurationKeyImport`**  
+  - `string Key`, `string Value`, `bool IsEncrypted`, `string Description`.
 
-- **`public string Key`**  
-  Gets or sets the key name for an individual configuration entry within a `ConfigurationKeyImport`.
+- **`BatchImportResult`**  
+  - `int SuccessCount` - keys written successfully by the call.  
+  - `int FailureCount` - keys that failed in the call.  
+  - `List<string> Errors` - failure messages; defaults to an empty list. Only `ImportAsync` (and therefore `ImportFromJsonAsync` and `CloneConfigurationAsync`) populates it.
 
-- **`public string Value`**  
-  Gets or sets the value for an individual configuration entry within a `ConfigurationKeyImport`.
+- **`ConfigurationDto`** (response model for `GET` in clone and merge)  
+  - `Guid Id`, `string Environment`, `List<ConfigurationKeyDto> Keys`.
 
-- **`public bool IsEncrypted`**  
-  Gets or sets a value indicating whether the configuration value is encrypted.
-
-- **`public string Description`**  
-  Gets or sets a human-readable description for a configuration key.
-
-- **`public int SuccessCount`**  
-  Gets the number of keys successfully imported or processed in the last operation.
-
-- **`public int FailureCount`**  
-  Gets the number of keys that failed to import or process in the last operation.
-
-- **`public List<string> Errors`**  
-  Gets the list of error messages accumulated during the last import or processing operation.
-
-- **`public Guid Id`**  
-  Gets or sets the unique identifier for the configuration entity (appears on both the importer and the DTO).
-
-- **`public string Environment`**  
-  Gets or sets the target environment name for the configuration.
-
-- **`public List<ConfigurationKeyDto> Keys`**  
-  Gets or sets the list of `ConfigurationKeyDto` objects representing the configuration keys in a data-transfer context.
+- **`ConfigurationKeyDto`**  
+  - `Guid Id`, `string Key`, `string Value`, `bool IsEncrypted`, `string Description`.
 
 ## Usage
 
 ### Example 1: Importing Configuration from a JSON File
 
+The file must use the PascalCase property names expected by the deserializer:
+
+```json
+{
+  "ConfigurationId": "app-settings-v2",
+  "Keys": [
+    { "Key": "Database:Host", "Value": "prod-db.example.com", "IsEncrypted": false, "Description": "Database server hostname" },
+    { "Key": "ApiKey:ThirdParty", "Value": "<encrypted-value>", "IsEncrypted": true, "Description": "Third-party API key" }
+  ]
+}
+```
+
 ```csharp
-var importer = new BatchConfigurationImporter();
-importer.ConfigurationId = "app-settings-v2";
+var importer = new BatchConfigurationImporter("https://localhost:5001");
 
-// Assume ImportFromJsonAsync reads from a file path
-BatchImportResult result = await importer.ImportFromJsonAsync("config.json");
+BatchImportResult result = await importer.ImportFromJsonAsync("configurations.json");
+Console.WriteLine(result);
 
-Console.WriteLine($"Imported: {result.SuccessCount} succeeded, {result.FailureCount} failed.");
 if (result.FailureCount > 0)
 {
     foreach (string error in result.Errors)
@@ -99,38 +93,92 @@ if (result.FailureCount > 0)
 }
 ```
 
-### Example 2: Cloning a Configuration and Merging Keys
+### Example 2: Building a Batch in Code
 
 ```csharp
-var importer = new BatchConfigurationImporter();
-importer.ConfigurationId = "source-config-id";
+var importer = new BatchConfigurationImporter("https://localhost:5001");
 
-// Clone the source configuration
-BatchImportResult cloneResult = await importer.CloneConfigurationAsync();
-Console.WriteLine($"Clone result: {cloneResult.SuccessCount} keys copied.");
-
-// Prepare new keys for merging
-importer.Keys = new List<ConfigurationKeyImport>
+var request = new BatchImportRequest
 {
-    new ConfigurationKeyImport
+    ConfigurationId = "app-settings-v2",
+    Keys = new List<ConfigurationKeyImport>
     {
-        Key = "NewFeature:Enabled",
-        Value = "true",
-        IsEncrypted = false,
-        Description = "Enables the new feature flag"
+        new ConfigurationKeyImport
+        {
+            Key = "NewFeature:Enabled",
+            Value = "true",
+            IsEncrypted = false,
+            Description = "Enables the new feature flag"
+        }
     }
 };
 
-// Merge into the cloned configuration
-BatchImportResult mergeResult = await importer.MergeConfigurationsAsync();
-Console.WriteLine($"Merge result: {mergeResult.SuccessCount} keys added.");
+BatchImportResult importResult = await importer.ImportAsync(request);
+Console.WriteLine($"Import result: {importResult.SuccessCount} keys written.");
 ```
+
+### Example 3: Cloning and Merging Between Configurations
+
+```csharp
+var importer = new BatchConfigurationImporter("https://localhost:5001");
+
+// Copy every key from the dev configuration into prod
+BatchImportResult cloneResult = await importer.CloneConfigurationAsync("dev-config-id", "prod-config-id");
+Console.WriteLine($"Clone result: {cloneResult}");
+
+// Copy keys from staging into prod, but keep prod values where the key already exists
+BatchImportResult mergeResult = await importer.MergeConfigurationsAsync(
+    "staging-config-id",
+    "prod-config-id",
+    overwrite: false);
+Console.WriteLine($"Merge result: {mergeResult.SuccessCount} written, {mergeResult.FailureCount} failed.");
+```
+
+### Example 4: Exporting a Backup
+
+```csharp
+await importer.ExportToJsonAsync("550e8400-e29b-41d4-a716-446655440001", "backup.json");
+```
+
+The exported file is the raw `GET` response (the configuration DTO shape), not the `BatchImportRequest` shape. Reshape it before passing it to `ImportFromJsonAsync`.
+
+## Error Handling
+
+Failures fall into three groups: exceptions that propagate to the caller, per-key failures that are counted and recorded, and silent no-ops. Check `FailureCount` after `ImportAsync`, `ImportFromJsonAsync`, or `CloneConfigurationAsync`; the absence of an exception does not mean every key was written.
+
+| Situation | Method | Result |
+|---|---|---|
+| Null or non-absolute `baseUrl` | constructor | `ArgumentNullException` / `UriFormatException` |
+| Missing JSON file | `ImportFromJsonAsync` | `FileNotFoundException` |
+| Malformed JSON | `ImportFromJsonAsync` | `JsonException` |
+| JSON with camelCase or other non-matching property names | `ImportFromJsonAsync` | No exception; `ConfigurationId` is null and `Keys` is empty, so the result is `Success: 0, Failed: 0`. |
+| JSON body `null` | `ImportFromJsonAsync` | `NullReferenceException` from `ImportAsync` |
+| Non-success HTTP status for one key | `ImportAsync` | `FailureCount++`; `Errors` gets `Failed to import {Key}: {StatusCode}`; next key continues |
+| Transport error or timeout for one key | `ImportAsync` | `FailureCount++`; `Errors` gets `Error importing {Key}: {message}`; next key continues |
+| Null `request` | `ImportAsync` | `NullReferenceException` |
+| Non-success status on export | `ExportToJsonAsync` | `HttpRequestException`; file is not written |
+| Unwritable output path | `ExportToJsonAsync` | `IOException` / `UnauthorizedAccessException` after the GET succeeded |
+| Non-success status on source fetch | `CloneConfigurationAsync`, `MergeConfigurationsAsync` | `HttpRequestException`; no keys are written |
+| Source or target response cannot be parsed | `CloneConfigurationAsync`, `MergeConfigurationsAsync` | `JsonException` |
+| Source has no `Keys` list (null) | `CloneConfigurationAsync` | `NullReferenceException` |
+| Target contains duplicate key names | `MergeConfigurationsAsync` | `ArgumentException` from `ToDictionary` |
+| Non-success or exception for one key | `MergeConfigurationsAsync` | `FailureCount++` only; no entry in `Errors`, so the reason is lost |
+| Key exists in target and `overwrite` is `false` | `MergeConfigurationsAsync` | Skipped silently; counted in neither counter |
+
+Practical guidance:
+
+- Wrap the calls in `try`/`catch` for `HttpRequestException`, `JsonException`, and `IOException`. Per-key failures never throw from `ImportAsync`, so inspect `FailureCount` and `Errors` instead.
+- `MergeConfigurationsAsync` gives no reason for a failed key. If you need the cause, check the server logs or run the operation through `ImportAsync` with the keys you care about.
+- The client has no retry logic. A failed key stays failed; rerun the failed keys only.
+- Validate the JSON shape before import. The importer cannot distinguish "no keys in the file" from "wrong property names in the file".
 
 ## Notes
 
-- **Thread Safety:** Instance members are not guaranteed to be thread-safe. Do not share `BatchConfigurationImporter` instances across multiple threads without external synchronization, especially when modifying `Keys` or reading `Errors` concurrently with an async operation.
-- **State Reuse:** The `SuccessCount`, `FailureCount`, and `Errors` properties reflect the outcome of the most recent operation. Calling a new import, clone, or merge method overwrites these values.
-- **Encryption Handling:** When `IsEncrypted` is `true` on a key, the importer expects the `Value` to be pre-encrypted or handles encryption during the import pipeline. Providing plaintext values with `IsEncrypted` set to `true` may result in storage of improperly secured data.
-- **Empty Keys:** Importing an empty `Keys` list typically results in a `BatchImportResult` with zero successes and zero failures, not an exception. Validate the list beforehand if a minimum key count is required.
-- **Duplicate Keys:** Behavior on duplicate keys within the `Keys` list depends on the underlying merge or import strategy. The last occurrence may overwrite earlier ones, or an error may be recorded in `Errors`.
-- **JSON Parsing:** `ImportFromJsonAsync` expects a well-formed JSON structure matching the configuration schema. Malformed JSON throws a `JsonException` rather than populating `Errors`.
+- **Thread Safety:** After construction the importer holds only its `HttpClient` and base URL, and each call returns a new `BatchImportResult`, so concurrent calls do not share counters. `ImportAsync` and `ImportFromJsonAsync` write to `Console`, which is synchronized but interleaves output.
+- **Disposal:** `BatchConfigurationImporter` does not implement `IDisposable`, so the `HttpClient` it creates is never disposed. Create one instance per server and reuse it rather than creating one per batch.
+- **Sequential Processing:** Keys are posted one at a time with `await`. A large batch is slow but cannot overwhelm the server with concurrent requests.
+- **Encryption Handling:** The importer does not encrypt or decrypt anything. It forwards `Value` and `IsEncrypted` unchanged, so an encrypted value must already be in the form the server expects.
+- **Empty Keys:** Importing an empty `Keys` list returns a result with zero successes and zero failures, not an exception.
+- **Duplicate Keys:** `ImportAsync` and `MergeConfigurationsAsync` post every occurrence of a duplicate source key. The final value is whatever the server stores last; the client does not deduplicate.
+- **Overwrite Semantics:** `overwrite: true` posts every source key, relying on the server to create or update it. There is no timestamp comparison despite what the source comment suggests; the flag is the only decision.
+- **JSON Property Names:** `ImportFromJsonAsync` uses default `System.Text.Json` options, which are case-sensitive. camelCase keys such as `configurationId` and `key` do not bind and produce an empty result without an error. `CloneConfigurationAsync` uses case-insensitive matching for the server response, so the two paths differ.
