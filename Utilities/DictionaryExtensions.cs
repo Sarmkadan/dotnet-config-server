@@ -179,6 +179,7 @@ public static class DictionaryExtensions
     /// <param name="separator">The separator to use between key parts.</param>
     /// <returns>A flattened dictionary with dot-separated keys.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="source"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="prefix"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentNullException"><paramref name="separator"/> is <see langword="null"/>.</exception>
     public static Dictionary<string, object?> Flatten<TKey, TValue>(
         this Dictionary<TKey, TValue> source,
@@ -187,6 +188,7 @@ public static class DictionaryExtensions
         where TKey : notnull
     {
         ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(prefix);
         ArgumentNullException.ThrowIfNull(separator);
 
         var result = new Dictionary<string, object?>();
