@@ -3980,6 +3980,22 @@ Re-encryption migrates values still protected by an older key version to the cur
 
 For request and response details, see [`docs/EncryptionController.md`](docs/EncryptionController.md).
 
+## HealthCheckController
+
+The `HealthCheckController` reports the health, readiness and liveness of the server as JSON. It is mounted at `/HealthCheck` without the `api/v1` prefix used by the other controllers, and it is separate from the `/health` endpoints mapped in `Program.cs`. Logic is delegated to `IHealthCheckService`; the controller only shapes the HTTP responses.
+
+**Endpoints:**
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/HealthCheck` | Full health report with the overall status and the result of each check. Returns `200 OK` with a `HealthReport` |
+| GET | `/HealthCheck/ready` | Readiness. Returns `200 OK` with `{ "status": "ready" }` or `{ "status": "not_ready" }` |
+| GET | `/HealthCheck/alive` | Liveness. Returns `200 OK` with `{ "status": "alive" }` or `{ "status": "dead" }` |
+
+These endpoints always return `200 OK` and report the state in the body. Probes that depend on the HTTP status code should use `/health/live` and `/health/ready` instead, which return `503 Service Unavailable` when a check is unhealthy.
+
+For request and response details, see [`docs/HealthCheckController.md`](docs/HealthCheckController.md).
+
 ## EventBusTests
 
 The `EventBusTests` class (defined in `tests/dotnet-config-server.Tests/Events/EventBusTests.cs`) verifies the behavior of the in-process event bus that dispatches domain events to subscribed handlers. It covers publishing scenarios—delivery to a single handler, fan-out to multiple handlers running in parallel, no-op publishes when no handlers are registered, and graceful containment of handler exceptions—together with subscription management such as adding handlers, removing specific handlers, and safely unsubscribing non-existent ones. Since the class also implements `ILogger` through its `IsEnabled`, `Log<TState>`, and `BeginScope<TState>` members, it can double as a lightweight logger while exercising the bus.
