@@ -3924,6 +3924,66 @@ public class AuditLogClient
 }
 ```
 
+## ConfigWatchController
+
+The `ConfigWatchController` lets clients find out about configuration changes without polling the configuration endpoints. It offers two transports for the same event: long-polling on `watch`, and Server-Sent Events (SSE) on `watch/sse`. Both are scoped to one application and environment. The `watch/status` endpoint lists the watch requests that are open on the server, for monitoring.
+
+**Key Features:**
+- Long-polling with a timeout (default 30 seconds, capped at 60); returns `204 No Content` when the timeout passes without a change
+- SSE stream of `config.changed` events, with a heartbeat comment every 5 seconds; the stream closes after at most 60 seconds, so clients should reconnect
+- Immediate response when the active version is already newer than `sinceVersion`
+- Monitoring endpoint that reports each open watch's application, environment, transport, start time and duration
+
+**Endpoints** (all under `api/v1/config/{appId}/{env}`, where `env` is an environment name such as `Production`):
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `watch?sinceVersion={v}&timeout={seconds}` | Long-poll. Returns `200 OK` with a `WatchResponse`, `204 No Content` on timeout, `404 Not Found` if the application has no active version |
+| GET | `watch/sse?sinceVersion={v}` | Opens an SSE stream. Each change arrives as `data: {"eventType":"config.changed","data":{...},"id":"...","retry":10000}` |
+| GET | `watch/status` | Returns the open watch requests, keyed by request ID |
+
+`sinceVersion` is the major version number the client last applied (the part before the first `.` in `VersionNumber`). Omitting it currently throws `ArgumentNullException`, so always send it.
+
+`WatchResponse` contains `version`, `changedAt`, `configurations` (the application's current configurations) and `isImmediateResponse`, which is `true` when the response was returned without waiting.
+
+### Usage Example
+
+```csharp
+using DotnetConfigServer.Controllers;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Example: Long-polling for changes to an application's Production configuration
+public class ConfigWatchClient
+{
+    private readonly HttpClient _httpClient;
+
+    public ConfigWatchClient(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<WatchResponse?> WaitForChangeAsync(Guid appId, int sinceVersion, CancellationToken cancellationToken)
+    {
+        var url = $"api/v1/config/{appId}/Production/watch?sinceVersion={sinceVersion}&timeout=60";
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+
+        // 204 means the timeout passed without a change; the caller should poll again
+        if (response.StatusCode == HttpStatusCode.NoContent)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<WatchResponse>(cancellationToken);
+    }
+}
+```
+
 ## EventBusTests
 
 The `EventBusTests` class (defined in `tests/dotnet-config-server.Tests/Events/EventBusTests.cs`) verifies the behavior of the in-process event bus that dispatches domain events to subscribed handlers. It covers publishing scenarios—delivery to a single handler, fan-out to multiple handlers running in parallel, no-op publishes when no handlers are registered, and graceful containment of handler exceptions—together with subscription management such as adding handlers, removing specific handlers, and safely unsubscribing non-existent ones. Since the class also implements `ILogger` through its `IsEnabled`, `Log<TState>`, and `BeginScope<TState>` members, it can double as a lightweight logger while exercising the bus.
