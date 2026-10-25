@@ -4252,6 +4252,27 @@ result.Violations[0].RuleId.Should().Be(ruleId);
 result.Violations[0].KeyName.Should().Be("ApiKey");
 ```
 
+## Troubleshooting
+
+### Requests fail with `429 Too Many Requests`
+
+**Symptom:** API calls start returning `HTTP 429` with the body `{ "error": "Rate limit exceeded" }`. The response carries `Retry-After` and `X-RateLimit-Remaining: 0`.
+
+**Cause:** The client has used all `RequestsPerMinute` requests in the current one-minute fixed window. Clients are counted by the `X-API-Key` header when it is sent, and by the remote IP address otherwise. Typical reasons:
+
+- Requests arrive without `X-API-Key`, and the app sits behind a reverse proxy or load balancer. `Program.cs` does not configure forwarded headers, so the remote IP is the proxy's address and every anonymous caller shares one counter.
+- The limit is lower than the real traffic, for example the default of `100` requests per minute.
+
+**Fix:**
+
+1. Read `Retry-After` on the failing response and wait that long before retrying. `X-RateLimit-Reset` gives the Unix time when the window ends.
+2. Have each client send its own stable `X-API-Key`, so each caller gets a separate counter.
+3. If the traffic is legitimate, raise `DotnetConfigServer:RateLimit:RequestsPerMinute` (maximum `10000`). Setting `EnableRateLimiting` to `false` turns the check off completely, so use it only for debugging.
+4. For anonymous traffic behind a proxy, configure forwarded headers in `Program.cs` before `app.UseMiddleware<RateLimitingMiddleware>()`, with the proxy listed as a known proxy so clients cannot spoof their address. Without this, the IP-based key is the proxy's address.
+5. If several instances must share one limit, set `UseDistributedStore` to `true` and register a shared `IDistributedCache` (see [Rate Limiting](#rate-limiting)). Otherwise each instance counts requests separately.
+
+`RateLimitExemptPaths` is not read by the middleware yet, so it does not exempt any path from the limit.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
