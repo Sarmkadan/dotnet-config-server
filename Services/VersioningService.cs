@@ -16,6 +16,9 @@ namespace DotnetConfigServer.Services;
 /// </summary>
 public sealed class VersioningService : IVersioningService
 {
+    private const string InitialVersionNumber = "1.0.0";
+    private const char VersionSeparator = '.';
+
     private readonly IConfigurationVersionRepository _versionRepository;
     private readonly IConfigurationRepository _configRepository;
     private readonly IConfigurationKeyRepository _keyRepository;
@@ -90,7 +93,7 @@ public sealed class VersioningService : IVersioningService
 
         // Calculate new version number
         var newVersionNumber = ConfigurationVersion.IncrementVersion(
-            previousVersion?.VersionNumber ?? "1.0.0",
+            previousVersion?.VersionNumber ?? InitialVersionNumber,
             VersionIncrementType.Patch
         );
 
@@ -217,7 +220,7 @@ public sealed class VersioningService : IVersioningService
         if (config is not null)
         {
             config.CurrentVersionId = version.Id;
-            config.VersionNumber = int.Parse(version.VersionNumber.Split('.')[0], System.Globalization.CultureInfo.InvariantCulture);
+            config.VersionNumber = int.Parse(version.VersionNumber.Split(VersionSeparator)[0], System.Globalization.CultureInfo.InvariantCulture);
             await _configRepository.UpdateAsync(config);
             await _configRepository.SaveChangesAsync();
         }
